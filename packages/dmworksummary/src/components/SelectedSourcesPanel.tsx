@@ -56,7 +56,7 @@ const SelectedSourcesPanel: React.FC<SelectedSourcesPanelProps> = ({ sources }) 
             {expanded && (
                 <div className="selected-sources-list">
                     {sources.map((source) => (
-                        <div key={source.source_id} className="selected-sources-item">
+                        <div key={`${source.source_type}-${source.source_id}`} className="selected-sources-item">
                             <span className="selected-sources-item-icon">
                                 {getIcon(source.source_type)}
                             </span>

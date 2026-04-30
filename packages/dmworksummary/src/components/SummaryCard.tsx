@@ -4,7 +4,6 @@ import { IconDelete } from "@douyinfe/semi-icons";
 import WKApp from "@octo/base/src/App";
 import type { SummaryListItem } from "../types/summary";
 import { ParticipantStatus } from "../types/summary";
-import { getModeLabel, formatDate } from "../utils/summaryHelpers";
 import TaskStatusBadge from "./TaskStatusBadge";
 
 interface SummaryCardProps {
