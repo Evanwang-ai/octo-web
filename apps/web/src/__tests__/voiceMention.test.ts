@@ -25,12 +25,25 @@ class MentionModel {
 
 // ─── Extracted functions (mirroring production code) ─────────────
 
+function escapeRegExp(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function buildMentionRegex(members: MemberInfo[]): RegExp {
+    const specialNames = ["所有人", "all", "everyone"]
+    const allNames = [...specialNames, ...members.map((m) => m.name)]
+    const unique = [...new Set(allNames)]
+    unique.sort((a, b) => b.length - a.length)
+    const pattern = unique.map(escapeRegExp).join("|")
+    return new RegExp(`@(${pattern})(?=[\\s，。！？,!?]|$)`, "gi")
+}
+
 function parseMentionMarkers(
     text: string,
     members: MemberInfo[]
 ): Array<{ type: string; text?: string; attrs?: { id: string; label: string } }> {
     const result: Array<{ type: string; text?: string; attrs?: { id: string; label: string } }> = []
-    const regex = /@(\S+?)(?=\s|$)/g
+    const regex = buildMentionRegex(members)
     let lastIndex = 0
     let match: RegExpExecArray | null
 
@@ -43,18 +56,18 @@ function parseMentionMarkers(
         }
 
         const isAll = name === '所有人' || name.toLowerCase() === 'all' || name.toLowerCase() === 'everyone'
-        const member = !isAll ? members.find(m => m.name === name) : undefined
+        const member = members.find(m => m.name.toLowerCase() === name.toLowerCase())
 
-        if (member) {
-            result.push({
-                type: 'mention',
-                attrs: { id: member.uid, label: member.name },
-            })
-            result.push({ type: 'text', text: ' ' })
-        } else if (isAll) {
+        if (isAll) {
             result.push({
                 type: 'mention',
                 attrs: { id: '-1', label: '所有人' },
+            })
+            result.push({ type: 'text', text: ' ' })
+        } else if (member) {
+            result.push({
+                type: 'mention',
+                attrs: { id: member.uid, label: member.name },
             })
             result.push({ type: 'text', text: ' ' })
         } else {
@@ -62,7 +75,7 @@ function parseMentionMarkers(
         }
 
         lastIndex = match.index + match[0].length
-        if (member || isAll) {
+        if (isAll || member) {
             if (lastIndex < text.length && /\s/.test(text[lastIndex])) {
                 lastIndex++
             }
@@ -186,8 +199,7 @@ describe('parseMentionMarkers', () => {
     it('should keep unmatched @name as plain text', () => {
         const result = parseMentionMarkers('@不存在的人 hello', members)
         expect(result).toEqual([
-            { type: 'text', text: '@不存在的人' },
-            { type: 'text', text: ' hello' },
+            { type: 'text', text: '@不存在的人 hello' },
         ])
     })
 
@@ -222,7 +234,8 @@ describe('parseMentionMarkers', () => {
 
     it('should handle empty members list', () => {
         const result = parseMentionMarkers('@陈皮皮 hello', [])
-        expect(result[0]).toEqual({ type: 'text', text: '@陈皮皮' })
+        // With empty members, only special names (所有人/all/everyone) match
+        expect(result).toEqual([{ type: 'text', text: '@陈皮皮 hello' }])
     })
 
     it('should still match @所有人 with empty members list', () => {
@@ -251,7 +264,7 @@ describe('parseMentionMarkers', () => {
         expect(mentions).toHaveLength(1)
         expect(mentions[0].attrs?.id).toBe('uid_chen')
         const texts = result.filter(n => n.type === 'text').map(n => n.text)
-        expect(texts).toContain('@不存在')
+        expect(texts.join('')).toContain('@不存在')
     })
 
     it('should handle text with leading content before mention', () => {
@@ -274,8 +287,8 @@ describe('parseMentionMarkers', () => {
 
     it('should handle @mention with special chars that do not match', () => {
         const result = parseMentionMarkers('@user@domain.com 看看', members)
-        // @user@domain.com is treated as a single non-whitespace token
-        expect(result[0]).toEqual({ type: 'text', text: '@user@domain.com' })
+        // No known member matches, entire string is plain text
+        expect(result).toEqual([{ type: 'text', text: '@user@domain.com 看看' }])
     })
 
     it('should match first member when duplicate names exist', () => {
@@ -287,6 +300,52 @@ describe('parseMentionMarkers', () => {
         const mentions = result.filter(n => n.type === 'mention')
         expect(mentions).toHaveLength(1)
         expect(mentions[0].attrs?.id).toBe('uid_a')
+    })
+
+    it('should parse mention with space in name', () => {
+        const spaceMembers: MemberInfo[] = [
+            { uid: 'uid_cindy', name: 'Cindy Che' },
+            { uid: 'uid_bob', name: 'Bob' },
+        ]
+        const result = parseMentionMarkers('@Cindy Che 看一下', spaceMembers)
+        expect(result).toEqual([
+            { type: 'mention', attrs: { id: 'uid_cindy', label: 'Cindy Che' } },
+            { type: 'text', text: ' ' },
+            { type: 'text', text: '看一下' },
+        ])
+    })
+
+    it('should prefer longer name when shorter name is a prefix', () => {
+        const spaceMembers: MemberInfo[] = [
+            { uid: 'uid_cindy', name: 'Cindy' },
+            { uid: 'uid_cindy_che', name: 'Cindy Che' },
+        ]
+        const result = parseMentionMarkers('@Cindy Che hello', spaceMembers)
+        const mentions = result.filter(n => n.type === 'mention')
+        expect(mentions).toHaveLength(1)
+        expect(mentions[0].attrs?.id).toBe('uid_cindy_che')
+    })
+
+    it('should handle multiple mentions with spaces in names', () => {
+        const spaceMembers: MemberInfo[] = [
+            { uid: 'uid_john', name: 'John Smith' },
+            { uid: 'uid_cindy', name: 'Cindy Che' },
+        ]
+        const result = parseMentionMarkers('@John Smith 和 @Cindy Che 请看', spaceMembers)
+        const mentions = result.filter(n => n.type === 'mention')
+        expect(mentions).toHaveLength(2)
+        expect(mentions[0].attrs).toEqual({ id: 'uid_john', label: 'John Smith' })
+        expect(mentions[1].attrs).toEqual({ id: 'uid_cindy', label: 'Cindy Che' })
+    })
+
+    it('should match name with space case-insensitively', () => {
+        const spaceMembers: MemberInfo[] = [
+            { uid: 'uid_cindy', name: 'Cindy Che' },
+        ]
+        const result = parseMentionMarkers('@cindy che hello', spaceMembers)
+        const mentions = result.filter(n => n.type === 'mention')
+        expect(mentions).toHaveLength(1)
+        expect(mentions[0].attrs?.id).toBe('uid_cindy')
     })
 })
 
