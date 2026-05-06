@@ -192,3 +192,14 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Wrap ChatContentPage and hide its native header (we render our own) */
+.appbot-chat-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.appbot-chat-wrap .wk-chat-conversation-header {
+  display: none;
+}

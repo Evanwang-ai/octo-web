@@ -142,7 +142,7 @@ export default function AppBotPage() {
 
     // Render bot chat with our own header (bypasses SDK channelInfo entirely)
     WKApp.routeRight.replaceToRoot(
-      <div key={channel.getChannelKey()} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div key={channel.getChannelKey()} className="appbot-chat-wrap">
         <BotChatHeader bot={bot} />
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <ChatContentPage channel={channel} />
