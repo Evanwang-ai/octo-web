@@ -82,19 +82,21 @@ export default function AppBotPage() {
 
   useEffect(() => {
     let stale = false
+    let requestId = 0
 
     const loadData = async () => {
+      const thisRequest = ++requestId
       setState("loading")
       try {
         const spaceId = WKApp.shared.currentSpaceId
         const params = spaceId ? { param: { space_id: spaceId } } : undefined
         const res = await WKApp.apiClient.get("/app_bot/available", params)
-        if (stale) return
+        if (stale || thisRequest !== requestId) return
         setBots(Array.isArray(res) ? res : [])
         setState("ready")
       } catch (err) {
         console.warn("[AppBotPage] Failed to load bots:", err)
-        if (stale) return
+        if (stale || thisRequest !== requestId) return
         setBots([])
         setState("error")
       }
@@ -106,7 +108,7 @@ export default function AppBotPage() {
       try {
         const spaces = await SpaceService.shared.getMySpaces()
         if (stale) return
-        const found = spaces?.find((s: any) => s.space_id === spaceId)
+        const found = spaces?.find((s: { space_id: string; name?: string }) => s.space_id === spaceId)
         setSpaceName(found?.name || "")
       } catch { if (!stale) setSpaceName("") }
     }
@@ -114,7 +116,13 @@ export default function AppBotPage() {
     loadData()
     resolveSpaceName()
 
-    const handler = () => { stale = false; loadData(); resolveSpaceName() }
+    const handler = () => {
+      stale = false
+      setSelectedUid(null)
+      WKApp.routeRight.popToRoot()
+      loadData()
+      resolveSpaceName()
+    }
     WKApp.mittBus.on("space-changed", handler)
     return () => { stale = true; WKApp.mittBus.off("space-changed", handler) }
   }, [reloadTick])
