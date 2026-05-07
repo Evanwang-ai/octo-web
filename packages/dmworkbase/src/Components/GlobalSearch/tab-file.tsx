@@ -68,35 +68,33 @@ export default class TabFile extends Component<TabFileProps> {
             {
                 files?.map((item: any) => {
                     let sender;
-                    let needFetchSender = false
                     const senderChannel = new Channel(item.from_uid, ChannelTypePerson)
                     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(senderChannel)
                     if (channelInfo) {
                         sender = channelInfo.title
-                    } else {
-                        // 懒加载：由 VisibilityTrigger 进入视口时触发
-                        needFetchSender = true
                     }
+                    // 缺失时交由 VisibilityTrigger 按需拉取
 
-                    const fileNode = <ItemFile
-                        sender={sender}
-                        message={item}
-                        onClick={()=>{
-                            if(this.props.onClick) {
-                                this.props.onClick(item)
+                    // 永远用 VisibilityTrigger 包裹，避免 VisibilityTrigger ↔ Fragment
+                    // 在同 key 下切换导致子树 unmount + remount
+                    return <VisibilityTrigger
+                        key={item.message_idstr}
+                        onVisible={() => {
+                            if (item.from_uid) {
+                                this.requestSenderChannelInfoIfNeeded(item.from_uid)
                             }
                         }}
-                    />
-
-                    if (needFetchSender) {
-                        return <VisibilityTrigger
-                            key={item.message_idstr}
-                            onVisible={() => this.requestSenderChannelInfoIfNeeded(item.from_uid)}
-                        >
-                            {fileNode}
-                        </VisibilityTrigger>
-                    }
-                    return <React.Fragment key={item.message_idstr}>{fileNode}</React.Fragment>
+                    >
+                        <ItemFile
+                            sender={sender}
+                            message={item}
+                            onClick={()=>{
+                                if(this.props.onClick) {
+                                    this.props.onClick(item)
+                                }
+                            }}
+                        />
+                    </VisibilityTrigger>
                 })
             }
         </div>

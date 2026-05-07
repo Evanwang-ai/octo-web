@@ -25,18 +25,25 @@ export default class TabGroup extends Component<TabGroupProps> {
         return <div className="wk-tab-group">
             {
                 groups?.map((item: any) => {
+                    // 用 local displayName 替代对 item.channel_name 的 mutation。
+                    // 直接改源数据会在 sticky + re-render 下反复 wrap 成
+                    // <mark><mark>...</mark></mark>。与 tab-contacts.tsx 保持一致。
+                    let displayName: string = item.channel_name
                     if (this.props.keyword && item.channel_name.indexOf(this.props.keyword) !== -1) {
-                        item.channel_name = item.channel_name.replace(this.props.keyword, `<mark>${this.props.keyword}</mark>`)
+                        displayName = item.channel_name.replace(
+                            this.props.keyword,
+                            `<mark>${this.props.keyword}</mark>`
+                        )
                     }
-                    return <ItemGroup 
-                    key={item.channel_id} 
-                    name={item.channel_name} 
+                    return <ItemGroup
+                    key={item.channel_id}
+                    name={displayName}
                     avatar={WKApp.shared.avatarGroup(item.channel_id)}
                     onClick={()=>{
                         if(this.props.onClick) {
                             this.props.onClick(item)
                         }
-                    }} 
+                    }}
                     />
                 })
             }

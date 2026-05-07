@@ -136,44 +136,45 @@ export default class TabAll extends Component<TabAllProps> {
 
 
                                 let sender;
-                                let needFetchSender = false
                                 if (item.channel?.channel_type !== ChannelTypePerson && item.from_uid && item.from_uid !== "") {
                                     const senderChannel = new Channel(item.from_uid, ChannelTypePerson)
                                     const channelInfo = WKSDK.shared().channelManager.getChannelInfo(senderChannel)
                                     if (channelInfo) {
                                         sender = channelInfo.title
-                                    } else {
-                                        // 懒加载：进入视口时再发，由 VisibilityTrigger 触发
-                                        needFetchSender = true
                                     }
+                                    // 缺失时交由 VisibilityTrigger 在行进入视口时按需拉取，
+                                    // 不在 render 中产生副作用
                                 }
 
                                 // YUJ-138: 跨 Space 搜索消息时在发送者名字后展示来源 Space
                                 const senderSourceSpaceName =
                                     this.resolveMessageSenderSourceSpaceName(item)
 
-                                const messageNode = <ItemMessage
-                                    sender={sender}
-                                    senderSourceSpaceName={senderSourceSpaceName}
-                                    digest={digest}
-                                    name={item.channel?.channel_name}
-                                    avatar={WKApp.shared.avatarChannel(new Channel(item.channel?.channel_id, item.channel?.channel_type))}
-                                    onClick={() => {
-                                        if (this.props.onClick) {
-                                            this.props.onClick(item, "message")
+                                // 永远用 VisibilityTrigger 包裹（首次 fire 后 observer
+                                // 已 disconnect，相当于一个无副作用的 div）。避免
+                                // VisibilityTrigger ↔ Fragment 切换让同 key 节点被
+                                // unmount + remount，引发 WKAvatar 重建。
+                                return <VisibilityTrigger
+                                    key={item.message_idstr}
+                                    onVisible={() => {
+                                        if (item.from_uid) {
+                                            this.requestSenderChannelInfoIfNeeded(item.from_uid)
                                         }
                                     }}
-                                />
-
-                                if (needFetchSender) {
-                                    return <VisibilityTrigger
-                                        key={item.message_idstr}
-                                        onVisible={() => this.requestSenderChannelInfoIfNeeded(item.from_uid)}
-                                    >
-                                        {messageNode}
-                                    </VisibilityTrigger>
-                                }
-                                return <React.Fragment key={item.message_idstr}>{messageNode}</React.Fragment>
+                                >
+                                    <ItemMessage
+                                        sender={sender}
+                                        senderSourceSpaceName={senderSourceSpaceName}
+                                        digest={digest}
+                                        name={item.channel?.channel_name}
+                                        avatar={WKApp.shared.avatarChannel(new Channel(item.channel?.channel_id, item.channel?.channel_type))}
+                                        onClick={() => {
+                                            if (this.props.onClick) {
+                                                this.props.onClick(item, "message")
+                                            }
+                                        }}
+                                    />
+                                </VisibilityTrigger>
                             })
                         }
                     </Section>

@@ -86,7 +86,9 @@ function SelectedRow({ item, onRemove }: SelectedRowProps) {
   return (
     <div className="wk-fm-selected-item">
       <div className="wk-fm-avatar-wrap">
-        <WKAvatar channel={channel} lazy />
+        {/* 右列已选列表项数量少且都在视口内，不启用 lazy 避免占位 SVG → 真实
+            图的视觉闪烁 */}
+        <WKAvatar channel={channel} />
       </div>
       <span className="wk-fm-item-name">{item.displayName}</span>
       <button
