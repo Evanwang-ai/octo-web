@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
+import { Download, ShieldAlert } from "lucide-react";
 import { BaseRendererProps } from "../types";
 import { isFileTooLarge, getRenderMode, formatFileSize } from "../config";
 import { useFileContent } from "../hooks/useFileContent";
@@ -24,8 +25,7 @@ export interface HtmlRendererProps extends BaseRendererProps {
 /**
  * 向 HTML 内容的 <head> 最前面注入 CSP 监听脚本。
  *
- * 由于 sandbox 没有 allow-same-origin，iframe 内部的 CSP 违规事
-件
+ * 由于 sandbox 没有 allow-same-origin，iframe 内部的 CSP 违规事件
  * 不会冒泡到父页面，必须在 iframe 内部监听后通过 postMessage 上报。
  */
 function injectCspMonitor(html: string): string {
@@ -34,8 +34,9 @@ function injectCspMonitor(html: string): string {
   const script =
     `<script data-wk="csp-monitor">(function(){` +
     `document.addEventListener('securitypolicyviolation',function(e){` +
-    `if((e.violatedDirective||'').indexOf('script-src')!==-1){` +
-    `window.parent.postMessage({type:'html-csp-violation',directive:e.violatedDirective},'*');` +
+    `var d=e.effectiveDirective||e.violatedDirective||'';` +
+    `if(d.indexOf('script-src')!==-1||d.indexOf('connect-src')!==-1){` +
+    `window.parent.postMessage({type:'html-csp-violation',directive:d},'*');` +
     `}` +
     `});` +
     `})();<\/script>`;
@@ -61,7 +62,7 @@ function injectCspMonitor(html: string): string {
  * 1. 预览模式：iframe 沙箱渲染
  * 2. 源码模式：语法高亮 + 行号
  * 3. 错误自动切源码：iframe 渲染出错时自动切换到源码并显示红色提示条
- * 4. CSP 降级策略：注入脚本检测 iframe 内部 CSP 错误，自动降级为无脚本模式
+ * 4. CSP 防护策略：注入脚本检测 iframe 内部 CSP 错误，命中后停止预览并显示提示页
  */
 const HtmlRenderer: React.FC<HtmlRendererProps> = ({
   file,
@@ -139,6 +140,16 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
     onError?.(errorMsg);
   }, [handleViewModeChange, onError]);
 
+  const handleDownload = useCallback(() => {
+    const a = document.createElement("a");
+    a.href = file.url;
+    a.download = file.name || "file.html";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [file.name, file.url]);
+
   // 监听来自 iframe 的 postMessage
   // - html-csp-violation: iframe 内部 CSP 违规，降级为无脚本模式
   // - html-render-error: iframe 内部 JS 运行时错误，切换到源码视图
@@ -156,12 +167,12 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
 
       if (event.data?.type === "html-csp-violation") {
         console.warn(
-          "[HtmlRenderer] CSP violation inside iframe, falling back to script-disabled mode.",
+          "[HtmlRenderer] CSP violation inside iframe, disable HTML preview.",
           event.data.directive
         );
         setScriptEnabled(false);
         setCspFallback(true);
-        setIframeLoading(true);
+        setIframeLoading(false);
         return;
       }
 
@@ -177,12 +188,11 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
     return () => window.removeEventListener("message", handleMessage);
   }, [viewMode, content, handleViewModeChange, onError]);
 
-  // 向 srcdoc 注入 CSP 监听脚本（仅允许脚本时注入，降级后无需）
+  // 向 srcdoc 注入 CSP 监听脚本。命中 CSP 后不再渲染 iframe，直接显示禁用预览页。
   const srcdocContent = useMemo(() => {
     if (!content) return "";
-    if (!scriptEnabled) return content;
     return injectCspMonitor(content);
-  }, [content, scriptEnabled]);
+  }, [content]);
 
   // 计算内容大小（用于源码模式的分级渲染）
   const contentSize = useMemo(() => {
@@ -292,23 +302,48 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
   }
 
   // 预览模式：使用 srcdoc 渲染 HTML
-  // 安全策略：
-  // - 默认 allow-scripts（允许脚本）、nginx CSP 已允许 blob: URL
-  // - srcdoc 注入了 CSP 监听脚本，检测到违规后通过 postMessage 通知父页面降级
-  // - 不加 allow-same-origin 以防止 XSS
+  // 安全策略：默认 allow-scripts 且不加 allow-same-origin；命中 CSP 后停止渲染 HTML。
+  if (cspFallback) {
+    return (
+      <div className="wk-file-preview-html-renderer wk-file-preview-html-renderer--preview">
+        <div className="wk-file-preview-html-renderer__disabled-preview">
+          <div className="wk-file-preview-html-renderer__disabled-icon">
+            <ShieldAlert size={48} strokeWidth={1.5} />
+          </div>
+          <div className="wk-file-preview-html-renderer__disabled-content">
+            <h3 className="wk-file-preview-html-renderer__disabled-title">
+              无法安全预览此 HTML
+            </h3>
+            <p className="wk-file-preview-html-renderer__disabled-message">
+              此文件在预览时触发了浏览器安全策略限制。为避免页面异常或潜在风险，已停止渲染
+              HTML 内容。
+            </p>
+            <p className="wk-file-preview-html-renderer__disabled-submessage">
+              你可以切换到源码视图查看文件内容，或下载到本地环境打开。
+            </p>
+          </div>
+          <div className="wk-file-preview-html-renderer__disabled-actions">
+            <button
+              className="wk-file-preview-html-renderer__disabled-action"
+              onClick={() => handleViewModeChange("source")}
+            >
+              查看源码
+            </button>
+            <button
+              className="wk-file-preview-html-renderer__disabled-action wk-file-preview-html-renderer__disabled-action--primary"
+              onClick={handleDownload}
+            >
+              <Download size={16} />
+              <span>下载文件</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="wk-file-preview-html-renderer wk-file-preview-html-renderer--preview">
-      {/* CSP 降级提示 */}
-      {cspFallback && !iframeLoading && (
-        <div className="wk-file-preview-html-renderer__csp-notice">
-          <span className="wk-file-preview-html-renderer__csp-notice-icon">
-            ℹ
-          </span>
-          <span className="wk-file-preview-html-renderer__csp-notice-text">
-            由于安全策略限制，已禁用脚本执行，部分交互功能可能不可用
-          </span>
-        </div>
-      )}
       {iframeLoading && (
         <div className="wk-file-preview-html-renderer__loading-overlay">
           <div className="wk-file-preview-html-renderer__spinner" />
