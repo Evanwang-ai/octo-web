@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { BaseRendererProps } from "../types";
-import { isFileTooLarge, FILE_SIZE_THRESHOLD } from "../config";
+import { isFileTooLarge, FILE_SIZE_THRESHOLD, getRenderMode } from "../config";
 import { useFileContent } from "../hooks/useFileContent";
 import FileTooLarge from "./FileTooLarge";
 import MarkdownContent from "../../../Messages/Text/MarkdownContent";
@@ -122,6 +122,18 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
   // 大文件强制使用源码模式
   const effectiveViewMode = isLargeFile ? "source" : viewMode;
+
+  // 计算内容大小（用于源码模式的分级渲染）
+  const contentSize = useMemo(() => {
+    if (file.size) return file.size;
+    return content ? new Blob([content]).size : 0;
+  }, [file.size, content]);
+
+  // 源码模式的渲染模式（highlight / plain / too-large）
+  const sourceRenderMode = useMemo(
+    () => getRenderMode(contentSize),
+    [contentSize]
+  );
 
   // 提取 TOC 项目（只计算一次）
   const tocItems = useMemo(() => {
@@ -355,8 +367,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           <div className="wk-file-preview-markdown-renderer__preview">
             <MarkdownContent content={content} enableMath />
           </div>
+        ) : sourceRenderMode === "too-large" ? (
+          /* 源码超过 PLAIN_TEXT 阈值，不预览 */
+          <FileTooLarge
+            fileName={file.name}
+            fileSize={contentSize}
+            fileUrl={file.url}
+          />
         ) : (
-          <MarkdownSourceView content={content} />
+          <MarkdownSourceView content={content} contentSize={contentSize} />
         )}
       </div>
     </div>

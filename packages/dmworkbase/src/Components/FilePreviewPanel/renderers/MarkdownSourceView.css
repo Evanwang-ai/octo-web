@@ -11,6 +11,35 @@
   box-sizing: border-box;
 }
 
+/* ── 纯文本模式提示条 ── */
+.wk-markdown-source-view__plain-hint {
+  padding: var(--wk-sp-2) var(--wk-sp-4);
+  background: var(--wk-color-warning-bg);
+  border-bottom: 1px solid var(--wk-color-warning-border);
+  color: var(--wk-color-warning);
+  font-size: var(--wk-text-size-sm);
+  flex-shrink: 0;
+}
+
+/* ── 纯文本源码 ── */
+.wk-markdown-source-view__plain-source {
+  margin: 0;
+  padding: var(--wk-sp-4);
+  flex: 1;
+  overflow: auto;
+  background: var(--wk-bg-base);
+  color: var(--wk-text-primary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.wk-markdown-source-view__plain-source code {
+  font-family: "SF Mono", Monaco, "Cascadia Code", Consolas, monospace;
+  font-size: var(--wk-text-size-sm);
+  line-height: 1.6;
+}
+
 /* ── 空状态 ── */
 .wk-markdown-source-view--empty {
   display: flex;

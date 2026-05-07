@@ -4,10 +4,11 @@ import React, {
   useEffect,
   useCallback,
   useLayoutEffect,
+  useMemo,
 } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { BaseRendererProps } from "../types";
-import { isFileTooLarge } from "../config";
+import { isFileTooLarge, getRenderMode, formatFileSize } from "../config";
 import { useFileContent } from "../hooks/useFileContent";
 import { RendererState } from "./RendererState";
 import FileTooLarge from "./FileTooLarge";
@@ -138,6 +139,18 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
     return () => window.removeEventListener("message", handleMessage);
   }, [viewMode, content, handleViewModeChange, onError]);
 
+  // 计算内容大小（用于源码模式的分级渲染）
+  const contentSize = useMemo(() => {
+    if (file.size) return file.size;
+    return content ? new Blob([content]).size : 0;
+  }, [file.size, content]);
+
+  // 源码模式的渲染模式（highlight / plain / too-large）
+  const sourceRenderMode = useMemo(
+    () => getRenderMode(contentSize),
+    [contentSize]
+  );
+
   // 使用 useEffect 通知错误，避免在渲染阶段调用外部回调
   useEffect(() => {
     if (error) {
@@ -173,6 +186,17 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
 
   // 源码模式
   if (viewMode === "source") {
+    // 源码超过 PLAIN_TEXT 阈值，不预览
+    if (sourceRenderMode === "too-large") {
+      return (
+        <FileTooLarge
+          fileName={file.name}
+          fileSize={contentSize}
+          fileUrl={file.url}
+        />
+      );
+    }
+
     return (
       <div className="wk-file-preview-html-renderer wk-file-preview-html-renderer--source">
         {/* 错误提示条 */}
@@ -191,20 +215,33 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({
           </div>
         )}
         <div className="wk-file-preview-html-renderer__source-container wk-code-highlight-container">
-          <SyntaxHighlighter
-            language="html"
-            useInlineStyles={false}
-            showLineNumbers
-            wrapLines
-            lineNumberStyle={{
-              minWidth: "3em",
-              paddingRight: "1em",
-              textAlign: "right",
-              userSelect: "none",
-            }}
-          >
-            {content}
-          </SyntaxHighlighter>
+          {sourceRenderMode === "highlight" ? (
+            <SyntaxHighlighter
+              language="html"
+              useInlineStyles={false}
+              showLineNumbers
+              wrapLines
+              lineNumberStyle={{
+                minWidth: "3em",
+                paddingRight: "1em",
+                textAlign: "right",
+                userSelect: "none",
+              }}
+            >
+              {content}
+            </SyntaxHighlighter>
+          ) : (
+            /* 大文件使用纯文本渲染，避免卡死 */
+            <>
+              <div className="wk-file-preview-html-renderer__plain-hint">
+                文件较大（{formatFileSize(contentSize)}
+                ），已禁用语法高亮以提升性能
+              </div>
+              <pre className="wk-file-preview-html-renderer__plain-source">
+                <code>{content}</code>
+              </pre>
+            </>
+          )}
         </div>
       </div>
     );

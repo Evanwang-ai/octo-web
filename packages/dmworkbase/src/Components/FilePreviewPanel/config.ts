@@ -6,10 +6,10 @@
 /** 文件大小阈值配置（单位：字节） */
 export const FILE_SIZE_THRESHOLD = {
   /** 小于此值：完全渲染（语法高亮） */
-  HIGHLIGHT: 100 * 1024, // 100KB
+  HIGHLIGHT: 200 * 1024, // 200KB (SMALL)
 
   /** 小于此值：纯文本渲染（无高亮） */
-  PLAIN_TEXT: 1 * 1024 * 1024, // 1MB
+  PLAIN_TEXT: 2 * 1024 * 1024, // 2MB (MEDIUM)
 
   /** 小于此值：允许预览（超过则提示下载） */
   MAX_PREVIEW: 20 * 1024 * 1024, // 20MB
@@ -66,16 +66,15 @@ export function formatFileSize(bytes?: number): string {
 
 /**
  * 判断文件渲染模式
- * - highlight: 语法高亮渲染（< 100KB）
- * - plain: 纯文本渲染（100KB ~ 1MB）
- * - too-large: 文件过大，不渲染（> 20MB）
+ * - highlight: 语法高亮渲染（≤ 200KB）
+ * - plain: 纯文本渲染（200KB ~ 2MB）
+ * - too-large: 文件过大，不渲染（> 2MB）
  */
 export type RenderMode = "highlight" | "plain" | "too-large";
 
 export function getRenderMode(size: number): RenderMode {
   if (size <= FILE_SIZE_THRESHOLD.HIGHLIGHT) return "highlight";
-  // PLAIN_TEXT (1MB) < MAX_PREVIEW (20MB)，所以只需检查 MAX_PREVIEW
-  if (size <= FILE_SIZE_THRESHOLD.MAX_PREVIEW) return "plain";
+  if (size <= FILE_SIZE_THRESHOLD.PLAIN_TEXT) return "plain";
   return "too-large";
 }
 

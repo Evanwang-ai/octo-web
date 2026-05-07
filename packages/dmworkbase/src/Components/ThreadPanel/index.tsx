@@ -321,13 +321,14 @@ export default class ThreadPanel extends Component<
 
     // 优先使用 filePreview 中的 sourceChannelId/sourceChannelType
     // 其次使用 groupNo（如果在群聊/子区中）
-    const channelId = filePreview.sourceChannelId || groupNo || "";
+    const channelId = filePreview.sourceChannelId || groupNo;
     const channelType =
       filePreview.sourceChannelType ??
       (groupNo ? ChannelTypeGroup : ChannelTypePerson);
 
+    // 如果没有 channelId（如私聊场景未传入 sourceChannelId），跳过文件列表加载
     if (!channelId) {
-      console.warn("[ThreadPanel] getFileChannelInfo: no channelId available");
+      // 私聊场景不需要文件列表，静默返回 null
       return null;
     }
 
