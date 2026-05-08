@@ -149,7 +149,7 @@
     color: #b45309;
 }
 
-/* C: 未接入 OctoPush → 灰色 */
+/* B: 未接入 OctoPush → 灰色 */
 .wk-bot-detail-octopush-chip--unmanaged {
     background: rgba(148, 163, 184, 0.15);
     color: #64748b;
@@ -214,6 +214,63 @@
     left: 50%;
     transform: translateX(-50%);
     bottom: calc(100% + 1px);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.85);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* ❓ 帮助按钮（B 状态专属） */
+.wk-bot-detail-help-btn {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e5e5e5;
+    color: #888;
+    border: none;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    transition: all 0.15s ease-in-out;
+    position: relative;
+}
+
+.wk-bot-detail-help-btn:hover {
+    background: #e5e3f7;
+    color: #5b5fd6;
+}
+
+/* 帮助按钮 tooltip（通过 title 属性实现） */
+.wk-bot-detail-help-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 8px);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.4;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 280px;
+    width: max-content;
+}
+
+.wk-bot-detail-help-btn[title]:hover::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + 3px);
     border: 5px solid transparent;
     border-top-color: rgba(0, 0, 0, 0.85);
     pointer-events: none;
