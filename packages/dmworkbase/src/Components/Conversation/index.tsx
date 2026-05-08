@@ -387,32 +387,45 @@ export class Conversation
     content: MessageContent,
     channel?: Channel
   ): Promise<void> {
+    const TIMEOUT = 10_000;
+    let settled = false;
+    let clientSeq: number | null = null;
+
+    const { promise, resolve } = (() => {
+      let res: () => void;
+      const p = new Promise<void>((r) => { res = r; });
+      return { promise: p, resolve: res! };
+    })();
+
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      queueMicrotask(() => {
+        WKSDK.shared().chatManager.removeMessageStatusListener(statusListener);
+      });
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const timer = setTimeout(done, TIMEOUT);
+
+    // 在 sendMessage 之前注册 listener，避免快速 ack 竞态
+    const statusListener = (ackPacket: any) => {
+      if (clientSeq !== null && ackPacket.clientSeq === clientSeq) {
+        done();
+      }
+    };
+    WKSDK.shared().chatManager.addMessageStatusListener(statusListener);
+
     const message = await this.sendMessage(content, channel);
+    clientSeq = message.clientSeq;
 
-    await new Promise<void>((resolve) => {
-      const TIMEOUT = 10_000;
-      let settled = false;
+    // fallback：如果 ack 在 sendMessage 执行期间已经到达并处理
+    if (!settled && message.status === MessageStatus.Normal) {
+      done();
+    }
 
-      const done = () => {
-        if (settled) return;
-        settled = true;
-        // 延迟移除：同 sendMediaAndWait 中的注释，避免 forEach + splice 跳过 listener
-        queueMicrotask(() => {
-          WKSDK.shared().chatManager.removeMessageStatusListener(statusListener);
-        });
-        clearTimeout(timer);
-        resolve();
-      };
-
-      const timer = setTimeout(done, TIMEOUT);
-
-      const statusListener = (ackPacket: any) => {
-        if (ackPacket.clientSeq === message.clientSeq) {
-          done();
-        }
-      };
-      WKSDK.shared().chatManager.addMessageStatusListener(statusListener);
-    });
+    await promise;
   }
 
   scrollToBottom(animate?: boolean): void {
@@ -2120,7 +2133,7 @@ export class Conversation
                                 await sendFileAttachment(block.file);
                               }
                             } catch (err) {
-                              // 单条失败不阻塞后续
+                              console.error('[Conversation] editorBlock send failed:', err);
                             }
                           }
                           // 如果 reply 还没被消费（没有文本块），附加到一条空白消息
