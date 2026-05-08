@@ -60,3 +60,5 @@ package-lock.json
 .vscode/settings.json
 **/settings.local.json
 docs/superpowers/plans/
+# Review output files
+/cc-*.json

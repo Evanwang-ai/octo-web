@@ -6,7 +6,7 @@ import {
     Banner,
     Dropdown,
 } from "@douyinfe/semi-ui";
-import { IconMore, IconSend } from "@douyinfe/semi-icons";
+import { IconEdit, IconMore, IconSend } from "@douyinfe/semi-icons";
 import { Channel, ChannelTypeGroup, ChannelTypePerson, MessageText, WKSDK } from "wukongimjssdk";
 import WKApp from "@octo/base/src/App";
 import { splitSummaryText } from "../utils/splitMessage";
@@ -32,6 +32,7 @@ import SummaryContent from "../components/SummaryContent";
 import CitationText from "../components/CitationText";
 import SelectedSourcesPanel from "../components/SelectedSourcesPanel";
 import ScheduleConfigModal from "../components/ScheduleConfigModal";
+import SummaryEditor from "../components/SummaryEditor";
 
 interface SummaryDetailPageProps {
     taskId?: number;
@@ -51,6 +52,7 @@ interface SummaryDetailPageState {
     scheduleConfig: ScheduleConfig | null;
     lastKnownStatus?: number;
     expandedReports: Record<string, boolean>;
+    isEditing: boolean;
 }
 
 const INTER_MESSAGE_DELAY_MS = 200;
@@ -69,6 +71,7 @@ export default class SummaryDetailPage extends Component<SummaryDetailPageProps,
         showScheduleConfig: false,
         scheduleConfig: null,
         expandedReports: {},
+        isEditing: false,
     };
 
     private personalPollTimer: ReturnType<typeof setInterval> | null = null;
@@ -505,6 +508,12 @@ export default class SummaryDetailPage extends Component<SummaryDetailPageProps,
                     <span>{detail.result.total_msg_count} 条消息</span>
                     <span>·</span>
                     <span>{formatDate(detail.result.generated_at)}</span>
+                    {detail.result_is_edited && detail.result_edited_at && (
+                        <>
+                            <span>·</span>
+                            <span>已编辑 {formatDate(detail.result_edited_at)}</span>
+                        </>
+                    )}
                 </div>
             </div>
         );
@@ -676,6 +685,19 @@ export default class SummaryDetailPage extends Component<SummaryDetailPageProps,
         );
     }
 
+    handleStartEdit = () => {
+        this.setState({ isEditing: true });
+    };
+
+    handleEditSave = () => {
+        this.setState({ isEditing: false });
+        this.loadDetail();
+    };
+
+    handleEditCancel = () => {
+        this.setState({ isEditing: false });
+    };
+
     renderHeader() {
         const { detail } = this.state;
 
@@ -693,6 +715,15 @@ export default class SummaryDetailPage extends Component<SummaryDetailPageProps,
                 <div className="summary-detail-header-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, width: "100%" }}>
                     <OverflowTooltip as="h2" className="summary-detail-title" style={{ margin: 0, flex: 1, minWidth: 0, fontSize: 20, fontWeight: 600, lineHeight: "28px", color: "var(--semi-color-text-0)" }}>{detail?.title || "总结详情"}</OverflowTooltip>
                     <div className="summary-detail-header-actions" style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, paddingTop: 2 }}>
+                        {detail && detail.status === TaskStatus.COMPLETED && detail.summary_mode === SummaryMode.BY_PERSON && detail.permissions?.can_edit && !this.state.isEditing && (
+                            <Button
+                                theme="borderless"
+                                icon={<IconEdit />}
+                                onClick={this.handleStartEdit}
+                            >
+                                编辑
+                            </Button>
+                        )}
                         {detail && detail.status === TaskStatus.COMPLETED && (
                             <Button
                                 theme="borderless"
@@ -784,7 +815,20 @@ export default class SummaryDetailPage extends Component<SummaryDetailPageProps,
                     <>
                         {detail.summary_mode === SummaryMode.BY_PERSON && (
                             <>
-                                {this.renderPersonalSummary()}
+                                {this.state.isEditing && this.state.personalResult && detail.result_id ? (
+                                    <div className="summary-detail-personal">
+                                        <h3>我的总结</h3>
+                                        <SummaryEditor
+                                            taskId={detail.task_id}
+                                            baseResultId={detail.result_id}
+                                            initialContent={this.state.personalResult.content || ""}
+                                            onSave={this.handleEditSave}
+                                            onCancel={this.handleEditCancel}
+                                        />
+                                    </div>
+                                ) : (
+                                    this.renderPersonalSummary()
+                                )}
                                 {this.renderTeamSummary()}
                                 {this.renderMemberStatus()}
                                 {this.renderParticipantReports()}
@@ -820,7 +864,9 @@ export default class SummaryDetailPage extends Component<SummaryDetailPageProps,
                             </div>
                         )}
 
-                        {detail.status === TaskStatus.COMPLETED && detail.summary_mode !== SummaryMode.BY_PERSON && this.renderCompleted()}
+                        {detail.status === TaskStatus.COMPLETED && detail.summary_mode !== SummaryMode.BY_PERSON && (
+                            this.renderCompleted()
+                        )}
 
                         <SelectedSourcesPanel sources={detail.sources} />
                     </>

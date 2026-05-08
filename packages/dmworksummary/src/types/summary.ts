@@ -147,6 +147,12 @@ export interface SummaryDetail {
     schedule_id?: number;
     created_at: string;
     updated_at: string;
+    result_id?: number;
+    result_edited_at?: string | null;
+    result_is_edited?: boolean;
+    permissions?: {
+        can_edit: boolean;
+    };
 }
 
 /** 创建请求 */

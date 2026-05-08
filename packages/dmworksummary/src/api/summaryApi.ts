@@ -113,6 +113,28 @@ export async function regenerateSummary(taskId: number): Promise<{ task_id: numb
     return post(`/summaries/${taskId}/regenerate`);
 }
 
+// 不复用 put helper，因为需要保留 HTTP status 区分 409（冲突）和 5xx（服务错误）
+export async function editSummary(
+    taskId: number,
+    content: string,
+    baseResultId: number,
+): Promise<{ edited_at: string }> {
+    try {
+        const resp = await summaryAxios.put(`${BASE}/summaries/${taskId}/edit`, {
+            content,
+            base_result_id: baseResultId,
+        });
+        return resp.data?.data ?? resp.data;
+    } catch (err: unknown) {
+        const axiosErr = err as { response?: { status?: number; data?: { error?: { message?: string } } } };
+        const status = axiosErr?.response?.status;
+        const msg = extractErrorMessage(err);
+        const error = new Error(msg) as Error & { status?: number };
+        if (status) error.status = status;
+        throw error;
+    }
+}
+
 // ─── Status Management ─────────────────────────────────
 
 export async function batchStatus(taskIds: number[]): Promise<BatchStatusItem[]> {
