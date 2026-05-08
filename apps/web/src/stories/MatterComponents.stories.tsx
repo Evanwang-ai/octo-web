@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import React, { useState } from 'react'
-import TodoCard from '../../../../packages/dmworktodo/src/ui/TodoCard'
+import MatterCard from '../../../../packages/dmworktodo/src/ui/MatterCard'
 import MemberPicker from '../../../../packages/dmworktodo/src/ui/MemberPicker'
 import CreateTaskModal from '../../../../packages/dmworktodo/src/ui/CreateTaskModal'
-import type { Todo, TodoStatus } from '../../../../packages/dmworktodo/src/bridge/types'
+import type { Matter, MatterStatus } from '../../../../packages/dmworktodo/src/bridge/types'
 
 // ── Mock WKApp + SpaceService（仅 Story 范围内生效）─────────
 
@@ -50,12 +50,11 @@ const today = new Date().toISOString()
 const yesterday = new Date(Date.now() - 86400000).toISOString()
 const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString()
 
-const baseTodo: Todo = {
-  id: 'todo-1',
+const baseMatter: Matter = {
+  id: 'matter-1',
   space_id: 'space-1',
   title: '修复登录页闪屏问题',
   status: 'open',
-  goal_id: 'goal-1',
   creator_id: 'user-1',
   deadline: today,
   remind_at: undefined,
@@ -69,47 +68,47 @@ const baseTodo: Todo = {
 // ── Meta ───────────────────────────────────────────────────
 
 const meta: Meta = {
-  title: 'Todo/Components',
+  title: 'Matter/Components',
   parameters: { layout: 'padded' },
 }
 export default meta
 
-// ── TodoCard Story ─────────────────────────────────────────
+// ── MatterCard Story ─────────────────────────────────────────
 
 function CardDemo() {
-  const [statuses, setStatuses] = useState<Record<string, TodoStatus>>({
-    'todo-1': 'open',
-    'todo-2': 'closed',
-    'todo-3': 'open',
-    'todo-4': 'open',
+  const [statuses, setStatuses] = useState<Record<string, MatterStatus>>({
+    'matter-1': 'open',
+    'matter-2': 'done',
+    'matter-3': 'open',
+    'matter-4': 'open',
   })
 
-  const handleStatusChange = (id: string, status: TodoStatus) => {
+  const handleStatusChange = (id: string, status: MatterStatus) => {
     setStatuses(prev => ({ ...prev, [id]: status }))
   }
 
   const cards = [
     {
-      todo: { ...baseTodo, id: 'todo-1', status: statuses['todo-1'], deadline: today },
-      goalTitle: '产品 v2.0', channelName: '开发讨论',
+      matter: { ...baseMatter, id: 'matter-1', status: statuses['matter-1'], deadline: today },
+      : '产品 v2.0', channelName: '开发讨论',
       assigneeUids: ['u1', 'u2', 'u3', 'u4'],
       label: '今天到期 + 4个负责人（超出显+1）',
     },
     {
-      todo: { ...baseTodo, id: 'todo-2', title: '输出设计评审稿', status: statuses['todo-2'], deadline: yesterday },
-      goalTitle: 'Q2 迭代', channelName: '产品讨论',
+      matter: { ...baseMatter, id: 'matter-2', title: '输出设计评审稿', status: statuses['matter-2'], deadline: yesterday },
+      : 'Q2 迭代', channelName: '产品讨论',
       assigneeUids: ['u1'],
       label: '已完成 + 逾期',
     },
     {
-      todo: { ...baseTodo, id: 'todo-3', title: '整理 Q2 迭代需求文档', status: statuses['todo-3'], deadline: undefined, source_channel_id: undefined, source_name: undefined },
-      goalTitle: undefined, channelName: undefined,
+      matter: { ...baseMatter, id: 'matter-3', title: '整理 Q2 迭代需求文档', status: statuses['matter-3'], deadline: undefined, source_channel_id: undefined, source_name: undefined },
+      : undefined, channelName: undefined,
       assigneeUids: [],
       label: '无截止 + 无项目 + 无频道',
     },
     {
-      todo: { ...baseTodo, id: 'todo-4', title: '完成接口联调', status: statuses['todo-4'], deadline: nextWeek },
-      goalTitle: '产品 v2.0', channelName: '开发讨论',
+      matter: { ...baseMatter, id: 'matter-4', title: '完成接口联调', status: statuses['matter-4'], deadline: nextWeek },
+      : '产品 v2.0', channelName: '开发讨论',
       assigneeUids: ['u1', 'u2'],
       label: '下周到期',
     },
@@ -117,12 +116,11 @@ function CardDemo() {
 
   return (
     <div style={{ maxWidth: 500 }}>
-      {cards.map(({ todo, goalTitle, channelName, assigneeUids, label }) => (
-        <div key={todo.id} style={{ marginBottom: 16 }}>
+      {cards.map(({ matter, channelName, assigneeUids, label }) => (
+        <div key={matter.id} style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{label}</div>
-          <TodoCard
-            todo={todo}
-            goalTitle={goalTitle}
+          <MatterCard
+            matter={matter}
             channelName={channelName}
             assigneeUids={assigneeUids}
             onClick={(id) => console.log('点击详情:', id)}
@@ -132,14 +130,14 @@ function CardDemo() {
       ))}
 
       <div style={{ marginTop: 24, marginBottom: 4, fontSize: 11, color: '#aaa' }}>
-        hideProject=true（项目内部视图，不显示项目名）
+        =true（项目内部视图，不显示项目名）
       </div>
-      <TodoCard
-        todo={{ ...baseTodo, status: statuses['todo-1'] }}
-        goalTitle="产品 v2.0"
+      <MatterCard
+        matter={{ ...baseMatter, status: statuses['matter-1'] }}
+        ="产品 v2.0"
         channelName="开发讨论"
         assigneeUids={['u1', 'u2']}
-        hideProject
+        
         onClick={(id) => console.log('点击详情:', id)}
         onStatusChange={handleStatusChange}
       />
@@ -147,8 +145,8 @@ function CardDemo() {
   )
 }
 
-export const TodoCardStory: StoryObj = {
-  name: 'TodoCard',
+export const MatterCardStory: StoryObj = {
+  name: 'MatterCard',
   render: () => <CardDemo />,
 }
 

@@ -229,6 +229,7 @@ export default class MatterModule implements IModule {
             key="matter-icon"
             onClick={(e) => {
               e.stopPropagation();
+              // Cross-module event name (defined in @octo/base) — intentionally not renamed
               WKApp.mittBus.emit('wk:toggle-todo-panel', { channelId: channel.channelID, channelType: channel.channelType });
             }}
             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}

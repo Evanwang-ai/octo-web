@@ -8,7 +8,7 @@ import  { BaseModule, WKApp } from '@octo/base';
 import  { LoginModule } from '@octo/login';
 import  { DataSourceModule } from '@octo/datasource';
 import {ContactsModule} from '@octo/contacts';
-import { TodoModule } from '@octo/todo';
+import { MatterModule } from '@octo/todo';
 import { SummaryModule } from '@dmwork/summary';
 import { version as pkgVersion } from '../package.json';
 
@@ -53,7 +53,7 @@ WKApp.shared.registerModule(new BaseModule()); // 基础模块
 WKApp.shared.registerModule(new DataSourceModule()) // 数据源模块
 WKApp.shared.registerModule(new LoginModule()); // 登录模块
 WKApp.shared.registerModule(new ContactsModule()); // 联系模块
-WKApp.shared.registerModule(new TodoModule()); // Todo module
+WKApp.shared.registerModule(new MatterModule()); // Matter module
 WKApp.shared.registerModule(new SummaryModule()); // 智能总结模块
 
 WKApp.shared.startup() // app启动
