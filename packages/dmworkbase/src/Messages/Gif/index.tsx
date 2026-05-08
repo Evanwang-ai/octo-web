@@ -11,9 +11,19 @@ export class GifContent extends MessageContent {
     height!: number
     url!: string
     decodeJSON(content: any) {
-        this.width = content["width"] || 0
-        this.height = content["height"] || 0
-        this.url = content["url"] 
+        // 防御：线上观测到个别消息 content 被上游 double-stringify（例如某个 bot
+        // 或中转脚本在 SDK encode 之前多做了一次 JSON.stringify），decode 后拿到
+        // 的是字符串而不是对象，导致 url/width/height 全取不到、图片空白。
+        if (typeof content === "string") {
+            try {
+                content = JSON.parse(content)
+            } catch {
+                content = {}
+            }
+        }
+        this.width = content?.["width"] || 0
+        this.height = content?.["height"] || 0
+        this.url = content?.["url"] || ""
     }
 
     get conversationDigest() {

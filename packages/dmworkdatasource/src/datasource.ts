@@ -414,7 +414,11 @@ export class CommonDataSource implements ICommonDataSource {
     * @param opts 参数
     */
     getImageURL(path: string, opts?: { width: number, height: number }): string {
-        if (path && path.length > 4) {
+        // path 可能为 undefined/null/空串：某些消息体字段缺失（例如 Gif url、
+        // sticker 分类接口失败后 bot 构造的空 content）会一路传到这里。
+        // 直接返回空串，由 <img src=""> 走浏览器默认处理，避免整个会话崩溃。
+        if (!path) return ''
+        if (path.length > 4) {
             const prefix = path.substring(0, 4)
             if (prefix === 'http') {
                 return path
@@ -430,7 +434,8 @@ export class CommonDataSource implements ICommonDataSource {
         return `${baseURL}${path}`
     }
     getFileURL(path: string): string {
-        if (path && path.length > 4) {
+        if (!path) return ''
+        if (path.length > 4) {
             const prefix = path.substring(0, 4)
             if (prefix === 'http') {
                 return path
