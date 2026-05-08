@@ -171,7 +171,7 @@ export const WebUI: Story = {
 export const MultipleCards: Story = {
   render: () => (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      <SessionItem
+      <ClawSessionItem
         session={{
           key: "octo:c_pipi_lux_01",
           status: "active",
@@ -185,7 +185,7 @@ export const MultipleCards: Story = {
           lastMsg: "帮我用糗米写一份 OctoPush 的 V0.0.3 发布公告",
         }}
       />
-      <SessionItem
+      <ClawSessionItem
         session={{
           key: "discord:1470015610489536542",
           status: "active",
@@ -199,7 +199,7 @@ export const MultipleCards: Story = {
           lastMsg: "关于OctoPush的原型，有几个小问题需要修改一下…",
         }}
       />
-      <SessionItem
+      <ClawSessionItem
         session={{
           key: "octo:g_botfather",
           status: "idle",
@@ -213,7 +213,7 @@ export const MultipleCards: Story = {
           lastMsg: "/start",
         }}
       />
-      <SessionItem
+      <ClawSessionItem
         session={{
           key: "localhost:cli_term_01",
           status: "active",
