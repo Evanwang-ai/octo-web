@@ -157,7 +157,7 @@ export class Conversation
   private _dragFileCallback?: (file: File) => void;
   private _cachedSelectedText: string | null = null;
   private _beforeUnloadHandler: () => void;
-  private _todoSendMessageHandler?: (data: { channelId: string; channelType: number }) => void;
+  private _matterSendMessageHandler?: (data: { channelId: string; channelType: number }) => void;
   private _guardId: symbol = Symbol("pendingAttachmentGuard");
   private _addAttachmentFn?: (
     files: File[],
@@ -756,14 +756,14 @@ export class Conversation
       Conversation.replyStateCache.delete(channelKey);
     }
 
-    // Listen for todo-send-and-create: send current editor content (with mention), then clear
-    this._todoSendMessageHandler = (data: { channelId: string; channelType: number }) => {
+    // Listen for matter-send-and-create: send current editor content (with mention), then clear
+    this._matterSendMessageHandler = (data: { channelId: string; channelType: number }) => {
       const { channel } = this.props;
       if (data.channelId === channel.channelID && data.channelType === channel.channelType) {
         this._messageInputContext?.send();
       }
     };
-    WKApp.mittBus.on('wk:todo-created-from-input', this._todoSendMessageHandler);
+    WKApp.mittBus.on('wk:matter-created-from-input', this._matterSendMessageHandler);
 
     window.addEventListener("beforeunload", this._beforeUnloadHandler);
 
@@ -777,9 +777,9 @@ export class Conversation
   }
 
   componentWillUnmount() {
-    if (this._todoSendMessageHandler) {
-      WKApp.mittBus.off('wk:todo-created-from-input', this._todoSendMessageHandler);
-      this._todoSendMessageHandler = undefined;
+    if (this._matterSendMessageHandler) {
+      WKApp.mittBus.off('wk:matter-created-from-input', this._matterSendMessageHandler);
+      this._matterSendMessageHandler = undefined;
     }
     window.removeEventListener("beforeunload", this._beforeUnloadHandler);
     // 注销附件守卫：只清除自己注册的，防止新实例 guard 被旧实例 unmount 覆盖
@@ -1953,10 +1953,10 @@ export class Conversation
                         // Alt+Enter creates task only in group and topic channels
                         if (channel.channelType !== ChannelTypeGroup && channel.channelType !== ChannelTypeCommunityTopic) return;
                         const channelInfo = WKSDK.shared().channelManager.getChannelInfo(channel);
-                        // 传原始文本（含 @[uid:name] 占位符），由 GlobalTodoModal 先 parse 再截断
+                        // 传原始文本（含 @[uid:name] 占位符），由 GlobalMatterModal 先 parse 再截断
                         // 避免 slice 截断位置落在占位符中间导致 mention 残留乱码
                         const rawText = (this._messageInputContext?.text() ?? '').trim();
-                        WKApp.mittBus.emit('wk:open-create-task-modal', {
+                        WKApp.mittBus.emit('wk:open-create-matter-modal', {
                           channelId: channel.channelID,
                           channelType: channel.channelType,
                           channelName: channelInfo?.title,

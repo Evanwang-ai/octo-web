@@ -289,24 +289,24 @@ export class EndpointCommon {
     );
   }
 
-  chatTodoPanel(channel: Channel, onClose: () => void): JSX.Element | undefined {
-    return EndpointManager.shared.invoke(EndpointCategory.chatTodoPanel, {
+  chatMatterPanel(channel: Channel, onClose: () => void): JSX.Element | undefined {
+    return EndpointManager.shared.invoke(EndpointCategory.chatMatterPanel, {
       channel,
       onClose,
     });
   }
 
-  registerChatTodoPanel(
+  registerChatMatterPanel(
     sid: string,
     callback: (param: any) => JSX.Element | undefined
   ) {
     EndpointManager.shared.setMethod(
-      EndpointCategory.chatTodoPanel,
+      EndpointCategory.chatMatterPanel,
       (param) => {
         return callback(param);
       },
       {
-        category: EndpointCategory.chatTodoPanel,
+        category: EndpointCategory.chatMatterPanel,
       }
     );
   }

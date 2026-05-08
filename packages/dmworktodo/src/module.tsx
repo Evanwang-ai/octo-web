@@ -123,12 +123,12 @@ export default class MatterModule implements IModule {
     );
 
     // Mount global CreateTaskModal portal (handles Alt+Enter from any conversation)
-    mountGlobalTodoModal();
+    mountGlobalMatterModal();
 
     // Chat integration
     this.registerChatContextMenu();
     this.registerChatToolbar();
-    this.registerChatTodoPanel();
+    this.registerChatMatterPanel();
     this.registerChatHeaderIcon();
   }
 
@@ -159,7 +159,7 @@ export default class MatterModule implements IModule {
             const { title: parsedTitle } = parseMentionText(raw);
             const prefillTitle = parsedTitle.slice(0, 200);
             const channelInfo = WKSDK.shared().channelManager.getChannelInfo(message.channel);
-            WKApp.mittBus.emit('wk:open-create-task-modal', {
+            WKApp.mittBus.emit('wk:open-create-matter-modal', {
               channelId: message.channel.channelID,
               channelType: ct,
               channelName: channelInfo?.title,
@@ -179,7 +179,7 @@ export default class MatterModule implements IModule {
    */
   private registerChatToolbar(): void {
     WKApp.endpoints.registerChatToolbar(
-      'chattoolbar.todo',
+      'chattoolbar.matter',
       (ctx) => {
         const channel = ctx.channel();
         // Only show in group and topic channels
@@ -194,9 +194,9 @@ export default class MatterModule implements IModule {
   /**
    * Register ChatMatterPanel in the right sidebar (mutually exclusive with thread panel).
    */
-  private registerChatTodoPanel(): void {
-    WKApp.endpoints.registerChatTodoPanel(
-      'chattodopanel',
+  private registerChatMatterPanel(): void {
+    WKApp.endpoints.registerChatMatterPanel(
+      'chatmatterpanel',
       ({ channel, onClose }) => {
         if (channel.channelType !== ChannelTypeGroup && channel.channelType !== ChannelTypeCommunityTopic) {
           return undefined;
@@ -218,7 +218,7 @@ export default class MatterModule implements IModule {
    */
   private registerChatHeaderIcon(): void {
     WKApp.endpoints.registerChannelHeaderRightItem(
-      'channelheader.todo',
+      'channelheader.matter',
       ({ channel }) => {
         // Only show in group and topic channels
         if (channel.channelType !== ChannelTypeGroup && channel.channelType !== ChannelTypeCommunityTopic) {
@@ -229,8 +229,7 @@ export default class MatterModule implements IModule {
             key="matter-icon"
             onClick={(e) => {
               e.stopPropagation();
-              // Cross-module event name (defined in @octo/base) — intentionally not renamed
-              WKApp.mittBus.emit('wk:toggle-todo-panel', { channelId: channel.channelID, channelType: channel.channelType });
+              WKApp.mittBus.emit('wk:toggle-matter-panel', { channelId: channel.channelID, channelType: channel.channelType });
             }}
             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             title="事项"
@@ -246,7 +245,7 @@ export default class MatterModule implements IModule {
 
 /**
  * Chat toolbar Matter button.
- * Emits 'wk:open-create-task-modal' — handled by GlobalTodoModal.
+ * Emits 'wk:open-create-matter-modal' — handled by GlobalMatterModal.
  */
 function ChatToolbarTodoButton({ ctx }: { ctx: ConversationContext }) {
   const channel = ctx.channel();
@@ -264,7 +263,7 @@ function ChatToolbarTodoButton({ ctx }: { ctx: ConversationContext }) {
       prefillAssigneeUids,
       clearOnConfirm: true,
     };
-    WKApp.mittBus.emit('wk:open-create-task-modal', payload);
+    WKApp.mittBus.emit('wk:open-create-matter-modal', payload);
   };
 
   return (
@@ -279,23 +278,23 @@ function ChatToolbarTodoButton({ ctx }: { ctx: ConversationContext }) {
 }
 
 /**
- * Global CreateTaskModal driven by mittBus 'wk:open-create-task-modal'.
+ * Global CreateTaskModal driven by mittBus 'wk:open-create-matter-modal'.
  * Mounted once at module init — handles Alt+Enter from any conversation.
  */
 let _globalTodoModalMounted = false;
 let _globalTodoModalRoot: ReturnType<typeof ReactDOM.createRoot> | null = null;
 
-function mountGlobalTodoModal() {
+function mountGlobalMatterModal() {
   if (_globalTodoModalMounted) return;
   _globalTodoModalMounted = true;
   const container = document.createElement('div');
   container.id = 'matter-global-modal-root';
   document.body.appendChild(container);
   _globalTodoModalRoot = ReactDOM.createRoot(container);
-  _globalTodoModalRoot.render(<GlobalTodoModal />);
+  _globalTodoModalRoot.render(<GlobalMatterModal />);
 }
 
-function GlobalTodoModal() {
+function GlobalMatterModal() {
   const [open, setOpen] = useState(false);
   const [payload, setPayload] = useState<OpenCreateTaskPayload | null>(null);
 
@@ -311,9 +310,9 @@ function GlobalTodoModal() {
       setPayload(data);
       setOpen(true);
     };
-    WKApp.mittBus.on('wk:open-create-task-modal', handler);
+    WKApp.mittBus.on('wk:open-create-matter-modal', handler);
     return () => {
-      WKApp.mittBus.off('wk:open-create-task-modal', handler);
+      WKApp.mittBus.off('wk:open-create-matter-modal', handler);
     };
   }, []);
 
@@ -334,7 +333,7 @@ function GlobalTodoModal() {
     // Send input content (with mention) + clear when triggered from toolbar / Alt+Enter
     // 只在有预填文本时才发送（prefillTitle 非空 = 用户从输入框触发），纯附件场景不发消息
     if (payload?.clearOnConfirm && payload.channelId && payload.prefillTitle) {
-      WKApp.mittBus.emit('wk:todo-created-from-input', {
+      WKApp.mittBus.emit('wk:matter-created-from-input', {
         channelId: payload.channelId,
         channelType: payload.channelType,
       });

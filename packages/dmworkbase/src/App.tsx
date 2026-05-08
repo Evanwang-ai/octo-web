@@ -10,7 +10,7 @@ export type MittEvents = {
     thread: import("./Service/Thread").Thread | null;
   };
   "wk:close-thread-panel": undefined;
-  "wk:toggle-todo-panel": { channelId: string; channelType: number };
+  "wk:toggle-matter-panel": { channelId: string; channelType: number };
   "wk:switch-sidebar-tab": string;
   "wk:file-preview": {
     url: string;
@@ -30,9 +30,9 @@ export type MittEvents = {
     /** 消息摘要（用于回复时显示） */
     conversationDigest?: string;
   } | null;
-  'wk:open-create-task-modal': { channelId: string; channelType: number; channelName?: string; prefillTitle?: string; prefillAssigneeUids?: string[]; clearOnConfirm?: boolean };
-  /** After todo created from toolbar/Alt+Enter, send editor content then clear */
-  'wk:todo-created-from-input': { channelId: string; channelType: number };
+  'wk:open-create-matter-modal': { channelId: string; channelType: number; channelName?: string; prefillTitle?: string; prefillAssigneeUids?: string[]; clearOnConfirm?: boolean };
+  /** After matter created from toolbar/Alt+Enter, send editor content then clear */
+  'wk:matter-created-from-input': { channelId: string; channelType: number };
   "summary-space-changed": undefined;
   /**
    * 频道头像发生变化（上传/更新）时广播。订阅者（例如 WKAvatar）可依据 channelID +

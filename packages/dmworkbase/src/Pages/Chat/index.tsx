@@ -66,7 +66,7 @@ export interface ChatContentPageState {
   /** 当前正在预览的文件消息 ID（用于卡片激活态） */
   activePreviewMessageId: string | null;
   /** 任务列表面板是否显示 */
-  showTodoPanel: boolean;
+  showMatterPanel: boolean;
 }
 export class ChatContentPage extends Component<
   ChatContentPageProps,
@@ -86,7 +86,7 @@ export class ChatContentPage extends Component<
       activeThread: null,
       previewFile: null,
       activePreviewMessageId: null,
-      showTodoPanel: false,
+      showMatterPanel: false,
     };
   }
 
@@ -185,16 +185,16 @@ export class ChatContentPage extends Component<
     WKApp.mittBus.on("wk:close-thread-panel", this._onCloseThreadPanel);
 
     // 注册任务列表面板切换事件监听
-    this._onToggleTodoPanel = (data) => {
+    this._onToggleMatterPanel = (data) => {
       if (
         data.channelId !== channel.channelID ||
         data.channelType !== channel.channelType
       )
         return;
       this.setState((prevState) => {
-        const opening = !prevState.showTodoPanel;
+        const opening = !prevState.showMatterPanel;
         return {
-          showTodoPanel: opening,
+          showMatterPanel: opening,
           showThreadPanel: opening ? false : prevState.showThreadPanel,
           activeThread: opening ? null : prevState.activeThread,
           previewFile: opening ? null : prevState.previewFile,
@@ -204,7 +204,7 @@ export class ChatContentPage extends Component<
         };
       });
     };
-    WKApp.mittBus.on("wk:toggle-todo-panel", this._onToggleTodoPanel);
+    WKApp.mittBus.on("wk:toggle-matter-panel", this._onToggleMatterPanel);
 
     // 检查是否需要自动打开子区面板（查看全部子区）
     if (WKApp.shared.pendingThreadPanel === channel.channelID) {
@@ -320,7 +320,7 @@ export class ChatContentPage extends Component<
     thread: Thread | null;
   }) => void;
   private _onCloseThreadPanel?: () => void;
-  private _onToggleTodoPanel?: (data: {
+  private _onToggleMatterPanel?: (data: {
     channelId: string;
     channelType: number;
   }) => void;
@@ -333,8 +333,8 @@ export class ChatContentPage extends Component<
     if (this._onCloseThreadPanel) {
       WKApp.mittBus.off("wk:close-thread-panel", this._onCloseThreadPanel);
     }
-    if (this._onToggleTodoPanel) {
-      WKApp.mittBus.off("wk:toggle-todo-panel", this._onToggleTodoPanel);
+    if (this._onToggleMatterPanel) {
+      WKApp.mittBus.off("wk:toggle-matter-panel", this._onToggleMatterPanel);
     }
     WKSDK.shared().channelManager.removeListener(this.channelInfoListener);
   }
@@ -348,7 +348,7 @@ export class ChatContentPage extends Component<
       showThreadPanel,
       activeThread,
       previewFile,
-      showTodoPanel,
+      showMatterPanel,
     } = this.state;
     // 子区页面不显示讨论串按钮
     const isThreadChannel = channel.channelType === ChannelTypeCommunityTopic;
@@ -361,7 +361,7 @@ export class ChatContentPage extends Component<
         className={classNames(
           "wk-chat-content-right",
           showChannelSetting ? "wk-chat-channelsetting-open" : "",
-          showThreadPanel || previewFile || showTodoPanel
+          showThreadPanel || previewFile || showMatterPanel
             ? "wk-chat-threadpanel-open"
             : ""
         )}
@@ -538,7 +538,7 @@ export class ChatContentPage extends Component<
                             e.stopPropagation();
                             this.setState({
                               showThreadPanel: true,
-                              showTodoPanel: false, // 与任务面板互斥
+                              showMatterPanel: false, // 与事项面板互斥
                               activeThread: null,
                               previewFile: null, // 关闭文件预览（互斥）
                               activePreviewMessageId: null,
@@ -601,7 +601,7 @@ export class ChatContentPage extends Component<
                   if (threadInfo) {
                     this.setState({
                       showThreadPanel: true,
-                      showTodoPanel: false, // 与任务面板互斥
+                      showMatterPanel: false, // 与事项面板互斥
                       previewFile: null, // 关闭文件预览（互斥）
                       activePreviewMessageId: null,
                       activeThread: buildThreadStub(
@@ -715,10 +715,10 @@ export class ChatContentPage extends Component<
           )}
 
         {/* 任务列表面板（与子区互斥，复用 ThreadPanel 容器样式） */}
-        {showTodoPanel && (
+        {showMatterPanel && (
           <div className="wk-thread-panel">
-            {WKApp.endpoints.chatTodoPanel(channel, () =>
-              this.setState({ showTodoPanel: false })
+            {WKApp.endpoints.chatMatterPanel(channel, () =>
+              this.setState({ showMatterPanel: false })
             )}
           </div>
         )}
