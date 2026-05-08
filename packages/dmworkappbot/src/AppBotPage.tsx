@@ -189,7 +189,7 @@ export default function AppBotPage() {
     // Ensure friend relationship with bot (opt-in consent).
     // This is idempotent — already-friends returns OK immediately.
     try {
-      await WKApp.apiClient.post("/robot/apply", { robot_uid: bot.uid })
+      await WKApp.apiClient.post("/app_bot/apply", { robot_uid: bot.uid })
     } catch (err) {
       console.error("[AppBotPage] robot/apply failed:", err)
       showErrorToast("无法连接到该应用，请稍后重试")
