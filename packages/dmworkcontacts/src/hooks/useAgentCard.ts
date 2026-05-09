@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAgentCard } from '../api/agentCardApi';
+import { AgentCardService } from '@octo/base';
 import type { AgentCardData } from '../api/types';
 
 interface UseAgentCardResult {
@@ -55,7 +55,7 @@ export function useAgentCard(
     setError(null);
 
     try {
-      const result = await getAgentCard(botId);
+      const result = await AgentCardService.getAgentCard(botId);
       if (signal.cancelled) return; // 如果已取消，忽略结果
       setData(result);
       setError(null);

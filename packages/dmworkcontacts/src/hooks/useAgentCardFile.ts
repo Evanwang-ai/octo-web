@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getAgentCardFile } from '../api/agentCardApi';
+import { AgentCardService } from '@octo/base';
 import type { FileContentData } from '../api/types';
 
 interface UseAgentCardFileResult {
@@ -59,7 +59,7 @@ export function useAgentCardFile(botId: string | null): UseAgentCardFileResult {
       setError(null);
 
       try {
-        const result = await getAgentCardFile(botId, fileName);
+        const result = await AgentCardService.getFileData(botId, fileName);
         if (cancelledRef.current) return; // 如果已取消，忽略结果
         setData(result);
         setError(null);

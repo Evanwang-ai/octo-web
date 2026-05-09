@@ -2,17 +2,25 @@
  * useAgentCard Hook 单元测试
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { AgentCardService } from '@octo/base';
 import { useAgentCard } from '../useAgentCard';
+import { mockAgentCardA } from '../../api/mockData';
 
-// 确保使用 Mock 模式
-beforeAll(() => {
-  import.meta.env.VITE_AGENT_CARD_MOCK = 'true';
-});
+vi.mock('@octo/base', () => ({
+  AgentCardService: {
+    getAgentCard: vi.fn(),
+  },
+}));
 
 describe('useAgentCard', () => {
+  beforeEach(() => {
+    vi.mocked(AgentCardService.getAgentCard).mockReset();
+  });
+
   it('成功加载状态 A 数据', async () => {
+    vi.mocked(AgentCardService.getAgentCard).mockResolvedValue(mockAgentCardA);
     const { result } = renderHook(() => useAgentCard('pipixia_bot'));
 
     // 初始状态
@@ -30,6 +38,7 @@ describe('useAgentCard', () => {
   });
 
   it('状态 B - 返回 404 错误', async () => {
+    vi.mocked(AgentCardService.getAgentCard).mockRejectedValue(new Error('agent not found'));
     const { result } = renderHook(() => useAgentCard('bot_4'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -39,6 +48,7 @@ describe('useAgentCard', () => {
   });
 
   it('状态 D - 返回 403 错误', async () => {
+    vi.mocked(AgentCardService.getAgentCard).mockRejectedValue(new Error('permission denied'));
     const { result } = renderHook(() => useAgentCard('xiaoyan_bot'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -57,6 +67,7 @@ describe('useAgentCard', () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.data).toBeNull();
     expect(result.current.error).toBeNull();
+    expect(vi.mocked(AgentCardService.getAgentCard)).not.toHaveBeenCalled();
   });
 
   it('botId 为 null 时不加载', async () => {
@@ -67,9 +78,11 @@ describe('useAgentCard', () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.data).toBeNull();
     expect(result.current.error).toBeNull();
+    expect(vi.mocked(AgentCardService.getAgentCard)).not.toHaveBeenCalled();
   });
 
   it('refetch 可以重新加载数据', async () => {
+    vi.mocked(AgentCardService.getAgentCard).mockResolvedValue(mockAgentCardA);
     const { result } = renderHook(() => useAgentCard('pipixia_bot'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
