@@ -67,14 +67,12 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
     componentDidMount() {
         if (this.props.uid) {
             this.loadBotInfo();
-            this.loadReportStatus();
         }
     }
 
     componentDidUpdate(prevProps: BotDetailModalProps) {
         if (prevProps.uid !== this.props.uid && this.props.uid) {
             this.loadBotInfo();
-            this.loadReportStatus();
         }
     }
 
@@ -140,16 +138,22 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
             // 用 user detail API 获取完整信息（包含 follow）
             const data = await WKApp.apiClient.get(`users/${requestedUid}`);
             if (isStale()) return;
+            const creatorUid = data.bot_creator_uid || "";
             this.setState({
                 loading: false,
                 name: data.name || requestedUid,
                 username: data.username || requestedUid,
                 description: data.bot_description || "暂无简介",
                 creatorName: data.bot_creator_name || "",
-                creatorUid: data.bot_creator_uid || "",
+                creatorUid: creatorUid,
                 botCommands: data.bot_commands || "",
                 isFriend: data.follow === 1,
                 editingDescription: false,
+            }, () => {
+                // 只有当前用户是 bot 的创建者时才加载上报状态
+                if (this.isOwner()) {
+                    this.loadReportStatus();
+                }
             });
         } catch {
             // fallback to channel info
@@ -158,16 +162,22 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                     new Channel(requestedUid, ChannelTypePerson)
                 );
                 if (isStale()) return;
+                const creatorUid = channelInfo?.orgData?.bot_creator_uid || "";
                 this.setState({
                     loading: false,
                     name: channelInfo?.title || requestedUid,
                     username: requestedUid,
                     description: channelInfo?.orgData?.bot_description || "暂无简介",
                     creatorName: channelInfo?.orgData?.bot_creator_name || "",
-                    creatorUid: channelInfo?.orgData?.bot_creator_uid || "",
+                    creatorUid: creatorUid,
                     botCommands: channelInfo?.orgData?.bot_commands || "",
                     isFriend: channelInfo?.orgData?.follow === 1,
                     editingDescription: false,
+                }, () => {
+                    // 只有当前用户是 bot 的创建者时才加载上报状态
+                    if (this.isOwner()) {
+                        this.loadReportStatus();
+                    }
                 });
             } catch {
                 if (isStale()) return;
