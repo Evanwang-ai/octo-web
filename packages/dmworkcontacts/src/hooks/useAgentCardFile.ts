@@ -1,6 +1,6 @@
 /**
  * useAgentCardFile Hook
- * 
+ *
  * 用于获取 Agent Card 文件内容
  */
 
@@ -21,14 +21,14 @@ interface UseAgentCardFileResult {
 
 /**
  * 获取 Agent Card 文件内容
- * 
+ *
  * @param botId - Bot ID
  * @returns 文件内容数据、加载状态、错误信息
- * 
+ *
  * @example
  * ```tsx
  * const { data, loading, error, fetchFile } = useAgentCardFile('pipixia_bot');
- * 
+ *
  * // 获取文件
  * await fetchFile('AGENTS.md');
  * await fetchFile('memory/2026-05-07.md');

@@ -409,7 +409,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                                         {reported ? "✅" : "🔌"}
                                     </span>
                                     <span className="wk-bot-detail-octopush-chip-text">
-                                        {reported ? "OctoPush · 已接入" : "未接入 OctoPush"}
+                                        {reported ? "已上报 Agent 信息" : "未上报 Agent 信息"}
                                     </span>
                                     {!reported && (
                                         <button
@@ -417,7 +417,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                             }}
-                                            title="该 Bot 尚未在 OctoPush 中接入管理。请在 OctoPush 中配置所在机器的网关，并在该 Agent 详情页打开「上报机器信息」开关。"
+                                            title="请在 OctoPush 中打开该 Agent 的「上报机器信息」开关。"
                                             aria-label="帮助"
                                         >
                                             ?
@@ -500,7 +500,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                                 className={`wk-bot-detail-claw-btn${!reported ? " wk-bot-detail-claw-btn--disabled" : ""}`}
                                 style={{ marginTop: 16 }}
                                 aria-label={reported ? "查看龙虾信息" : undefined}
-                                data-tooltip={!reported ? "该 Bot 尚未在 OctoPush 中接入并上报。请先配置 OctoPush 网关并打开上报信息开关。" : undefined}
+                                data-tooltip={!reported ? "请在 OctoPush 中打开该 Agent 的「上报机器信息」开关。" : undefined}
                             >
                                 🦞 查看龙虾信息
                             </Button>

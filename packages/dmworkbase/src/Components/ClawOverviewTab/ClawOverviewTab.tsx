@@ -39,7 +39,7 @@ export default function ClawOverviewTab({
 
   const getGatewayStatus = (): HealthStatus => {
     if (runtimeInfo.gateway_status !== 'connected') return 'error';
-    if (runtimeInfo.network_latency_ms > 100) return 'warning';
+    if (runtimeInfo.network_latency_ms != null && runtimeInfo.network_latency_ms > 100) return 'warning';
     return 'success';
   };
 
@@ -140,7 +140,9 @@ export default function ClawOverviewTab({
             label="网关连接"
             value={
               runtimeInfo.gateway_status === 'connected'
-                ? `延迟 ${runtimeInfo.network_latency_ms.toFixed(2)}ms`
+                ? runtimeInfo.network_latency_ms != null
+                  ? `延迟 ${runtimeInfo.network_latency_ms.toFixed(2)}ms`
+                  : '已连接'
                 : '未连接'
             }
           />

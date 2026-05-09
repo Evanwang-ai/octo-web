@@ -16,15 +16,33 @@
   border-color: rgba(113, 113, 238, 0.3);
 }
 
-/* AC-6: RUNNING 状态强视觉标记 */
-.wk-session-card.is-running {
+/* AC-6: 状态视觉标记（running=绿 / done=灰 / failed|killed|timeout=红） */
+.wk-session-card.wk-session-card--running {
   border-left: 4px solid #22c55e;
   box-shadow: 0 2px 12px rgba(34, 197, 94, 0.12);
   background: linear-gradient(90deg, rgba(34, 197, 94, 0.03), #fff 40%);
 }
 
-.wk-session-card.is-running .wk-session-head {
+.wk-session-card.wk-session-card--running .wk-session-head {
   background: rgba(34, 197, 94, 0.05);
+}
+
+.wk-session-card.wk-session-card--done {
+  border-left: 4px solid #9ca3af;
+}
+
+.wk-session-card.wk-session-card--done .wk-session-head {
+  background: #f9fafb;
+}
+
+.wk-session-card.wk-session-card--failed {
+  border-left: 4px solid #ef4444;
+  box-shadow: 0 2px 12px rgba(239, 68, 68, 0.12);
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.02), #fff 40%);
+}
+
+.wk-session-card.wk-session-card--failed .wk-session-head {
+  background: rgba(239, 68, 68, 0.04);
 }
 
 /* 头部 */
@@ -43,12 +61,16 @@
   background: #f5f5f5;
 }
 
-.wk-session-card.is-running .wk-session-head:hover {
+.wk-session-card.wk-session-card--running .wk-session-head:hover {
   background: rgba(34, 197, 94, 0.08);
 }
 
-/* RUNNING 徽章 */
-.wk-running-badge {
+.wk-session-card.wk-session-card--failed .wk-session-head:hover {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* 状态徽章 */
+.wk-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -56,19 +78,37 @@
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 100px;
-  background: #22c55e;
   color: #fff;
   letter-spacing: 0.5px;
-  animation: runningPulse 1.6s ease-in-out infinite;
 }
 
-.wk-running-badge::before {
+.wk-status-badge::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: #fff;
+}
+
+/* RUNNING 状态（绿） */
+.wk-status-badge--running {
+  background: #22c55e;
+  animation: runningPulse 1.6s ease-in-out infinite;
+}
+
+.wk-status-badge--running::before {
   animation: runningDot 1.2s ease-in-out infinite;
+}
+
+/* DONE 状态（灰） */
+.wk-status-badge--done {
+  background: #9ca3af;
+}
+
+/* FAILED / KILLED / TIMEOUT 状态（红） */
+.wk-status-badge--failed {
+  background: #ef4444;
+  animation: failedPulse 2s ease-in-out infinite;
 }
 
 @keyframes runningPulse {
@@ -90,6 +130,16 @@
   50% {
     opacity: 0.5;
     transform: scale(0.7);
+  }
+}
+
+@keyframes failedPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
   }
 }
 
@@ -154,6 +204,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.wk-session-party-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-left: 2px;
 }
 
 /* AC-7: 展开/收起箭头 */

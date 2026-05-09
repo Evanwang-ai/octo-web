@@ -6,14 +6,14 @@ export interface ClawSessionItemProps {
   session: {
     /** Session key（如 octo:c_pipi_lux_01） */
     key: string;
-    /** 状态（active | idle | closed） */
-    status: "active" | "idle" | "closed";
-    /** 是否正在运行 */
-    running: boolean;
+    /** 状态（running | done | failed | killed | timeout） */
+    status: "running" | "done" | "failed" | "killed" | "timeout";
     /** 渠道名称（如 Octo、Discord、飞书） */
     channel: string;
-    /** 对话方（如"罗敬为 · 皮皮虾(私聊)"） */
-    party: string;
+    /** 对话方原始名称/ID（如"7edea73a3c334a5382c0e0b6f27adbe0"，可选） */
+    peerName?: string;
+    /** 对话方展示名称（如"Octo 产品管家"，可选） */
+    peerDisplayName?: string;
     /** Bot 显示名（如"皮皮虾"） */
     botName: string;
     /** Bot ID（如"pipixia_bot"） */
@@ -35,7 +35,7 @@ export interface ClawSessionItemProps {
  * ClawSessionItem - Session 展示卡片组件
  *
  * AC-5: 展示对话方、模型、上下文、最近消息
- * AC-6: RUNNING 状态强视觉标记（绿色左边框 + 渐变背景）
+ * AC-6: 状态视觉标记（running=绿 / done=灰 / failed|killed|timeout=红）
  * AC-7: 点击表头展开/收起
  * AC-8: 上下文进度条 > 70% 显示警告色
  */
@@ -45,9 +45,9 @@ export default function ClawSessionItem({ session }: ClawSessionItemProps) {
   const {
     key,
     status,
-    running,
     channel,
-    party,
+    peerName,
+    peerDisplayName,
     botName,
     botId,
     model,
@@ -64,16 +64,20 @@ export default function ClawSessionItem({ session }: ClawSessionItemProps) {
   // 渠道 CSS 类（用于不同渠道的颜色标记）
   const channelClass = channel.toLowerCase().replace(/\s+/g, "-");
 
-  // 状态文本映射
-  const statusText = {
-    active: "活跃",
-    idle: "空闲",
-    closed: "已关闭",
+  // 状态配置映射
+  const statusConfig = {
+    running: { badge: "RUNNING", class: "running" },
+    done: { badge: "DONE", class: "done" },
+    failed: { badge: "FAILED", class: "failed" },
+    killed: { badge: "KILLED", class: "failed" },
+    timeout: { badge: "TIMEOUT", class: "failed" },
   }[status];
+
+  const statusClass = statusConfig?.class || "done";
 
   return (
     <div
-      className={`wk-session-card ${running ? "is-running" : ""} ${
+      className={`wk-session-card wk-session-card--${statusClass} ${
         collapsed ? "collapsed" : ""
       }`}
       data-testid="claw-session-card"
@@ -84,10 +88,13 @@ export default function ClawSessionItem({ session }: ClawSessionItemProps) {
         onClick={() => setCollapsed(!collapsed)}
         data-testid="claw-session-head"
       >
-        {/* RUNNING 徽章（仅 running=true 时显示） */}
-        {running && (
-          <span className="wk-running-badge" data-testid="claw-running-badge">
-            RUNNING
+        {/* 状态徽章 */}
+        {statusConfig && (
+          <span
+            className={`wk-status-badge wk-status-badge--${statusClass}`}
+            data-testid="claw-status-badge"
+          >
+            {statusConfig.badge}
           </span>
         )}
 
@@ -100,9 +107,16 @@ export default function ClawSessionItem({ session }: ClawSessionItemProps) {
         </span>
 
         {/* 对话方 */}
-        <span className="wk-session-party" data-testid="claw-session-party-head">
-          {party}
-        </span>
+        {(peerDisplayName || peerName) && (
+          <span className="wk-session-party" data-testid="claw-session-party-head">
+            {peerDisplayName || peerName}
+            {peerDisplayName && peerName && (
+              <span className="wk-session-party-id">
+                ({peerName})
+              </span>
+            )}
+          </span>
+        )}
 
         {/* 展开/收起箭头 */}
         <svg
