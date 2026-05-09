@@ -213,6 +213,70 @@
   margin-left: 0;
 }
 
+/* ─── StatusPicker dropdown ─────────────────────────────── */
+
+.wk-mp-status-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.wk-mp-status-picker .wk-mp-head__status {
+  cursor: pointer;
+}
+
+.wk-mp-status-picker__dropdown {
+  position: absolute;
+  z-index: var(--wk-z-dropdown);
+  top: calc(100% + var(--wk-sp-1));
+  left: 0;
+  min-width: 180px;
+  background: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  box-shadow: var(--wk-shadow-lg);
+  padding: var(--wk-sp-1);
+  animation: wk-mp-status-picker-in var(--wk-dur-fast) var(--wk-ease) both;
+}
+
+@keyframes wk-mp-status-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wk-mp-status-picker__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--wk-sp-2);
+  padding: var(--wk-sp-1-5) var(--wk-sp-2);
+  border: none;
+  background: transparent;
+  border-radius: var(--wk-r-sm);
+  cursor: pointer;
+  transition: background var(--wk-dur-fast);
+  text-align: left;
+}
+
+.wk-mp-status-picker__option:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-mp-status-picker__option.is-active {
+  background: var(--wk-bg-elevated);
+}
+
+.wk-mp-status-picker__desc {
+  font-size: var(--wk-text-size-tiny);
+  color: var(--wk-text-tertiary);
+  margin-left: auto;
+}
+
 /* ─── Avatar（Matter 模块专用原子） ─────────────────────── */
 
 .wk-mp-avatar {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import type {
   ActorKind,
   ChangelogEntry,
@@ -9,6 +9,9 @@ import type {
   TimelineKind,
 } from '../../bridge/matterDetailTypes';
 import { getMattersByChannelMock } from '../../bridge/matterDetailMock';
+import { transitionMatter } from '../../api/todoApi';
+import type { MatterStatus as ApiMatterStatus } from '../../bridge/types';
+import { Toast } from '../../utils/toast';
 import './index.css';
 
 export interface MatterDetailPanelProps {
@@ -34,8 +37,29 @@ export default function MatterDetailPanel({ channelId, onClose }: MatterDetailPa
 
   const [tab, setTab] = useState<TabKey>('channels');
   const [favorited, setFavorited] = useState(false);
+  const [statusOverride, setStatusOverride] = useState<MatterStatus | null>(null);
 
-  if (!matter) {
+  const handleStatusChange = useCallback(async (newStatus: MatterStatus) => {
+    if (!matter) return;
+    const oldStatus = statusOverride ?? matter.status;
+    // 乐观更新
+    setStatusOverride(newStatus);
+    try {
+      // 映射 v0.7 status → 后端 status（active → open）
+      const apiStatus: ApiMatterStatus = newStatus === 'active' ? 'open' : newStatus;
+      // TODO(backend): matter.id 目前是 mock 的 "M-2451"，真实接口需要后端 UUID
+      await transitionMatter(matter.id, apiStatus);
+    } catch {
+      // 回滚
+      setStatusOverride(oldStatus);
+      Toast.error('状态修改失败');
+    }
+  }, [matter, statusOverride]);
+
+  // 合并 override 到 matter
+  const displayMatter = matter ? { ...matter, status: statusOverride ?? matter.status } : undefined;
+
+  if (!displayMatter) {
     return (
       <div className="wk-mp">
         <div className="wk-mp-head">
@@ -56,20 +80,21 @@ export default function MatterDetailPanel({ channelId, onClose }: MatterDetailPa
   }
 
   const tabs: { id: TabKey; label: string; count: number }[] = [
-    { id: 'channels', label: '关联群聊', count: matter.channelDigests.length },
-    { id: 'outputs', label: '产出文件', count: matter.deliverables.length },
-    { id: 'changelog', label: '变更记录', count: matter.changelog.length },
+    { id: 'channels', label: '关联群聊', count: displayMatter.channelDigests.length },
+    { id: 'outputs', label: '产出文件', count: displayMatter.deliverables.length },
+    { id: 'changelog', label: '变更记录', count: displayMatter.changelog.length },
   ];
 
   return (
     <div className="wk-mp">
       <Head
-        matter={matter}
+        matter={displayMatter}
         favorited={favorited}
         onToggleFavorite={() => setFavorited(!favorited)}
         onClose={onClose}
+        onStatusChange={handleStatusChange}
       />
-      <MainGoal matter={matter} />
+      <MainGoal matter={displayMatter} />
       <div className="wk-mp-tabs" role="tablist">
         {tabs.map((t) => (
           <button
@@ -86,9 +111,9 @@ export default function MatterDetailPanel({ channelId, onClose }: MatterDetailPa
         ))}
       </div>
       <div className="wk-mp__scroll">
-        {tab === 'channels' && <ChannelsTab digests={matter.channelDigests} />}
-        {tab === 'outputs' && <OutputsTab items={matter.deliverables} />}
-        {tab === 'changelog' && <ChangelogTab entries={matter.changelog} />}
+        {tab === 'channels' && <ChannelsTab digests={displayMatter.channelDigests} />}
+        {tab === 'outputs' && <OutputsTab items={displayMatter.deliverables} />}
+        {tab === 'changelog' && <ChangelogTab entries={displayMatter.changelog} />}
         <div className="wk-mp-footer-note">
           ✦ Matter 是 IM 工作的 hierarchy 任务卡 · AI 从群聊持续蒸馏 · 用户只确认，不维护
         </div>
@@ -103,11 +128,13 @@ function Head({
   favorited,
   onToggleFavorite,
   onClose,
+  onStatusChange,
 }: {
   matter: MatterDetail;
   favorited: boolean;
   onToggleFavorite: () => void;
   onClose: () => void;
+  onStatusChange: (newStatus: MatterStatus) => void;
 }) {
   const statusLabel: Record<MatterStatus, string> = {
     active: '进行中',
@@ -119,11 +146,7 @@ function Head({
     <div className="wk-mp-head">
       <div className="wk-mp-head__row1">
         <span className="wk-mp-head__id">{matter.id}</span>
-        {/* TODO(interaction): StatusPicker — 点击切换状态（按权限 PRD §9） */}
-        <span className={`wk-mp-head__status wk-mp-head__status--${matter.status}`}>
-          <span className="wk-mp-head__status-dot" />
-          {statusLabel[matter.status]}
-        </span>
+        <StatusPicker status={matter.status} onChange={onStatusChange} />
         {/* TODO(interaction): DdlEditor — 点击弹日期选择器 */}
         <span className="wk-mp-head__ddl">
           <span className="wk-mp-head__ddl-label">截止</span>
@@ -450,6 +473,74 @@ function ChangelogRow({ ev }: { ev: ChangelogEntry }) {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── StatusPicker（点击状态徽章弹出下拉切换） ─────────────
+const STATUS_OPTIONS: Array<{ id: MatterStatus; label: string; desc: string }> = [
+  { id: 'active', label: '进行中', desc: '推进中' },
+  { id: 'done', label: '已完成', desc: '已交付' },
+  { id: 'archived', label: '已归档', desc: '只发起人可见' },
+];
+
+function StatusPicker({
+  status,
+  onChange,
+}: {
+  status: MatterStatus;
+  onChange: (newStatus: MatterStatus) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const statusLabel: Record<MatterStatus, string> = {
+    active: '进行中',
+    done: '已完成',
+    archived: '已归档',
+  };
+
+  return (
+    <span ref={ref} className="wk-mp-status-picker">
+      <button
+        type="button"
+        className={`wk-mp-head__status wk-mp-head__status--${status}`}
+        onClick={() => setOpen((o) => !o)}
+        title="点击修改状态"
+      >
+        <span className="wk-mp-head__status-dot" />
+        {statusLabel[status]}
+      </button>
+      {open && (
+        <div className="wk-mp-status-picker__dropdown">
+          {STATUS_OPTIONS.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              className={`wk-mp-status-picker__option${o.id === status ? ' is-active' : ''}`}
+              onClick={() => {
+                onChange(o.id);
+                setOpen(false);
+              }}
+            >
+              <span className={`wk-mp-head__status wk-mp-head__status--${o.id}`}>
+                <span className="wk-mp-head__status-dot" />
+                {o.label}
+              </span>
+              <span className="wk-mp-status-picker__desc">{o.desc}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
   );
 }
 
