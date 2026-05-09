@@ -950,11 +950,9 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     (text: string) => {
       if (editor) {
         // insertText 保持追加语义，用于 emoji、引用回复等场景
-        // 解析 @[uid:label] 格式为 Tiptap 节点后逐个追加
+        // 整段 paragraph 数组交给 Tiptap，保留多行结构
         const content = parseDraftToContent(text);
-        content.content.forEach((p) => {
-          p.content.forEach((node) => editor.commands.insertContent(node));
-        });
+        editor.commands.insertContent(content.content);
         editor.commands.focus();
       }
     },
