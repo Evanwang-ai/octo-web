@@ -8,6 +8,7 @@ import MatterPage from './pages/TodoPage';
 import ChatMatterPanel from './panel/ChatTodoPanel';
 import MatterDetailPanel from './panel/MatterDetailPanel';
 import MatterLinkMenu from './ui/MatterLinkMenu';
+import SmartCreateModal from './ui/SmartCreateModal';
 import { createMatter, listMatters } from './api/todoApi';
 import { Toast } from './utils/toast';
 import CreateTaskModal from './ui/CreateTaskModal';
@@ -408,6 +409,7 @@ function GlobalMatterLinkMenu() {
   const [channelType, setChannelType] = useState<number>(0);
   const [matters, setMatters] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const anchorRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
@@ -441,16 +443,32 @@ function GlobalMatterLinkMenu() {
     };
   }, [anchor]);
 
-  if (!anchor) return null;
+  if (!anchor && !showCreate) return null;
 
   return (
-    <MatterLinkMenu
-      anchorRef={anchorRef}
-      matters={matters}
-      onClose={() => setAnchor(null)}
-      // TODO(interaction): onCreate → 打开 SmartCreateModal
-      // TODO(interaction): onPick → 调 linkChannel API 关联选中消息到 Matter
-      disabled={loading}
-    />
+    <>
+      {anchor && (
+        <MatterLinkMenu
+          anchorRef={anchorRef}
+          matters={matters}
+          onClose={() => setAnchor(null)}
+          onCreate={() => {
+            setAnchor(null);
+            setShowCreate(true);
+          }}
+          disabled={loading}
+        />
+      )}
+      <SmartCreateModal
+        visible={showCreate}
+        blank
+        onClose={() => setShowCreate(false)}
+        onConfirm={async (req) => {
+          await createMatter(req);
+          Toast.success('事项已创建');
+        }}
+        channel={channelId ? { channelId, channelType } : undefined}
+      />
+    </>
   );
 }
