@@ -523,9 +523,9 @@ export default function MatterDetailPanel({
                         channelId={ch.channel_id}
                         channelType={ch.channel_type}
                         fallback={ch.channel_name}
-                        blur={!isMember}
                       />
                     </span>
+                    {!isMember && <NotMemberBadge />}
                     <span className="wk-mp-channels__card-time">
                       {new Date(ch.created_at).toLocaleDateString("zh-CN", {
                         month: "numeric",
@@ -533,9 +533,13 @@ export default function MatterDetailPanel({
                       })}{" "}
                       关联
                     </span>
-                    <ChannelMoreMenu
-                      onUnlink={() => handleUnlinkChannel(ch.channel_id)}
-                    />
+                    {/* 未加入群时隐藏 '取消关联' 菜单 (对齐原型: 非成员
+                        不能 CRUD 跟本群相关的绑定关系) */}
+                    {isMember && (
+                      <ChannelMoreMenu
+                        onUnlink={() => handleUnlinkChannel(ch.channel_id)}
+                      />
+                    )}
                   </div>
                   <div className="wk-mp-channels__card-progress">
                     <div className="wk-mp-channels__card-progress-label">
@@ -604,8 +608,11 @@ export default function MatterDetailPanel({
                       return (
                         <TimelinePanel
                           entries={chEntries}
-                          // 未加入该群时不提供 onShowAnchor, TimelinePanel
-                          // 会据此隐藏 '↗ 原消息' 按钮 (没权限查原消息)。
+                          // 未加入该群时整个群的 entries 都不允许看原消息,
+                          // 用 canShowAnchor 彻底隐藏按钮 (不是置灰),
+                          // 对齐原型 v19 V5_TimelinePanel 里 isMember &&
+                          // SourceTag 的 short-circuit 行为。
+                          canShowAnchor={() => isMember}
                           onShowAnchor={
                             isMember
                               ? (entry, ev) => {
@@ -1179,33 +1186,44 @@ function TimelinePanel({
 //
 // 优先级: WKSDK 反查最新群名 > 后端保存的 channel_name 快照 > id 前缀兜底
 // 群改名后 WKSDK cache 会推新值, 组件自动重渲染。
-//
-// blur: 当前用户不在该群时 (从 /group/my 判定), 模糊展示群名以遮住名称。
 
 function ChannelNameLabel({
   channelId,
   channelType,
   fallback,
-  blur,
 }: {
   channelId: string;
   channelType: number;
   fallback?: string;
-  blur?: boolean;
 }) {
   const live = useChannelName(channelId, channelType);
   const display = live || fallback || channelId.slice(0, 8);
-  if (blur) {
-    return (
-      <span
-        className="wk-mp-channels__card-name--blur"
-        title="你不在该群, 群名已隐藏"
-      >
-        {display}
-      </span>
-    );
-  }
   return <>{display}</>;
+}
+
+// ─── NotMemberBadge (对齐原型 v19: '不在群' 小徽章) ──
+//
+// 原型里用户不在该群时, 群名照常显示 (让用户知道是哪个群), 但旁边
+// 跟一个灰底带小锁的 '不在群' 徽章标明权限状态。避免 blur 群名那种
+// "看不清是啥群" 的困惑。
+function NotMemberBadge() {
+  return (
+    <span className="wk-mp-channels__not-member-badge">
+      <svg
+        width="9"
+        height="9"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        aria-hidden="true"
+      >
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+      不在群
+    </span>
+  );
 }
 
 // ─── TimelineInput (添加进展) ─────────────────────────────

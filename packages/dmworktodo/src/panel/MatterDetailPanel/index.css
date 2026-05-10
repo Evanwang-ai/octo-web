@@ -516,15 +516,22 @@ textarea.wk-mp-goal__text--editing {
   color: var(--wk-text-primary, #18181b);
 }
 
-/* 未加入群: 群名模糊 + 鼠标悬停变问号, 提示用户这是不可访问的群 */
-.wk-mp-channels__card-name--blur {
-  filter: blur(4px);
-  user-select: none;
-  cursor: help;
-}
-
-.wk-mp-channels__card-name--blur:hover {
-  filter: blur(2px);
+/* 未加入群的 "不在群" 小徽章 (对齐原型 v19 ChannelDigestItem 右侧标签): 
+   灰底 + 边框 + 小锁图标 + "不在群" 文字。跟 card-name 在同一行,
+   让用户一眼看出 "是这个群, 但我没权限" */
+.wk-mp-channels__not-member-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  color: var(--wk-text-tertiary, #71717a);
+  background: var(--wk-bg-muted, #f4f4f5);
+  border: 1px solid var(--wk-border-default, #e4e4e7);
+  border-radius: 4px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .wk-mp-channels__card-time {
