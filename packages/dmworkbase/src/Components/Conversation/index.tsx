@@ -2617,7 +2617,7 @@ class MultiplePanel extends Component<MultiplePanelProps> {
           创建新事项
         </button>
         <div className="wk-multiplepanel-sep" />
-        {/* 同步到任务 — 点击由调用方弹出菜单（dmworktodo 模块接管） */}
+        {/* 同步到事项 — 点击由调用方弹出菜单（dmworktodo 模块接管） */}
         <button
           ref={this.matterBtnRef}
           className="wk-multiplepanel-btn wk-multiplepanel-btn--matter"
@@ -2626,9 +2626,9 @@ class MultiplePanel extends Component<MultiplePanelProps> {
               onAddToMatter(this.matterBtnRef.current);
             }
           }}
-          title="同步到任务"
+          title="同步到事项"
         >
-          同步到任务
+          同步到事项
         </button>
         <div className="wk-multiplepanel-sep" />
         <button

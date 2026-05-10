@@ -17,8 +17,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   min-width: 380px;
-  max-width: 460px;
-  max-height: 480px;
+  max-width: 480px;
+  max-height: 400px;
   z-index: 401;
   background: var(--wk-bg-surface, #fff);
   border: 1px solid var(--wk-border-default, #e4e4e7);
@@ -122,6 +122,8 @@
   align-items: flex-start;
   gap: 8px;
   padding: 6px 0;
+  max-height: 150px;
+  overflow: hidden;
 }
 
 .wk-anchor-pop__msg + .wk-anchor-pop__msg {
@@ -173,6 +175,10 @@
   line-height: 1.55;
   word-break: break-word;
   white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
 }
 
 .wk-anchor-pop__msg-text--dim {

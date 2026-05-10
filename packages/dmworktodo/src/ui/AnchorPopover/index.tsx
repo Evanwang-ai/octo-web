@@ -161,7 +161,7 @@ export default function AnchorPopover({
             >
                 <div className="wk-anchor-pop__head">
                     <span className="wk-anchor-pop__channel">
-                        #{displayChannelName} · 上下文
+                        #{displayChannelName}
                     </span>
                     <button
                         type="button"
@@ -250,7 +250,15 @@ function extractDisplayText(msg: IMMessageResp): string {
     if (!p) return '';
     // 文本消息
     const content = p.content;
-    if (typeof content === 'string' && content.trim()) return content;
+    if (typeof content === 'string' && content.trim()) {
+        // 限制文本长度，超过 200 字符时截断并添加省略号
+        const MAX_LENGTH = 200;
+        const text = content.trim();
+        if (text.length > MAX_LENGTH) {
+            return text.slice(0, MAX_LENGTH) + '...';
+        }
+        return text;
+    }
     // 类型降级: 展示一个占位, 方便用户识别
     const type = p.type;
     switch (type) {
@@ -261,7 +269,27 @@ function extractDisplayText(msg: IMMessageResp): string {
         case 4:
             return '[视频]';
         case 5:
-            return '[文件]';
+            return '[小视频]';
+        case 6:
+            return '[位置]';
+        case 7:
+            return '[名片]';
+        case 8: {
+            // 文件消息：显示文件名和大小
+            const name = p.name;
+            const size = p.size;
+            const fileName = typeof name === 'string' && name ? name : '未知文件';
+            if (typeof size === 'number' && size > 0) {
+                const formattedSize = formatFileSize(size);
+                return `[文件] ${fileName} (${formattedSize})`;
+            }
+            return `[文件] ${fileName}`;
+        }
+        case 11:
+            return '[合并转发]';
+        case 12:
+        case 13:
+            return '[表情]';
         case 1000:
             return '[系统消息]';
         default:
@@ -269,6 +297,16 @@ function extractDisplayText(msg: IMMessageResp): string {
                 ? `[消息 type=${type}]`
                 : '[消息]';
     }
+}
+
+/** 格式化文件大小（字节转为人类可读格式） */
+function formatFileSize(bytes: number): string {
+    if (bytes <= 0) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024)
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
 function formatTime(ts: number): string {

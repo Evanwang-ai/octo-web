@@ -1046,23 +1046,42 @@ function ChannelMoreMenu({ onUnlink }: { onUnlink: () => void }) {
 
 /**
  * 根据触发按钮的 rect 算 AnchorPopover 锚定位置 (对齐原型 v19 onShowAnchor):
- *   - 水平: 右对齐按钮 (popover 宽 380, 右边留 10px 安全边距)
- *   - 垂直: 按钮下方 22px, 防底部溢出时向上收缩
+ *   - 水平: 左对齐按钮, 防止弹框太靠右
+ *   - 垂直: 按钮下方 8px, 优先向下展开，空间不足时向上展开
  *
  * 返回 viewport 坐标 (fixed 定位用)。调用方把 x/y 传进 AnchorPopover。
  */
 function computeAnchorPosition(rect: DOMRect): { x: number; y: number } {
-  const POP_WIDTH = 380;
-  const POP_HEIGHT = 400;
-  const SAFE = 10;
+  const POP_WIDTH = 420;
+  const POP_HEIGHT = 360;
+  const SAFE = 16;
+  const GAP = 8; // 按钮与弹框的间距
+
+  // 优先左对齐按钮，如果右侧空间不足则向左移动
   const x = Math.max(
     SAFE,
-    Math.min(rect.right - POP_WIDTH, window.innerWidth - POP_WIDTH - SAFE),
+    Math.min(rect.left, window.innerWidth - POP_WIDTH - SAFE),
   );
-  const y = Math.max(
-    SAFE,
-    Math.min(rect.top + 22, window.innerHeight - POP_HEIGHT - SAFE),
-  );
+
+  // 计算垂直位置：优先向下展开，空间不足时向上展开
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  let y: number;
+  if (spaceBelow >= POP_HEIGHT + GAP) {
+    // 下方空间充足，向下展开
+    y = rect.bottom + GAP;
+  } else if (spaceAbove >= POP_HEIGHT + GAP) {
+    // 上方空间充足，向上展开
+    y = rect.top - POP_HEIGHT - GAP;
+  } else {
+    // 两侧空间都不足，居中显示并限制在安全范围内
+    y = Math.max(SAFE, Math.min(
+      rect.top - POP_HEIGHT / 2 + rect.height / 2,
+      window.innerHeight - POP_HEIGHT - SAFE
+    ));
+  }
+
   return { x, y };
 }
 

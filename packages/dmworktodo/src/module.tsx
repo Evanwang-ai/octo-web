@@ -163,7 +163,7 @@ export default class MatterModule implements IModule {
     mountGlobalSmartCreateModal();
 
     // Chat integration
-    this.registerChatContextMenu();
+    // this.registerChatContextMenu(); // 已禁用：移除单条消息右键菜单中的"创建事项"选项
     this.registerChatToolbar();
     this.registerChatMatterPanel();
     this.registerChatHeaderIcon();
