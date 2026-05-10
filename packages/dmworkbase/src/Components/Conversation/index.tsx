@@ -33,6 +33,7 @@ import {
   ChannelTypeCommunityTopic,
 } from "../../Service/Const";
 import ConversationContext from "./context";
+import { subscriberDisplayName } from "../../Utils/displayName";
 import MessageInput, {
   MentionModel,
   MessageInputContext,
@@ -162,6 +163,56 @@ function guessFileNameFromUrl(url: string, fallback: string): string {
     // ignore
   }
   return fallback;
+}
+
+/**
+ * 从 WuKongIM Message 对象解析发送人的展示名。
+ *
+ * WuKongIM SDK 的 Message 只带 fromUID, 不带 fromName; name 必须前端自己解析。
+ * 参考 useMessageRow.ts + Messages/Base/index.tsx 的群成员名字解析路径:
+ *
+ *   1. 群消息: 从 channelManager.getSubscribes(groupChannel) 拉群成员列表,
+ *      按 uid 匹配后用 subscriberDisplayName (remark > real_name > name)
+ *      — 群内用户大概率没开过 1v1, Person channelInfo 缓存常 miss,
+ *      群成员列表缓存命中率高得多, 是主路径
+ *   2. fallback: Person channelInfo.title (用户真开过 1v1 时才有)
+ *   3. 最终兜底: 空串 (后端 from_uname optional)
+ *
+ * 注意: 这是同步函数, 不做 fetch; 拿不到就返回空。
+ * 后端 LLM 接收到空 from_uname 时会用 from_uid 代替, 不会致命。
+ */
+function resolveFromUName(m: Message | undefined | null): string {
+  if (!m || !m.fromUID) return "";
+  const fromUID = m.fromUID;
+
+  // 1. 优先从群成员列表拿 (群聊场景命中率最高)
+  try {
+    const ch = m.channel;
+    if (ch && ch.channelType === ChannelTypeGroup) {
+      const subs = WKSDK.shared().channelManager.getSubscribes(ch) as
+        | { uid?: string; name?: string; remark?: string; orgData?: Record<string, unknown> }[]
+        | null
+        | undefined;
+      const member = subs?.find((s) => s && s.uid === fromUID);
+      if (member) {
+        const name = subscriberDisplayName(member);
+        if (name) return name;
+      }
+    }
+  } catch {
+    // channelManager 未初始化 / 缓存 miss, 降级
+  }
+
+  // 2. Person channelInfo 兜底
+  try {
+    const info = WKSDK.shared()
+      .channelManager.getChannelInfo(new Channel(fromUID, ChannelTypePerson));
+    if (info?.title) return info.title;
+  } catch {
+    // ignore
+  }
+
+  return "";
 }
 
 const foldSessionAvatarIcon = new URL(
@@ -1898,7 +1949,7 @@ export class Conversation
                           messageSeq: m.messageSeq,
                           messageID: m.messageID,
                           fromUID: m.fromUID,
-                          fromUName: m.fromUName || m.from?.name,
+                          fromUName: resolveFromUName(m),
                           content:
                             m.content?.conversationDigest ||
                             m.content?.text ||
@@ -1922,7 +1973,7 @@ export class Conversation
                           messageSeq: m.messageSeq,
                           messageID: m.messageID,
                           fromUID: m.fromUID,
-                          fromUName: m.fromUName || m.from?.name,
+                          fromUName: resolveFromUName(m),
                           content:
                             m.content?.conversationDigest ||
                             m.content?.text ||
