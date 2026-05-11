@@ -10,9 +10,6 @@
   min-height: 0;
   overflow-y: auto;
   background: var(--wk-bg-surface, #fff);
-  /* container query: 子元素根据自身宽度响应式布局 */
-  container-type: inline-size;
-  container-name: wk-mp-main;
 }
 
 .wk-mp-main__inner {
@@ -36,7 +33,6 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  flex-wrap: wrap;
 }
 
 .wk-mp-header__id {
@@ -1049,16 +1045,12 @@ textarea.wk-mp-goal__text--editing {
 
 .wk-mp-activity__actor {
   flex-shrink: 0;
-  min-width: 0;
-  max-width: 140px;
+  width: 180px;
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
   color: var(--wk-text-tertiary, #a1a1aa);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .wk-mp-activity__actor .wk-avatar {
@@ -1131,60 +1123,4 @@ textarea.wk-mp-goal__text--editing {
 
 .wk-mp-activity__filter-item.is-active {
   font-weight: 500;
-}
-
-/* ─── 响应式: 窄宽度适配 (container query) ─────────────────
- * 事项详情面板作为可拖拽宽度的侧栏, 拖到 < 420px 时:
- *   - inner padding 缩减
- *   - activity actor 列 max-width 压到 80px 并强制省略号
- *   - 关联群卡头部 meta 允许换行
- *   - tabs 在需要时支持横滚
- */
-@container wk-mp-main (max-width: 420px) {
-  .wk-mp-main__inner {
-    padding: 12px 14px 20px;
-  }
-
-  .wk-mp-activity__actor {
-    max-width: 90px;
-  }
-
-  .wk-mp-activity__row {
-    gap: 8px;
-    padding: 6px 6px;
-  }
-
-  .wk-mp-channels__card-head {
-    flex-wrap: wrap;
-    row-gap: 4px;
-  }
-
-  .wk-mp-tabs {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .wk-mp-tabs::-webkit-scrollbar {
-    display: none;
-  }
-  .wk-mp-tabs__btn {
-    flex-shrink: 0;
-  }
-
-  .wk-mp-goal__source {
-    flex-wrap: wrap;
-    row-gap: 4px;
-  }
-
-  .wk-mp-header__row1 {
-    row-gap: 6px;
-  }
-}
-
-@container wk-mp-main (max-width: 340px) {
-  .wk-mp-activity__actor {
-    max-width: 64px;
-  }
-  .wk-mp-main__inner {
-    padding: 10px 10px 16px;
-  }
 }

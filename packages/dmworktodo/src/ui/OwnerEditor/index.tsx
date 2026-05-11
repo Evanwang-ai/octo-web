@@ -168,7 +168,7 @@ export default function OwnerEditor({
     <span className="wk-owner-editor" ref={ref}>
       <button {...triggerProps} className={triggerClass}>
         <span className="wk-owner-editor__avatars">
-          {assignees.slice(0, 3).map((a, i) => (
+          {assignees.map((a, i) => (
             <span
               key={a.user_id}
               className="wk-owner-editor__avatar-wrap"
@@ -182,17 +182,12 @@ export default function OwnerEditor({
           ))}
         </span>
         <span className="wk-owner-editor__names">
-          {assignees.slice(0, 3).map((a, i) => (
+          {assignees.map((a, i) => (
             <React.Fragment key={a.user_id}>
               {i > 0 && '、'}
               <OwnerNameInline uid={a.user_id} resolveName={resolveName} />
             </React.Fragment>
           ))}
-          {assignees.length > 3 && (
-            <span className="wk-owner-editor__names-more">
-              {' '}等 {assignees.length} 人
-            </span>
-          )}
         </span>
       </button>
 
