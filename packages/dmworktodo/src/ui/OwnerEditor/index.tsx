@@ -67,7 +67,7 @@ function OwnerOption({
     >
       {renderAvatar(uid, 16)}
       <span className="wk-owner-editor__option-name">{name}</span>
-      {picked && <span className="wk-owner-editor__option-check">&#10003;</span>}
+      {picked && <span className="wk-owner-editor__option-check">✓</span>}
     </button>
   );
 }
@@ -190,7 +190,7 @@ export default function OwnerEditor({
           ))}
           {assignees.length > 3 && (
             <span className="wk-owner-editor__names-more">
-              {' '}\u7b49 {assignees.length} \u4eba
+              {` 等 ${assignees.length} 人`}
             </span>
           )}
         </span>
