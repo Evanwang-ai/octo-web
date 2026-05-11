@@ -144,6 +144,13 @@ export default function ChatMatterPanel({
     const panel = panelRef.current;
     if (panel) {
       panel.style.width = newWidth + "px";
+      // CSS 变量要设在祖先 (.wk-chat-content-right) 上, 兄弟元素
+      // (.wk-chat-content-chat) 才能 var() 拿到, 触发宽度挤压
+      const ancestor = panel.closest(".wk-chat-content-right") as HTMLElement | null;
+      if (ancestor) {
+        ancestor.style.setProperty("--wk-width-thread-panel", newWidth + "px");
+      }
+      // 同时保留在父元素上, 保证 panel 自身宽度的其它消费者 (splitter 等) 可用
       panel.parentElement?.style.setProperty(
         "--wk-width-thread-panel",
         newWidth + "px",
@@ -164,6 +171,14 @@ export default function ChatMatterPanel({
     const panel = panelRef.current;
     if (panel) {
       panel.style.width = lastPanelWidth.current + "px";
+      // 挤压会话区宽度依赖祖先 .wk-chat-content-right 上的 CSS 变量
+      const ancestor = panel.closest(".wk-chat-content-right") as HTMLElement | null;
+      if (ancestor) {
+        ancestor.style.setProperty(
+          "--wk-width-thread-panel",
+          lastPanelWidth.current + "px",
+        );
+      }
       panel.parentElement?.style.setProperty(
         "--wk-width-thread-panel",
         lastPanelWidth.current + "px",
@@ -180,7 +195,7 @@ export default function ChatMatterPanel({
 
   if (selectedMatterId) {
     return (
-      <div ref={panelRef}>
+      <div className="wk-mp-page-sidebar" ref={panelRef}>
         <div
           className={`wk-thread-panel-splitter${isDragging ? " wk-thread-panel-splitter-active" : ""}`}
           onMouseDown={onDragStart}

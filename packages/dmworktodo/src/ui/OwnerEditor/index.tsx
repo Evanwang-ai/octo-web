@@ -67,7 +67,7 @@ function OwnerOption({
     >
       {renderAvatar(uid, 16)}
       <span className="wk-owner-editor__option-name">{name}</span>
-      {picked && <span className="wk-owner-editor__option-check">✓</span>}
+      {picked && <span className="wk-owner-editor__option-check">&#10003;</span>}
     </button>
   );
 }
@@ -159,16 +159,16 @@ export default function OwnerEditor({
   const triggerProps = canEdit
     ? { onClick: () => setOpen((o) => !o), type: 'button' as const }
     : {
-                type: 'button' as const,
-                disabled: true,
-                title: '仅发起人或当前负责人可修改',
-            };
+        type: 'button' as const,
+        disabled: true,
+        title: '仅发起人或当前负责人可修改',
+      };
 
   return (
     <span className="wk-owner-editor" ref={ref}>
       <button {...triggerProps} className={triggerClass}>
         <span className="wk-owner-editor__avatars">
-          {assignees.map((a, i) => (
+          {assignees.slice(0, 3).map((a, i) => (
             <span
               key={a.user_id}
               className="wk-owner-editor__avatar-wrap"
@@ -182,55 +182,60 @@ export default function OwnerEditor({
           ))}
         </span>
         <span className="wk-owner-editor__names">
-          {assignees.map((a, i) => (
+          {assignees.slice(0, 3).map((a, i) => (
             <React.Fragment key={a.user_id}>
-              {i > 0 && '、'}
+              {i > 0 && '\u3001'}
               <OwnerNameInline uid={a.user_id} resolveName={resolveName} />
             </React.Fragment>
           ))}
+          {assignees.length > 3 && (
+            <span className="wk-owner-editor__names-more">
+              {' '}\u7b49 {assignees.length} \u4eba
+            </span>
+          )}
         </span>
       </button>
 
-            {open && canEdit && (
-                <div className="wk-owner-editor__dropdown">
-                    <div className="wk-owner-editor__hint">
-                        多选 · 至少保留 1 位
-                    </div>
-                    <div className="wk-owner-editor__hint wk-owner-editor__hint--sub">
-                        候选人来自 Matter 关联的群
-                    </div>
-                    {mergedCandidates.length === 0 && (
-                        <div className="wk-owner-editor__empty">
-                            暂无可选成员
-                        </div>
-                    )}
-                    {mergedCandidates.map((c) => {
-                        const picked = assignedUids.has(c.uid);
-                        const isLast = picked && assignees.length <= 1;
-                        const isPending = pending.has(c.uid);
-                        // 移除权限 (对齐后端 RemoveAssignee):
-                        //   - creator 能移除任何人
-                        //   - 非 creator 只能移除自己 (self-unassign)
-                        //   - 添加不受此限制 (AddAssignee: creator OR assignee)
-                        const canRemoveThis = picked
-                          ? isCreator || c.uid === currentUid
-                          : true; // 不是移除操作, 不限制
-                        const disabled =
-                          isLast || isPending || (picked && !canRemoveThis);
-                        return (
-                            <OwnerOption
-                                key={c.uid}
-                                uid={c.uid}
-                                name={resolveName(c.uid, c.name)}
-                                picked={picked}
-                                onClick={() => handleToggle(c.uid)}
-                                disabled={disabled}
-                                renderAvatar={renderAvatar}
-                            />
-                        );
-                    })}
-                </div>
-            )}
+      {open && canEdit && (
+        <div className="wk-owner-editor__dropdown">
+          <div className="wk-owner-editor__hint">
+            多选 · 至少保留 1 位
+          </div>
+          <div className="wk-owner-editor__hint wk-owner-editor__hint--sub">
+            候选人来自 Matter 关联的群
+          </div>
+          {mergedCandidates.length === 0 && (
+            <div className="wk-owner-editor__empty">
+              暂无可选成员
+            </div>
+          )}
+          {mergedCandidates.map((c) => {
+            const picked = assignedUids.has(c.uid);
+            const isLast = picked && assignees.length <= 1;
+            const isPending = pending.has(c.uid);
+            // 移除权限 (对齐后端 RemoveAssignee):
+            //   - creator 能移除任何人
+            //   - 非 creator 只能移除自己 (self-unassign)
+            //   - 添加不受此限制 (AddAssignee: creator OR assignee)
+            const canRemoveThis = picked
+              ? isCreator || c.uid === currentUid
+              : true;
+            const disabled =
+              isLast || isPending || (picked && !canRemoveThis);
+            return (
+              <OwnerOption
+                key={c.uid}
+                uid={c.uid}
+                name={resolveName(c.uid, c.name)}
+                picked={picked}
+                onClick={() => handleToggle(c.uid)}
+                disabled={disabled}
+                renderAvatar={renderAvatar}
+              />
+            );
+          })}
+        </div>
+      )}
     </span>
   );
 }

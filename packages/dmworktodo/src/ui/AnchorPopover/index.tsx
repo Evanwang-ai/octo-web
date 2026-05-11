@@ -45,6 +45,8 @@ export interface AnchorPopoverProps {
     renderAvatar: (uid: string, size: number) => React.ReactNode;
     /** Render a user name inline for the given uid */
     renderUserName: (uid: string) => React.ReactNode;
+    /** 可选: 跳转到原消息回调。传入第一条成功加载消息的 message_seq。 */
+    onJumpToMessage?: (messageSeq: number) => void;
 }
 
 interface LoadedMessage {
@@ -70,6 +72,7 @@ export default function AnchorPopover({
     fetchMessage,
     renderAvatar,
     renderUserName,
+    onJumpToMessage,
 }: AnchorPopoverProps) {
     const [results, setResults] = useState<FetchResult[]>([]);
     const [loading, setLoading] = useState(true);
@@ -142,11 +145,29 @@ export default function AnchorPopover({
 
     const stop = (e: React.MouseEvent) => e.stopPropagation();
 
+    // 跳转到原消息：使用第一条成功加载的消息的 message_seq 定位
+    const handleJumpToMessage = useCallback(() => {
+        if (!onJumpToMessage) return;
+
+        // 找到第一条成功加载的消息
+        const firstSuccess = results.find((r) => r.ok);
+        if (!firstSuccess || !firstSuccess.ok) return;
+
+        const messageSeq = firstSuccess.data.message_seq;
+
+        // 关闭弹框并调用外部跳转逻辑
+        onClose();
+        onJumpToMessage(messageSeq);
+    }, [results, onClose, onJumpToMessage]);
+
     // 有 x/y 时锚定到指定 viewport 坐标 (按钮下方), 无则走 CSS 居中
     const anchored = typeof x === 'number' && typeof y === 'number';
     const popStyle: React.CSSProperties | undefined = anchored
         ? { top: y, left: x, right: 'auto', bottom: 'auto', transform: 'none' }
         : undefined;
+
+    // 是否有成功加载的消息且支持跳转（用于判断是否显示跳转按钮）
+    const hasValidMessage = !loading && results.some((r) => r.ok) && onJumpToMessage;
 
     return (
         <>
@@ -193,6 +214,19 @@ export default function AnchorPopover({
                             />
                         ))}
                 </div>
+
+                {/* 跳转到原消息链接：仅在有有效消息且提供了跳转回调时显示 */}
+                {hasValidMessage && (
+                    <div className="wk-anchor-pop__footer">
+                        <button
+                            type="button"
+                            className="wk-anchor-pop__jump-link"
+                            onClick={handleJumpToMessage}
+                        >
+                            ↗ 跳到原消息
+                        </button>
+                    </div>
+                )}
             </div>
         </>
     );

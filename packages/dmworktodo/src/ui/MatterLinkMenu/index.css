@@ -84,18 +84,6 @@
   letter-spacing: 0.01em;
 }
 
-.wk-matter-link-menu__no {
-  font-size: var(--wk-text-size-tiny);
-  color: var(--wk-text-tertiary);
-  background: var(--wk-bg-elevated);
-  padding: 1px var(--wk-sp-1);
-  border-radius: var(--wk-r-xs);
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  flex-shrink: 0;
-  font-family: var(--wk-font-mono);
-}
-
 .wk-matter-link-menu__title {
   flex: 1;
   font-size: var(--wk-text-size-sm);

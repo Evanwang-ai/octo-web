@@ -1,13 +1,13 @@
-/* OwnerEditor — 负责人编辑下拉
+/* OwnerEditor �?负责人编辑下�?
  *
- * 设计基线：19-Matters-prototype.html > OwnersEditor
- *   - trigger: 头像堆叠 + 名字串联，hover 浅灰底
+ * 设计基线�?9-Matters-prototype.html > OwnersEditor
+ *   - trigger: 头像堆叠 + 名字串联，hover 浅灰�?
  *   - dropdown: 纯白卡，边框 + 阴影，候选项 16px 头像
  *
- * 颜色 / 圆角 / 间距 全部走 --wk-* token，dark mode 自动继承。
+ * 颜色 / 圆角 / 间距 全部�?--wk-* token，dark mode 自动继承�?
  */
 
-/* ─── 根容器 ────────────────────────────────────────── */
+/* ─── 根容�?────────────────────────────────────────── */
 .wk-owner-editor {
   position: relative;
   display: inline-flex;
@@ -68,6 +68,11 @@
   line-height: 1;
 }
 
+.wk-owner-editor__names-more {
+  color: var(--wk-text-tertiary, #6b7075);
+  font-weight: 400;
+}
+
 /* ─── Dropdown ─────────────────────────────────────── */
 .wk-owner-editor__dropdown {
   position: absolute;
@@ -102,7 +107,7 @@
   color: var(--wk-text-tertiary, #a1a1aa);
 }
 
-/* 次要提示 (候选人来源说明): 比主 hint 再淡一档, 且收窄 padding 避免视觉堆叠 */
+/* 次要提示 (候选人来源说明): 比主 hint 再淡一�? 且收�?padding 避免视觉堆叠 */
 .wk-owner-editor__hint--sub {
   padding-top: 0;
   color: var(--wk-border-default, #d4d4d8);

@@ -122,7 +122,6 @@ class MatterLinkMenu extends Component<MatterLinkMenuProps> {
               }
             }}
           >
-            <span className="wk-matter-link-menu__no">{m.id}</span>
             <span className="wk-matter-link-menu__title">{m.title}</span>
           </button>
         ))}

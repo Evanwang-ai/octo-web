@@ -33,13 +33,14 @@ import AnchorPopover from "../../ui/AnchorPopover";
 import WKAvatar from "@octo/base/src/Components/WKAvatar";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import { WKApp } from "@octo/base";
+import { ShowConversationOptions } from "@octo/base/src/EndpointCommon";
 import { useChannelName } from "../../hooks/useChannelName";
 import { useMyGroups } from "../../hooks/useMyGroups";
 import {
   useMembersFromChannels,
   ChannelRef,
 } from "../../hooks/useMembersFromChannels";
-import { useUserName } from "../../hooks/useUserName";
+import { useUserName, useUserNames } from "../../hooks/useUserName";
 import "./index.css";
 
 export interface MatterDetailPanelProps {
@@ -313,6 +314,7 @@ export default function MatterDetailPanel({
     applyMatterUpdate(updated);
   }, [matter, applyMatterUpdate]);
 
+  // ── 取消关联群聊 ──
   const handleUnlinkChannel = useCallback(
     async (chId: string) => {
       if (!matter) return;
@@ -456,6 +458,31 @@ export default function MatterDetailPanel({
     }
     return list;
   }, [matter?.assignees, ownerCandidateMembers]);
+
+  // 候选池里已有 name 的 uid 直接用, 只对 assignees 里缺名的 uid 调 useUserNames
+  // 避免把整个候选池 (可能数百人) 全量传给 fetchChannelInfo
+  const candidateNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of ownerCandidates) {
+      if (c.name) m.set(c.uid, c.name);
+    }
+    return m;
+  }, [ownerCandidates]);
+
+  const assigneeUidsNeedingName = useMemo(
+    () =>
+      (matter?.assignees || [])
+        .map((a) => a.user_id)
+        .filter((uid) => !candidateNameMap.has(uid)),
+    [matter?.assignees, candidateNameMap],
+  );
+  const assigneeNameMap = useUserNames(assigneeUidsNeedingName);
+
+  const resolveOwnerName = useCallback(
+    (uid: string) =>
+      candidateNameMap.get(uid) || assigneeNameMap.get(uid) || "",
+    [candidateNameMap, assigneeNameMap],
+  );
 
   // ── LinkChannelsModal: loadChannels / onLinkChannel callbacks ──
   const loadChannelsForModal = useCallback(async (): Promise<ChannelOption[]> => {
@@ -703,6 +730,7 @@ export default function MatterDetailPanel({
                 candidates={ownerCandidates}
                 onToggle={handleToggleAssignee}
                 renderAvatar={renderAvatar}
+                resolveUserName={resolveOwnerName}
               />
               <span className="wk-mp-people__role">负责人</span>
             </div>
@@ -790,10 +818,11 @@ export default function MatterDetailPanel({
                       })}{" "}
                       关联
                     </span>
-                    {/* 未加入群时隐藏 '取消关联' 菜单 (对齐原型: 非成员
-                        不能 CRUD 跟本群相关的绑定关系) */}
+                    {/* 查看群聊菜单: 仅群成员可见 (非成员无权限查看群聊) */}
                     {isMember && (
                       <ChannelMoreMenu
+                        channelId={ch.channel_id}
+                        channelType={ch.channel_type}
                         onUnlink={() => handleUnlinkChannel(ch.channel_id)}
                       />
                     )}
@@ -942,6 +971,13 @@ export default function MatterDetailPanel({
           fetchMessage={getMessageByChannel}
           renderAvatar={renderAvatar}
           renderUserName={renderUserName}
+          onJumpToMessage={(messageSeq) => {
+            // 跳转到群聊并定位到指定消息
+            const channel = new Channel(anchor.channelId, anchor.channelType);
+            const opts = new ShowConversationOptions();
+            opts.initLocateMessageSeq = messageSeq;
+            WKApp.endpoints.showConversation(channel, opts);
+          }}
         />
       )}
     </main>
@@ -1098,7 +1134,15 @@ function MoreMenu({ onDelete }: { onDelete: () => void }) {
 
 // ─── ChannelMoreMenu (查看群聊 / 取消关联) ────────────────
 
-function ChannelMoreMenu({ onUnlink }: { onUnlink: () => void }) {
+function ChannelMoreMenu({
+  channelId,
+  channelType,
+  onUnlink,
+}: {
+  channelId: string;
+  channelType: number;
+  onUnlink: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -1110,6 +1154,14 @@ function ChannelMoreMenu({ onUnlink }: { onUnlink: () => void }) {
     document.addEventListener("mousedown", c);
     return () => document.removeEventListener("mousedown", c);
   }, [open]);
+
+  const handleViewChannel = () => {
+    setOpen(false);
+    // 跳转到群聊
+    const channel = new Channel(channelId, channelType);
+    WKApp.endpoints.showConversation(channel);
+  };
+
   return (
     <span className="wk-mp-ch-more" ref={ref} style={{ marginLeft: "auto" }}>
       <button
@@ -1137,7 +1189,7 @@ function ChannelMoreMenu({ onUnlink }: { onUnlink: () => void }) {
           <button
             type="button"
             className="wk-mp-ch-more__item"
-            onClick={() => setOpen(false)}
+            onClick={handleViewChannel}
           >
             <svg
               width="11"
