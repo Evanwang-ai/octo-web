@@ -18,6 +18,14 @@ server {
         # these at container start; leaving an env blank yields an empty
         # string that the corresponding location block tests for.
         set $summary_api_url "${SUMMARY_API_URL}";
+        set $matter_api_url  "${MATTER_API_URL}";
+
+        # Resolver for runtime DNS lookups in `proxy_pass $variable;`.
+        # K8s CoreDNS service (works in any cluster with default DNS setup).
+        # Docker-compose users: override default.conf or set the resolver
+        # to 127.0.0.11 (docker's embedded DNS) manually.
+        resolver kube-dns.kube-system.svc.cluster.local valid=30s ipv6=off;
+        resolver_timeout 5s;
 
         # Security headers
         # Prevent clickjacking attacks
@@ -43,16 +51,10 @@ server {
         # /summary/api/v1/* to a static 503 so missing the smart-summary
         # service does not fail nginx startup.
         location /summary/api/v1/ {
-            # nginx's `return` defaults to text/html; this location is an
-            # API proxy so JSON clients expect application/json.
             default_type application/json;
             if ($summary_api_url = "") {
                 return 503 '{"status":503,"msg":"smart-summary is not configured"}';
             }
-            # nginx resolves proxy_pass variables at request time, not at
-            # startup, so an unresolvable hostname no longer hard-fails the
-            # whole container.
-            resolver 127.0.0.11 ipv6=off valid=30s;
             # When proxy_pass contains a variable, nginx does NOT do the
             # usual location-prefix→URI swap — the URI after the host
             # would be sent verbatim. Use a rewrite to produce the final
@@ -60,6 +62,26 @@ server {
             # forwards the rewritten request as-is.
             rewrite ^/summary/api/v1/(.*)$ /api/v1/$1 break;
             proxy_pass  $summary_api_url;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            client_max_body_size 100m;
+        }
+
+        # Matter (tasks / todos) backend — optional.
+        # Set MATTER_API_URL (e.g. http://matter:8080) at container start
+        # to enable in-app tasks. Leaving it blank routes /matter/* to a
+        # static 503 so missing the matter service does not fail nginx
+        # startup. Strips the /matter prefix before forwarding so the
+        # backend sees its own /api/v1/* routes.
+        location /matter/ {
+            default_type application/json;
+            if ($matter_api_url = "") {
+                return 503 '{"status":503,"msg":"matter is not configured"}';
+            }
+            rewrite ^/matter/(.*)$ /$1 break;
+            proxy_pass  $matter_api_url;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
