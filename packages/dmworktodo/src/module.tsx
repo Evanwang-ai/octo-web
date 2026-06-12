@@ -4,7 +4,9 @@ import { WKApp, Menus, ChannelTypeCommunityTopic, i18n, t as translate, useI18n 
 import type { IModule, ConversationContext } from "@octo/base";
 import { ChannelTypeGroup } from "wukongimjssdk";
 import WKSDK from "wukongimjssdk";
-import MatterPage from "./pages/TodoPage";
+// matter-v2: route content swapped to the embedded workspace served by
+// octo-matter; the legacy TodoPage panel is retired (chat integrations stay).
+import MatterPage from "./pages/MatterWorkspace";
 import ChatMatterPanel from "./panel/ChatTodoPanel";
 import MatterDetailPanel from "./panel/MatterDetailPanel";
 import MatterLinkMenu from "./ui/MatterLinkMenu";
