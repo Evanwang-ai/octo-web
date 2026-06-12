@@ -22,8 +22,6 @@ import {
   listMatters,
   listProjects,
   addProjectSource,
-  listProjects,
-  addProjectSource,
   addTimelineEntry,
 } from "./api/todoApi";
 import { Toast } from "./utils/toast";
