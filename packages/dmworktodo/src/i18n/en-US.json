@@ -146,7 +146,9 @@
   "linkMenu": {
     "createNew": "Create new task",
     "currentGroupTasks": "Tasks in this group",
-    "syncExisting": "Sync to an existing task"
+    "syncExisting": "Sync to an existing task",
+    "saveToProject": "Save to project context",
+    "chatExcerptTitle": "Chat excerpt · {{count}} messages"
   },
   "member": {
     "empty": "No members",
@@ -265,7 +267,8 @@
     "createFailed": "Failed to create",
     "created": "Task created",
     "deleteFailed": "Failed to delete",
-    "deleted": "Deleted","downloadFailed": "Download failed",
+    "deleted": "Deleted",
+    "downloadFailed": "Download failed",
     "descriptionUpdateFailed": "Failed to update description",
     "loadCommentsFailed": "Failed to load comments",
     "loadFailed": "Failed to load",
@@ -280,7 +283,9 @@
     "syncedProgress": "Progress synced",
     "titleUpdateFailed": "Failed to update title",
     "unlinkFailed": "Failed to unlink",
-    "unlinked": "Unlinked"
+    "unlinked": "Unlinked",
+    "savedToProject": "Saved to project context",
+    "saveToProjectFailed": "Failed to save to project"
   },
   "weekday": {
     "fri": "Fri",

@@ -146,7 +146,9 @@
   "linkMenu": {
     "createNew": "创建新事项",
     "currentGroupTasks": "当前群事项",
-    "syncExisting": "同步到已有事项"
+    "syncExisting": "同步到已有事项",
+    "saveToProject": "存入项目上下文",
+    "chatExcerptTitle": "聊天记录 · {{count}} 条"
   },
   "member": {
     "empty": "暂无成员",
@@ -281,7 +283,9 @@
     "syncedProgress": "已同步进展",
     "titleUpdateFailed": "标题修改失败",
     "unlinkFailed": "取消关联失败",
-    "unlinked": "已取消关联"
+    "unlinked": "已取消关联",
+    "savedToProject": "已存入项目上下文",
+    "saveToProjectFailed": "存入项目失败,稍后再试"
   },
   "weekday": {
     "fri": "周五",

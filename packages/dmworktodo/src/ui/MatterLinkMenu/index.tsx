@@ -29,9 +29,12 @@ export interface MatterLinkMenuItem {
 export interface MatterLinkMenuProps {
   anchorRef: React.RefObject<HTMLElement | null>;
   matters?: MatterLinkMenuItem[];
+  /** 项目列表 — 「存入项目上下文」分区（设计 06 §9.3） */
+  projects?: MatterLinkMenuItem[];
   onClose: () => void;
   onCreate?: () => void;
   onPick?: (matter: MatterLinkMenuItem) => void;
+  onPickProject?: (project: MatterLinkMenuItem) => void;
   /** 所有选项是否 disabled（占位阶段使用） */
   disabled?: boolean;
 }
@@ -66,8 +69,9 @@ class MatterLinkMenu extends Component<MatterLinkMenuProps> {
   };
 
   render() {
-    const { anchorRef, onClose, onCreate, onPick, disabled } = this.props;
+    const { anchorRef, onClose, onCreate, onPick, onPickProject, disabled } = this.props;
     const matters = this.props.matters ?? [];
+    const projects = this.props.projects ?? [];
     const rect = anchorRef.current?.getBoundingClientRect();
     if (!rect) return null;
 
@@ -129,6 +133,23 @@ class MatterLinkMenu extends Component<MatterLinkMenuProps> {
             <span className="wk-matter-link-menu__title">{m.title}</span>
           </button>
         ))}
+        {projects.length > 0 && onPickProject && (
+          <>
+            <div className="wk-matter-link-menu__divider" />
+            <div className="wk-matter-link-menu__sub">{t("todo.linkMenu.saveToProject")}</div>
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="wk-matter-link-menu__item"
+                disabled={disabled}
+                onClick={() => onPickProject(p)}
+              >
+                <span className="wk-matter-link-menu__title">{p.title}</span>
+              </button>
+            ))}
+          </>
+        )}
       </div>,
       document.body,
     );

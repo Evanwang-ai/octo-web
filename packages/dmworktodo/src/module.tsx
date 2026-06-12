@@ -20,6 +20,10 @@ import {
   getMatter,
   deleteMatter,
   listMatters,
+  listProjects,
+  addProjectSource,
+  listProjects,
+  addProjectSource,
   addTimelineEntry,
 } from "./api/todoApi";
 import { Toast } from "./utils/toast";
@@ -479,6 +483,7 @@ function GlobalMatterLinkMenu() {
   const [channelType, setChannelType] = useState<number>(0);
   const [messages, setMessages] = useState<any[]>([]);
   const [matters, setMatters] = useState<{ id: string; title: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const anchorRef = React.useRef<HTMLElement | null>(null);
@@ -518,6 +523,10 @@ function GlobalMatterLinkMenu() {
           setMatters([]);
         })
         .finally(() => setLoading(false));
+      // 项目分区(存入共享上下文)— 失败静默,不挡事项分区
+      listProjects()
+        .then((ps) => setProjects(ps.map((p) => ({ id: p.id, title: p.name }))))
+        .catch(() => setProjects([]));
     };
     WKApp.mittBus.on("wk:open-matter-link-menu", handler);
     return () => {
@@ -576,6 +585,33 @@ function GlobalMatterLinkMenu() {
         <MatterLinkMenu
           anchorRef={anchorRef}
           matters={matters}
+          projects={projects}
+          onPickProject={async (proj) => {
+            if (!messages || messages.length === 0) {
+              Toast.error(t("todo.toast.noMessagesToSync"));
+              return;
+            }
+            setLoading(true);
+            try {
+              const snippet = messages
+                .map((m: any) => `${m.fromUName || m.fromUID || ""}: ${m.content || ""}`)
+                .join("\n")
+                .slice(0, 4000);
+              await addProjectSource(proj.id, {
+                kind: "chat",
+                title: t("todo.linkMenu.chatExcerptTitle", { count: messages.length }),
+                ref: channelId,
+                snippet,
+              });
+              Toast.success(t("todo.toast.savedToProject"));
+              setAnchor(null);
+              WKApp.mittBus.emit("wk:exit-multiple-mode");
+            } catch (e: any) {
+              Toast.error(t("todo.toast.saveToProjectFailed"));
+            } finally {
+              setLoading(false);
+            }
+          }}
           onClose={() => { if (!loading) setAnchor(null); }}
           onCreate={() => {
             setAnchor(null);

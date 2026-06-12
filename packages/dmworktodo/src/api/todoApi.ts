@@ -274,6 +274,33 @@ export async function deleteTimelineEntry(
   return del<void>(`/matters/${matterId}/timeline/${entryId}`);
 }
 
+// ─── 项目共享上下文（设计 06 §9.3:来源=聊天记录引用）────────
+
+export interface ProjectItem {
+  id: string;
+  name: string;
+}
+
+export async function listProjects(): Promise<ProjectItem[]> {
+  const res = await get<{ data: ProjectItem[] } | ProjectItem[]>(`/projects`);
+  const arr = Array.isArray(res) ? res : (res as { data: ProjectItem[] }).data;
+  return arr ?? [];
+}
+
+export interface ProjectSourceReq {
+  kind: string;
+  title: string;
+  ref?: string;
+  snippet?: string;
+}
+
+export async function addProjectSource(
+  projectId: string,
+  req: ProjectSourceReq,
+): Promise<void> {
+  return post<void>(`/projects/${projectId}/sources`, req);
+}
+
 // ─── 兼容旧 API（deprecated） ────────────────────────────
 
 /** @deprecated 使用 listTimeline 替代 */
