@@ -597,7 +597,7 @@ function GlobalMatterLinkMenu() {
                 .slice(0, 4000);
               await addProjectSource(proj.id, {
                 kind: "chat",
-                title: t("todo.linkMenu.chatExcerptTitle", { count: messages.length }),
+                title: t("todo.linkMenu.chatExcerptTitle", { values: { count: messages.length } }),
                 ref: channelId,
                 snippet,
               });
