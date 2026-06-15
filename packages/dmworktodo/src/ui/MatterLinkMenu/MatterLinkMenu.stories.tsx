@@ -19,7 +19,7 @@ const meta: Meta<typeof MatterLinkMenu> = {
 export default meta
 type Story = StoryObj<typeof MatterLinkMenu>
 
-const MOCK_MATTERS = [
+const MOCK_PROJECTS = [
   { id: 'M-2451', title: 'Octo 产品策略 PPT 打磨' },
   { id: 'M-2438', title: 'AI 杠杆率纳入绩效体系' },
   { id: 'M-2402', title: 'Kano 模型推广到所有产研群' },
@@ -39,10 +39,9 @@ export const Default: Story = {
           </button>
           <MatterLinkMenu
             anchorRef={anchorRef as React.RefObject<HTMLElement>}
-            matters={MOCK_MATTERS}
+            projects={MOCK_PROJECTS}
             onClose={() => {}}
-            onCreate={() => alert('创建新事项')}
-            onPick={(m) => alert(`选择: ${m.title}`)}
+            onPickProject={(p) => alert(`选择: ${p.title}`)}
           />
         </>
       )
@@ -65,7 +64,7 @@ export const Disabled: Story = {
           </button>
           <MatterLinkMenu
             anchorRef={anchorRef as React.RefObject<HTMLElement>}
-            matters={MOCK_MATTERS}
+            projects={MOCK_PROJECTS}
             onClose={() => {}}
             disabled
           />
@@ -77,7 +76,7 @@ export const Disabled: Story = {
 }
 
 /**
- * 空列表 — 无已有事项
+ * 空列表 — 无可同步项目
  */
 export const EmptyList: Story = {
   render: () => {
@@ -90,9 +89,8 @@ export const EmptyList: Story = {
           </button>
           <MatterLinkMenu
             anchorRef={anchorRef as React.RefObject<HTMLElement>}
-            matters={[]}
+            projects={[]}
             onClose={() => {}}
-            onCreate={() => alert('创建新事项')}
           />
         </>
       )
@@ -115,13 +113,12 @@ export const LongTitle: Story = {
           </button>
           <MatterLinkMenu
             anchorRef={anchorRef as React.RefObject<HTMLElement>}
-            matters={[
+            projects={[
               { id: 'M-9999', title: '这是一个非常非常长的事项标题用来测试文本溢出和截断效果是否正常工作' },
               { id: 'M-1000', title: '短标题' },
             ]}
             onClose={() => {}}
-            onCreate={() => {}}
-            onPick={() => {}}
+            onPickProject={() => {}}
           />
         </>
       )

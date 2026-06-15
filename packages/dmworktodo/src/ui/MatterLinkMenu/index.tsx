@@ -4,11 +4,10 @@ import { I18nContext, t } from "@octo/base";
 import "./index.css";
 
 /**
- * MatterLinkMenu — 多选消息后"添加到事项"弹出菜单
+ * MatterLinkMenu — 多选消息后"同步到项目"弹出菜单
  *
  * 参考原型 MultiMenu（18-Matters-prototype-v4-shadcn.html）：
- *   - "+ 创建新事项 (智能)" 主按钮 — 走 PRD §3 智能创建
- *   - "→ 同步到已有事项" + Matter 列表 — 走 PRD §4.1 多选关联
+ *   - "→ 同步到项目" + Project 列表 — 写入项目上下文
  *
  * 组件分层：Layer 1 纯 UI，无 SDK/WKApp/Service 依赖。
  * 通过 props 接收 anchorRef（用于定位）和 onClose 回调，由调用方负责事件派发。
@@ -16,9 +15,7 @@ import "./index.css";
  * Portal 渲染到 document.body —
  * 避免 MultiplePanel 祖先的 transform 把 fixed 变成相对定位。
  *
- * TODO(backend): Matter 列表目前 hardcode，后续接 API 查询可关联的 Matter 列表
- * TODO(interaction): 点击"创建新事项"走 SmartCreateModal（PRD §3）
- * TODO(interaction): 点击已有 Matter 走"多选关联"流程（PRD §4.1）
+ * TODO(interaction): 需要时支持项目搜索,避免项目过多时列表过长
  */
 
 export interface MatterLinkMenuItem {
@@ -28,18 +25,15 @@ export interface MatterLinkMenuItem {
 
 export interface MatterLinkMenuProps {
   anchorRef: React.RefObject<HTMLElement | null>;
-  matters?: MatterLinkMenuItem[];
   /** 项目列表 — 「存入项目上下文」分区（设计 06 §9.3） */
   projects?: MatterLinkMenuItem[];
   onClose: () => void;
-  onCreate?: () => void;
-  onPick?: (matter: MatterLinkMenuItem) => void;
   onPickProject?: (project: MatterLinkMenuItem) => void;
   /** 所有选项是否 disabled（占位阶段使用） */
   disabled?: boolean;
 }
 
-// 无默认 mock 数据 — 调用方必须传入 matters prop
+// 无默认 mock 数据 — 调用方必须传入 projects prop
 // 如果未传，显示空列表
 
 class MatterLinkMenu extends Component<MatterLinkMenuProps> {
@@ -69,8 +63,7 @@ class MatterLinkMenu extends Component<MatterLinkMenuProps> {
   };
 
   render() {
-    const { anchorRef, onClose, onCreate, onPick, onPickProject, disabled } = this.props;
-    const matters = this.props.matters ?? [];
+    const { anchorRef, onPickProject, disabled } = this.props;
     const projects = this.props.projects ?? [];
     const rect = anchorRef.current?.getBoundingClientRect();
     if (!rect) return null;
@@ -89,66 +82,20 @@ class MatterLinkMenu extends Component<MatterLinkMenuProps> {
         style={style}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="wk-matter-link-menu__head">{t("todo.linkMenu.currentGroupTasks")}</div>
-        <button
-          type="button"
-          className="wk-matter-link-menu__item wk-matter-link-menu__item--primary"
-          disabled={!onCreate}
-          onClick={() => {
-            if (onCreate) onCreate();
-            onClose();
-          }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>{t("todo.linkMenu.createNew")}</span>
-        </button>
-        <div className="wk-matter-link-menu__divider" />
+        <div className="wk-matter-link-menu__head">{t("todo.linkMenu.saveToProject")}</div>
         <div className="wk-matter-link-menu__sub">{t("todo.linkMenu.syncExisting")}</div>
-        {matters.map((m) => (
+        {projects.length > 0 && onPickProject ? projects.map((p) => (
           <button
-            key={m.id}
+            key={p.id}
             type="button"
             className="wk-matter-link-menu__item"
-            disabled={disabled || !onPick}
-            onClick={() => {
-              if (onPick) {
-                onPick(m);
-              } else {
-                onClose();
-              }
-            }}
+            disabled={disabled}
+            onClick={() => onPickProject(p)}
           >
-            <span className="wk-matter-link-menu__title">{m.title}</span>
+            <span className="wk-matter-link-menu__title">{p.title}</span>
           </button>
-        ))}
-        {projects.length > 0 && onPickProject && (
-          <>
-            <div className="wk-matter-link-menu__divider" />
-            <div className="wk-matter-link-menu__sub">{t("todo.linkMenu.saveToProject")}</div>
-            {projects.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className="wk-matter-link-menu__item"
-                disabled={disabled}
-                onClick={() => onPickProject(p)}
-              >
-                <span className="wk-matter-link-menu__title">{p.title}</span>
-              </button>
-            ))}
-          </>
+        )) : (
+          <div className="wk-matter-link-menu__empty">{t("todo.linkMenu.noProjects")}</div>
         )}
       </div>,
       document.body,

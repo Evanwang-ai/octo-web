@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { WKApp } from "@octo/base";
+import { WKApp, t as translate } from "@octo/base";
 
 /**
  * matter-v2: the Matter workspace now lives in the octo-matter service
@@ -42,7 +42,7 @@ const MatterWorkspace: React.FC = () => {
   return ReactDOM.createPortal(
     <iframe
       key={spaceId || "no-space"}
-      title="事项"
+      title={translate("todo.menu.title")}
       src="/matter/ui/?embed=1#/inbox"
       style={{
         // iframes are replaced elements: left+right do NOT stretch them

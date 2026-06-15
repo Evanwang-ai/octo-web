@@ -144,10 +144,10 @@
     "unnamedThread": "Unnamed thread"
   },
   "linkMenu": {
-    "createNew": "Create new task",
-    "currentGroupTasks": "Tasks in this group",
-    "syncExisting": "Sync to an existing task",
-    "saveToProject": "Save to project context",
+    "currentGroupTasks": "Projects in this group",
+    "syncExisting": "Choose a project",
+    "saveToProject": "Sync to project",
+    "noProjects": "No projects available",
     "chatExcerptTitle": "Chat excerpt · {{count}} messages"
   },
   "member": {

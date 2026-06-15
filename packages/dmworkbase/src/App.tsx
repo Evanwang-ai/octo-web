@@ -26,7 +26,7 @@ export type MittEvents = {
   "wk:toggle-matter-detail-panel": { channelId: string; channelType: number };
   "wk:toggle-summary-panel": { channelId: string; channelType: number; summaryPanelView: 'history' | 'new'; forceOpen?: boolean };
   "wk:open-summary-modal": { channelId: string; channelType: number };
-  /** 打开多选→添加到事项的弹出菜单（由 dmworktodo 模块接管渲染） */
+  /** 打开多选→同步到项目的弹出菜单（由 dmworktodo 模块接管渲染） */
   "wk:open-matter-link-menu": { anchor: HTMLElement; channelId: string; channelType: number; messages?: Array<{ messageSeq?: number; messageID?: string; fromUID?: string; fromUName?: string; content?: string; timestamp?: number; attachments?: any[] }> };
   "wk:switch-sidebar-tab": string;
   "wk:file-preview": {

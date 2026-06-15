@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BotDetailModal from '../../../../../packages/dmworkbase/src/Components/BotDetailModal';
+import WKApp from '../../../../../packages/dmworkbase/src/App';
+import AgentCardService from '../../../../../packages/dmworkbase/src/Service/AgentCardService';
 
 const mocks = vi.hoisted(() => ({
     apiGet: vi.fn(),
@@ -152,9 +154,31 @@ vi.mock('../../../../../packages/dmworkbase/src/i18n', async () => {
         'botDetail.remarkUpdateFailed': 'Failed to update remark',
         'botDetail.save': 'Save',
         'botDetail.sendMessage': 'Send message',
+        'botDetail.matterCard.title': 'Matter capabilities',
+        'botDetail.matterCard.loading': 'Loading',
+        'botDetail.matterCard.ownerView': 'creator view',
+        'botDetail.matterCard.private': 'Private',
+        'botDetail.matterCard.privateNote': 'Capability card is not public to you',
+        'botDetail.matterCard.done': 'Done',
+        'botDetail.matterCard.inProgress': 'In progress',
+        'botDetail.matterCard.inReview': 'In review',
+        'botDetail.matterCard.preferences': 'Preference',
+        'botDetail.matterCard.openclaw': 'OpenClaw',
+        'botDetail.matterCard.manual': 'Custom',
+        'botDetail.matterCard.ready': 'Ready',
+        'botDetail.matterCard.needsSetup': 'Needs setup',
+        'botDetail.matterCard.disabled': 'Disabled',
+        'botDetail.matterCard.ownerOnly': 'creator only',
+        'botDetail.matterCard.moreCapabilities': '+{{count}} more',
         'common.cancel': 'Cancel',
     };
-    const translate = (key: string) => dict[key.replace(/^base\./, '')] || key;
+    const translate = (key: string, options?: { values?: Record<string, unknown> }) => {
+        const template = dict[key.replace(/^base\./, '')] || key;
+        return template.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_match, valueKey) => {
+            const value = options?.values?.[valueKey];
+            return value === undefined || value === null ? '' : String(value);
+        });
+    };
     return {
         I18nContext: React.createContext({ t: translate }),
         t: translate,
@@ -164,6 +188,10 @@ vi.mock('../../../../../packages/dmworkbase/src/i18n', async () => {
 describe('BotDetailModal remark editing', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubGlobal('fetch', vi.fn());
+        (WKApp.loginInfo as any).uid = 'viewer';
+        (WKApp.loginInfo as any).token = '';
+        (WKApp.shared as any).currentSpaceId = '';
         mocks.apiGet.mockResolvedValue({
             uid: 'bot-1',
             name: 'Original Bot',
@@ -281,5 +309,141 @@ describe('BotDetailModal remark editing', () => {
         expect(screen.queryByText('Old Alias')).not.toBeInTheDocument();
         expect(mocks.toastSuccess).not.toHaveBeenCalledWith('Remark updated');
         expect(mocks.fetchChannelInfo).not.toHaveBeenCalled();
+    });
+
+    it('renders the Matter AgentCard capability block from the shared endpoint', async () => {
+        (WKApp.loginInfo as any).token = 'token-1';
+        (WKApp.shared as any).currentSpaceId = 'space-1';
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                declared: {
+                    tagline: 'Handles browser and local tools',
+                    capabilities: [
+                        { name: 'browser-control', source: 'openclaw', status: 'ready' },
+                        { name: 'private-admin', source: 'manual', status: 'needs_setup', visibility: 'owner' },
+                    ],
+                },
+                earned: {
+                    done: 7,
+                    in_progress: 2,
+                    in_review: 1,
+                    preferences: [{ summary_id: 'pref-1' }],
+                },
+                viewer: {
+                    can_edit: true,
+                    declared_visible: true,
+                },
+            }),
+        } as Response);
+
+        render(
+            <BotDetailModal
+                uid="bot-1"
+                visible
+                onClose={vi.fn()}
+                onChat={vi.fn()}
+            />
+        );
+
+        expect(await screen.findByTestId('matter-agent-card')).toBeInTheDocument();
+        expect(fetch).toHaveBeenCalledWith('/matter/api/v1/agent-cards/bot-1', {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'token': 'token-1',
+                'X-Space-Id': 'space-1',
+            },
+        });
+        expect(screen.getByText('browser-control')).toBeInTheDocument();
+        expect(screen.getByText('OpenClaw')).toBeInTheDocument();
+        expect(screen.getByText('Ready')).toBeInTheDocument();
+        expect(screen.getByText('private-admin')).toBeInTheDocument();
+        expect(screen.getByText('creator only')).toBeInTheDocument();
+        expect(screen.getByText('Done 7')).toBeInTheDocument();
+        expect(screen.getByText('In progress 2')).toBeInTheDocument();
+        expect(screen.getByText('Preference 1')).toBeInTheDocument();
+    });
+
+    it('does not request Matter AgentCard when token or space is missing', async () => {
+        render(
+            <BotDetailModal
+                uid="bot-1"
+                visible
+                onClose={vi.fn()}
+                onChat={vi.fn()}
+            />
+        );
+
+        expect(await screen.findAllByText('Personal Bot')).toHaveLength(2);
+        expect(fetch).not.toHaveBeenCalled();
+        expect(screen.queryByTestId('matter-agent-card')).not.toBeInTheDocument();
+    });
+
+    it('summarizes hidden Matter capabilities instead of implying the short list is complete', async () => {
+        (WKApp.loginInfo as any).token = 'token-1';
+        (WKApp.shared as any).currentSpaceId = 'space-1';
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                declared: {
+                    capabilities: [
+                        { name: 'cap-1', source: 'openclaw', status: 'ready' },
+                        { name: 'cap-2', source: 'openclaw', status: 'ready' },
+                        { name: 'cap-3', source: 'openclaw', status: 'ready' },
+                        { name: 'cap-4', source: 'openclaw', status: 'ready' },
+                        { name: 'cap-5', source: 'openclaw', status: 'ready' },
+                        { name: 'cap-6', source: 'openclaw', status: 'ready' },
+                    ],
+                },
+                viewer: {
+                    can_edit: false,
+                    declared_visible: true,
+                },
+            }),
+        } as Response);
+
+        render(
+            <BotDetailModal
+                uid="bot-1"
+                visible
+                onClose={vi.fn()}
+                onChat={vi.fn()}
+            />
+        );
+
+        expect(await screen.findByText('cap-1')).toBeInTheDocument();
+        expect(screen.getByText('+2 more')).toBeInTheDocument();
+        expect(screen.queryByText('cap-5')).not.toBeInTheDocument();
+    });
+
+    it('keeps optional OctoPush report-status failures out of the error console', async () => {
+        const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (WKApp.loginInfo as any).uid = 'owner';
+        vi.mocked(AgentCardService.getReportStatus).mockRejectedValueOnce({ status: 404 });
+
+        render(
+            <BotDetailModal
+                uid="bot-1"
+                visible
+                onClose={vi.fn()}
+                onChat={vi.fn()}
+            />
+        );
+
+        expect(await screen.findAllByText('Personal Bot')).toHaveLength(2);
+        await waitFor(() => {
+            expect(AgentCardService.getReportStatus).toHaveBeenCalledWith('bot-1');
+        });
+        expect(consoleWarn).toHaveBeenCalledWith(
+            '[BotDetailModal] optional report status unavailable:',
+            { status: 404 }
+        );
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(screen.queryByText('Agent information not reported')).not.toBeInTheDocument();
+
+        consoleWarn.mockRestore();
+        consoleError.mockRestore();
     });
 });

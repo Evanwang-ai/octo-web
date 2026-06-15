@@ -2661,32 +2661,6 @@ export class Conversation
                         })),
                       });
                     }}
-                    onCreateMatter={() => {
-                      const checkedMsgs = vm.getCheckedMessages();
-                      if (!checkedMsgs || checkedMsgs.length === 0) {
-                        Toast.error(
-                          t("base.conversation.selection.selectMessageFirst")
-                        );
-                        return;
-                      }
-                      const ch = this.props.channel;
-                      WKApp.mittBus.emit("wk:open-smart-create-modal", {
-                        channelId: ch.channelID,
-                        channelType: ch.channelType,
-                        messages: checkedMsgs.map((m: any) => ({
-                          messageSeq: m.messageSeq,
-                          messageID: m.messageID,
-                          fromUID: m.fromUID,
-                          fromUName: resolveFromUName(m),
-                          content:
-                            m.content?.conversationDigest ||
-                            m.content?.text ||
-                            "",
-                          timestamp: m.message?.timestamp,
-                          attachments: extractMessageAttachments(m),
-                        })),
-                      });
-                    }}
                   ></MultiplePanel>
                 </div>
                 <div
@@ -3576,8 +3550,7 @@ interface MultiplePanelProps {
   onForward?: () => void; // 逐条转发
   onMergeForward?: () => void; // 合并转发
   onDelete?: () => void; // 删除
-  onAddToMatter?: (anchor: HTMLElement) => void; // 添加到事项（传出按钮 DOM 给菜单定位）
-  onCreateMatter?: () => void; // 创建新事项
+  onAddToMatter?: (anchor: HTMLElement) => void; // 同步到项目（传出按钮 DOM 给菜单定位）
 }
 class MultiplePanel extends Component<MultiplePanelProps> {
   private matterBtnRef = React.createRef<HTMLButtonElement>();
@@ -3589,7 +3562,6 @@ class MultiplePanel extends Component<MultiplePanelProps> {
       onMergeForward,
       onDelete,
       onAddToMatter,
-      onCreateMatter,
     } = this.props;
     return (
       <div className="wk-multiplepanel">
@@ -3601,18 +3573,7 @@ class MultiplePanel extends Component<MultiplePanelProps> {
           {t("base.conversation.multiplePanel.mergeForward")}
         </button>
         <div className="wk-multiplepanel-sep" />
-        {/* 创建新事项 — 从多选消息智能创建（PRD §3） */}
-        <button
-          className="wk-multiplepanel-btn wk-multiplepanel-btn--matter"
-          onClick={() => {
-            if (onCreateMatter) onCreateMatter();
-          }}
-          title={t("base.conversation.multiplePanel.createMatter")}
-        >
-          {t("base.conversation.multiplePanel.createMatter")}
-        </button>
-        <div className="wk-multiplepanel-sep" />
-        {/* 同步到事项 — 点击由调用方弹出菜单（dmworktodo 模块接管） */}
+        {/* 同步到项目 — 点击由调用方弹出菜单（dmworktodo 模块接管） */}
         <button
           ref={this.matterBtnRef}
           className="wk-multiplepanel-btn wk-multiplepanel-btn--matter"

@@ -1,5 +1,5 @@
 /* ============================================================
- * MatterLinkMenu — 多选"添加到事项"弹出菜单
+ * MatterLinkMenu — 多选"同步到项目"弹出菜单
  *
  * 规范对齐（DEVELOPMENT.md §2 / §13）：
  *   - 禁止硬编码颜色、字号、间距、圆角
@@ -90,4 +90,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.wk-matter-link-menu__empty {
+  padding: var(--wk-sp-2);
+  font-size: var(--wk-text-size-sm);
+  color: var(--wk-text-tertiary);
 }

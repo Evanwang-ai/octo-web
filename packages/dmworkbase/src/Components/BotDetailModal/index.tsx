@@ -24,6 +24,40 @@ interface BotDetailModalProps {
     onChat: (channel: Channel) => void;
 }
 
+interface MatterAgentCapability {
+    name: string;
+    description?: string;
+    source?: string;
+    status?: string;
+    homepage?: string;
+    visibility?: string;
+}
+
+interface MatterAgentCardData {
+    declared?: {
+        tagline?: string;
+        description?: string;
+        skills?: string[];
+        systems?: string[];
+        capabilities?: MatterAgentCapability[];
+        visibility?: string;
+    } | null;
+    earned?: {
+        assigned?: number;
+        done?: number;
+        in_review?: number;
+        in_progress?: number;
+        preferences?: unknown[];
+        recent?: unknown[];
+        current?: unknown[];
+    } | null;
+    viewer?: {
+        relationship?: string;
+        can_edit?: boolean;
+        declared_visible?: boolean;
+    } | null;
+}
+
 interface BotDetailModalState {
     loading: boolean;
     name: string;
@@ -51,6 +85,8 @@ interface BotDetailModalState {
     showBotManage: boolean;
     avatarCropFile: File | null;
     avatarPreviewFile: File | null;
+    matterAgentCard: MatterAgentCardData | null;
+    matterAgentCardLoading: boolean;
 }
 
 export default class BotDetailModal extends Component<BotDetailModalProps, BotDetailModalState> {
@@ -88,6 +124,8 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
         showBotManage: false,
         avatarCropFile: null,
         avatarPreviewFile: null,
+        matterAgentCard: null,
+        matterAgentCardLoading: false,
     };
 
     componentDidMount() {
@@ -132,12 +170,61 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
             this.setState({ reported: result });
         } catch (error) {
             if (isStale()) return;
-            console.error("[BotDetailModal] loadReportStatus failed:", error);
+            console.warn("[BotDetailModal] optional report status unavailable:", error);
             // 网络错误时不设置 reported，避免误导用户
             // reported 保持 null，不显示 OctoPush chip 和龙虾按钮
         } finally {
             if (!isStale()) {
                 this.setState({ reportStatusLoading: false });
+            }
+        }
+    };
+
+    getMatterSpaceId = () => {
+        const appSpaceId = WKApp.shared.currentSpaceId || "";
+        if (appSpaceId) return appSpaceId;
+        try {
+            return window.localStorage?.getItem("currentSpaceId") || "";
+        } catch {
+            return "";
+        }
+    };
+
+    loadMatterAgentCard = async (requestedUid: string) => {
+        const token = WKApp.loginInfo.token || "";
+        const spaceId = this.getMatterSpaceId();
+        if (!requestedUid || !token || !spaceId || typeof fetch !== "function") {
+            this.setState({ matterAgentCard: null, matterAgentCardLoading: false });
+            return;
+        }
+
+        const isStale = () => !this.mounted || this.props.uid !== requestedUid;
+
+        this.setState({ matterAgentCard: null, matterAgentCardLoading: true });
+        try {
+            const response = await fetch(`/matter/api/v1/agent-cards/${encodeURIComponent(requestedUid)}`, {
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json",
+                    "token": token,
+                    "X-Space-Id": spaceId,
+                },
+            });
+            if (isStale()) return;
+            if (!response.ok) {
+                this.setState({ matterAgentCard: null });
+                return;
+            }
+            const data = await response.json();
+            if (isStale()) return;
+            this.setState({ matterAgentCard: data || null });
+        } catch (error) {
+            if (isStale()) return;
+            console.warn("[BotDetailModal] loadMatterAgentCard failed:", error);
+            this.setState({ matterAgentCard: null });
+        } finally {
+            if (!isStale()) {
+                this.setState({ matterAgentCardLoading: false });
             }
         }
     };
@@ -172,6 +259,8 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
             editingRemark: false,
             remarkDraft: "",
             savingRemark: false,
+            matterAgentCard: null,
+            matterAgentCardLoading: false,
         });
 
         const isStale = () => this.props.uid !== requestedUid;
@@ -193,6 +282,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                 isFriend: data.follow === 1,
                 editingDescription: false,
             }, () => {
+                this.loadMatterAgentCard(requestedUid);
                 // 只有当前用户是 bot 的创建者时才加载上报状态
                 if (this.isOwner()) {
                     this.loadReportStatus();
@@ -218,6 +308,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                     isFriend: channelInfo?.orgData?.follow === 1,
                     editingDescription: false,
                 }, () => {
+                    this.loadMatterAgentCard(requestedUid);
                     // 只有当前用户是 bot 的创建者时才加载上报状态
                     if (this.isOwner()) {
                         this.loadReportStatus();
@@ -238,6 +329,8 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                     botCommands: "",
                     isFriend: false,
                     editingDescription: false,
+                    matterAgentCard: null,
+                    matterAgentCardLoading: false,
                 });
             }
         }
@@ -482,6 +575,141 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
 
     handleViewClawInfo = () => {
         this.setState({ showClawInfo: true });
+    };
+
+    matterCapabilityStatusLabel = (status?: string) => {
+        switch (status) {
+            case "ready":
+                return t("base.botDetail.matterCard.ready");
+            case "needs_setup":
+                return t("base.botDetail.matterCard.needsSetup");
+            case "disabled":
+                return t("base.botDetail.matterCard.disabled");
+            default:
+                return "";
+        }
+    };
+
+    matterCapabilitySourceLabel = (source?: string) => {
+        if (source === "openclaw") return t("base.botDetail.matterCard.openclaw");
+        if (source === "custom") return t("base.botDetail.matterCard.manual");
+        return "";
+    };
+
+    renderMatterAgentCard = () => {
+        const { matterAgentCard, matterAgentCardLoading } = this.state;
+        if (matterAgentCardLoading && !matterAgentCard) {
+            return (
+                <div className="wk-bot-detail-agent-card">
+                    <div className="wk-bot-detail-agent-card-head">
+                        <span className="wk-bot-detail-agent-card-title">
+                            {t("base.botDetail.matterCard.title")}
+                        </span>
+                        <span className="wk-bot-detail-agent-card-badge">
+                            {t("base.botDetail.matterCard.loading")}
+                        </span>
+                    </div>
+                </div>
+            );
+        }
+        if (!matterAgentCard) return null;
+
+        const declared = matterAgentCard.declared || undefined;
+        const earned = matterAgentCard.earned || undefined;
+        const viewer = matterAgentCard.viewer || undefined;
+        const declaredVisible = viewer?.declared_visible !== false;
+        const allCapabilities = (declared?.capabilities || []).filter((item) => item && item.name);
+        const allSkills = (declared?.skills || []).filter(Boolean);
+        const capabilities = allCapabilities.slice(0, 4);
+        const skills = capabilities.length === 0 ? allSkills.slice(0, 4) : [];
+        const totalShown = capabilities.length || skills.length;
+        const totalAvailable = allCapabilities.length || allSkills.length;
+        const hiddenCount = Math.max(totalAvailable - totalShown, 0);
+        const tagline = declaredVisible ? this.stripDisplayName(declared?.tagline || declared?.description || "") : "";
+        const statItems = [
+            earned?.done ? `${t("base.botDetail.matterCard.done")} ${earned.done}` : "",
+            earned?.in_progress ? `${t("base.botDetail.matterCard.inProgress")} ${earned.in_progress}` : "",
+            earned?.in_review ? `${t("base.botDetail.matterCard.inReview")} ${earned.in_review}` : "",
+            earned?.preferences?.length ? `${t("base.botDetail.matterCard.preferences")} ${earned.preferences.length}` : "",
+        ].filter(Boolean);
+
+        const hasDeclared = declaredVisible && (capabilities.length > 0 || skills.length > 0 || !!tagline);
+        const hasEarned = statItems.length > 0;
+        if (!hasDeclared && !hasEarned && declaredVisible) return null;
+
+        return (
+            <div className="wk-bot-detail-agent-card" data-testid="matter-agent-card">
+                <div className="wk-bot-detail-agent-card-head">
+                    <span className="wk-bot-detail-agent-card-title">
+                        {t("base.botDetail.matterCard.title")}
+                    </span>
+                    <span className="wk-bot-detail-agent-card-badges">
+                        {viewer?.can_edit && (
+                            <span className="wk-bot-detail-agent-card-badge">
+                                {t("base.botDetail.matterCard.ownerView")}
+                            </span>
+                        )}
+                        {!declaredVisible && (
+                            <span className="wk-bot-detail-agent-card-badge wk-bot-detail-agent-card-badge--private">
+                                {t("base.botDetail.matterCard.private")}
+                            </span>
+                        )}
+                    </span>
+                </div>
+                {tagline && (
+                    <div className="wk-bot-detail-agent-card-summary">
+                        {tagline}
+                    </div>
+                )}
+                {!declaredVisible && (
+                    <div className="wk-bot-detail-agent-card-summary wk-bot-detail-agent-card-summary--muted">
+                        {t("base.botDetail.matterCard.privateNote")}
+                    </div>
+                )}
+                {capabilities.length > 0 && (
+                    <div className="wk-bot-detail-agent-card-tags">
+                        {capabilities.map((capability) => {
+                            const sourceLabel = this.matterCapabilitySourceLabel(capability.source);
+                            const statusLabel = this.matterCapabilityStatusLabel(capability.status);
+                            return (
+                                <span className="wk-bot-detail-agent-card-tag" key={`${capability.name}:${capability.source || ""}:${capability.status || ""}`}>
+                                    <span>{capability.name}</span>
+                                    {sourceLabel && <em>{sourceLabel}</em>}
+                                    {statusLabel && <em>{statusLabel}</em>}
+                                    {capability.visibility === "owner" && <em>{t("base.botDetail.matterCard.ownerOnly")}</em>}
+                                </span>
+                            );
+                        })}
+                        {hiddenCount > 0 && (
+                            <span className="wk-bot-detail-agent-card-tag wk-bot-detail-agent-card-tag--more">
+                                <span>{t("base.botDetail.matterCard.moreCapabilities", { values: { count: hiddenCount } })}</span>
+                            </span>
+                        )}
+                    </div>
+                )}
+                {skills.length > 0 && (
+                    <div className="wk-bot-detail-agent-card-tags">
+                        {skills.map((skill) => (
+                            <span className="wk-bot-detail-agent-card-tag" key={skill}>
+                                <span>{skill}</span>
+                            </span>
+                        ))}
+                        {hiddenCount > 0 && (
+                            <span className="wk-bot-detail-agent-card-tag wk-bot-detail-agent-card-tag--more">
+                                <span>{t("base.botDetail.matterCard.moreCapabilities", { values: { count: hiddenCount } })}</span>
+                            </span>
+                        )}
+                    </div>
+                )}
+                {hasEarned && (
+                    <div className="wk-bot-detail-agent-card-stats">
+                        {statItems.map((item) => (
+                            <span key={item}>{item}</span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     render() {
@@ -734,6 +962,7 @@ export default class BotDetailModal extends Component<BotDetailModalProps, BotDe
                                 ))}
                             </div>
                         )}
+                        {this.renderMatterAgentCard()}
                         {isOwner && (
                             <Button
                                 block

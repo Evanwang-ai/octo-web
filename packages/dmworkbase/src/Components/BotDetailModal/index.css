@@ -95,6 +95,110 @@
 .wk-bot-detail-cmd-desc {
     color: #888;
 }
+.wk-bot-detail-agent-card {
+    margin-top: 14px;
+    margin-bottom: 8px;
+    padding: 12px 14px;
+    border: 1px solid rgba(28, 28, 35, 0.10);
+    border-radius: var(--wk-r-sm, 8px);
+    background: linear-gradient(180deg, rgba(28, 28, 35, 0.018), rgba(28, 28, 35, 0.038));
+}
+.wk-bot-detail-agent-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.wk-bot-detail-agent-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    letter-spacing: 0;
+}
+.wk-bot-detail-agent-card-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.wk-bot-detail-agent-card-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(28, 28, 35, 0.10);
+    background: #fff;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+}
+.wk-bot-detail-agent-card-badge--private {
+    color: #9a3412;
+    border-color: rgba(249, 115, 22, 0.22);
+    background: rgba(249, 115, 22, 0.08);
+}
+.wk-bot-detail-agent-card-summary {
+    margin-bottom: 10px;
+    color: #555;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.wk-bot-detail-agent-card-summary--muted {
+    color: #777;
+}
+.wk-bot-detail-agent-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+.wk-bot-detail-agent-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 26px;
+    max-width: 100%;
+    padding: 3px 8px;
+    border: 1px solid rgba(28, 28, 35, 0.10);
+    border-radius: 7px;
+    background: #fff;
+    color: #2f3440;
+    font-size: 12px;
+    font-weight: 600;
+}
+.wk-bot-detail-agent-card-tag span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wk-bot-detail-agent-card-tag em {
+    padding-left: 5px;
+    border-left: 1px solid rgba(28, 28, 35, 0.10);
+    color: #737b8c;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.wk-bot-detail-agent-card-tag--more {
+    border-style: dashed;
+    color: #667085;
+    background: rgba(28, 28, 35, 0.025);
+    font-weight: 600;
+}
+.wk-bot-detail-agent-card-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-top: 10px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(28, 28, 35, 0.08);
+    color: #666;
+    font-size: 12px;
+    line-height: 1.4;
+}
 
 /* Owner 头像编辑：hover 显示 📷 遮罩 */
 .wk-bot-detail-avatar {

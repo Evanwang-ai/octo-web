@@ -19,10 +19,8 @@ import {
   removeAssignee,
   getMatter,
   deleteMatter,
-  listMatters,
   listProjects,
   addProjectSource,
-  addTimelineEntry,
 } from "./api/todoApi";
 import { Toast } from "./utils/toast";
 import { parseMentions } from "./utils/mention";
@@ -169,9 +167,9 @@ export default class MatterModule implements IModule {
 
     // Mount global SmartCreateModal portal (handles Alt+Enter from any conversation)
     mountGlobalMatterModal();
-    // Mount global MatterLinkMenu portal (handles "添加到事项" button from MultiplePanel)
+    // Mount global MatterLinkMenu portal (handles "同步到项目" button from MultiplePanel)
     mountGlobalMatterLinkMenu();
-    // Mount global SmartCreateModal portal (handles "创建新事项" from MultiplePanel etc.)
+    // Mount global SmartCreateModal portal (handles explicit smart-create events)
     mountGlobalSmartCreateModal();
 
     // Chat integration
@@ -440,9 +438,9 @@ function GlobalMatterModal() {
 }
 
 /**
- * Global MatterLinkMenu — 多选"添加到事项"弹出菜单
+ * Global MatterLinkMenu — 多选"同步到项目"弹出菜单
  *
- * 由 Conversation MultiplePanel 的"添加到事项"按钮通过 mitt 事件
+ * 由 Conversation MultiplePanel 的"同步到项目"按钮通过 mitt 事件
  * 'wk:open-matter-link-menu' 触发。
  *
  * 为什么不直接在 MultiplePanel 里渲染：
@@ -478,12 +476,9 @@ function GlobalMatterLinkMenu() {
   const { t } = useI18n();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [channelId, setChannelId] = useState<string>("");
-  const [channelType, setChannelType] = useState<number>(0);
   const [messages, setMessages] = useState<any[]>([]);
-  const [matters, setMatters] = useState<{ id: string; title: string }[]>([]);
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
   const anchorRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
@@ -504,27 +499,12 @@ function GlobalMatterLinkMenu() {
       }
       setAnchor(data.anchor);
       setChannelId(data.channelId);
-      setChannelType(data.channelType);
       setMessages(data.messages || []);
-      // 按 channel 查询关联的 Matter 列表 (严格过滤, 同 ChatTodoPanel):
-      // 用 channel_id (PR #38) 而非 source_channel_id, 避免混入
-      // "我相关但跟本群无关" 的 Matter 污染选项列表。
       setLoading(true);
-      listMatters({
-        channel_id: data.channelId,
-        limit: 20,
-      })
-        .then((res) => {
-          setMatters(res.data.map((m) => ({ id: m.id, title: m.title })));
-        })
-        .catch(() => {
-          setMatters([]);
-        })
-        .finally(() => setLoading(false));
-      // 项目分区(存入共享上下文)— 失败静默,不挡事项分区
       listProjects()
         .then((ps) => setProjects(ps.map((p) => ({ id: p.id, title: p.name }))))
-        .catch(() => setProjects([]));
+        .catch(() => setProjects([]))
+        .finally(() => setLoading(false));
     };
     WKApp.mittBus.on("wk:open-matter-link-menu", handler);
     return () => {
@@ -532,7 +512,7 @@ function GlobalMatterLinkMenu() {
     };
   }, [anchor]);
 
-  if (!anchor && !showCreate) return null;
+  if (!anchor) return null;
 
   return (
     <>
@@ -582,7 +562,6 @@ function GlobalMatterLinkMenu() {
       {anchor && (
         <MatterLinkMenu
           anchorRef={anchorRef}
-          matters={matters}
           projects={projects}
           onPickProject={async (proj) => {
             if (!messages || messages.length === 0) {
@@ -611,65 +590,16 @@ function GlobalMatterLinkMenu() {
             }
           }}
           onClose={() => { if (!loading) setAnchor(null); }}
-          onCreate={() => {
-            setAnchor(null);
-            setShowCreate(true);
-          }}
           disabled={loading}
-          onPick={async (matter) => {
-            if (!messages || messages.length === 0) {
-              Toast.error(t("todo.toast.noMessagesToSync"));
-              return;
-            }
-            setLoading(true);
-            try {
-              await addTimelineEntry(matter.id, {
-                channel_id: channelId,
-                channel_type: channelType,
-                participant_uid: WKApp.loginInfo.uid || "",
-                msgs: messages.map((m: any) => ({
-                  message_id: m.messageID || m.messageSeq?.toString() || "",
-                  from_uid: m.fromUID || "",
-                  from_uname: m.fromUName || "",
-                  timestamp: m.timestamp || 0,
-                  content: m.content || "",
-                  attachments: m.attachments || [],
-                })),
-              });
-              Toast.success(t("todo.toast.syncedProgress"));
-              setAnchor(null);
-              WKApp.mittBus.emit("wk:exit-multiple-mode");
-            } catch (e: any) {
-              const code = e?.code;
-              if (code === "LLM_UPSTREAM_ERROR") {
-                Toast.error(t("todo.toast.aiUnavailable"));
-              } else {
-                Toast.error(t("todo.toast.syncProgressFailed"));
-              }
-            } finally {
-              setLoading(false);
-            }
-          }}
         />
       )}
-      <SmartCreateModal
-        visible={showCreate}
-        blank
-        onClose={() => setShowCreate(false)}
-        onConfirm={async (req) => {
-          await createMatter(req);
-          Toast.success(t("todo.toast.created"));
-          WKApp.mittBus.emit("wk:exit-multiple-mode");
-        }}
-        channel={channelId ? { channelId, channelType } : undefined}
-      />
     </>
   );
 }
 
 /* ============================================================
  * Global SmartCreateModal — 响应 'wk:open-smart-create-modal' 事件
- * 由 MultiplePanel "创建新事项" 按钮触发
+ * 可由快捷入口或显式事件触发
  * ============================================================ */
 let _globalSmartCreateMounted = false;
 let _globalSmartCreateRoot: ReturnType<typeof ReactDOM.createRoot> | null =

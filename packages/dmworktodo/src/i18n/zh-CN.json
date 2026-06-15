@@ -144,10 +144,10 @@
     "unnamedThread": "未命名子区"
   },
   "linkMenu": {
-    "createNew": "创建新事项",
-    "currentGroupTasks": "当前群事项",
-    "syncExisting": "同步到已有事项",
-    "saveToProject": "存入项目上下文",
+    "currentGroupTasks": "当前群项目",
+    "syncExisting": "选择项目",
+    "saveToProject": "同步到项目",
+    "noProjects": "没有可同步的项目",
     "chatExcerptTitle": "聊天记录 · {{count}} 条"
   },
   "member": {

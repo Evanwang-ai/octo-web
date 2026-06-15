@@ -744,7 +744,7 @@ body[theme-mode="dark"] .wk-conversation-input-notice-bubble {
   background: rgba(255, 86, 59, 0.08);
 }
 
-/* 添加到事项按钮 */
+/* 同步到项目按钮 */
 .wk-multiplepanel-btn--matter {
   color: var(--wk-text-primary, #1c1c23);
 }
