@@ -2,6 +2,30 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { WKApp, t as translate } from "@octo/base";
 
+export type MatterAuthBridgeInput = {
+  token?: string;
+  uid?: string;
+  name?: string;
+  spaceId?: string;
+};
+
+export function syncMatterAuth(auth: MatterAuthBridgeInput): void {
+  try {
+    if (auth.token) localStorage.setItem("token", auth.token);
+    else localStorage.removeItem("token");
+
+    if (auth.uid) localStorage.setItem("uid", auth.uid);
+    else localStorage.removeItem("uid");
+
+    if (auth.name) localStorage.setItem("name", auth.name);
+    else localStorage.removeItem("name");
+
+    if (auth.spaceId) localStorage.setItem("currentSpaceId", auth.spaceId);
+  } catch {
+    /* storage unavailable -> the embedded app shows its connect panel */
+  }
+}
+
 /**
  * matter-v2: the Matter workspace now lives in the octo-matter service
  * (embedded SPA served at /matter/ui/). Same origin behind nginx, so the
@@ -21,6 +45,10 @@ import { WKApp, t as translate } from "@octo/base";
 const MatterWorkspace: React.FC = () => {
   const [active, setActive] = useState(true); // mounted on first activation
   const spaceId = WKApp.shared.currentSpaceId || "";
+  const token = WKApp.loginInfo.token || "";
+  const uid = WKApp.loginInfo.uid || "";
+  const name = WKApp.loginInfo.name || "";
+  const authKey = [spaceId, uid, name, token ? "token" : "no-token"].join("|");
 
   useEffect(() => {
     const onMenu = (payload: unknown) => {
@@ -33,15 +61,11 @@ const MatterWorkspace: React.FC = () => {
     };
   }, []);
 
-  try {
-    if (spaceId) localStorage.setItem("currentSpaceId", spaceId);
-  } catch {
-    /* storage unavailable → the embedded app shows its connect panel */
-  }
+  syncMatterAuth({ token, uid, name, spaceId });
 
   return ReactDOM.createPortal(
     <iframe
-      key={spaceId || "no-space"}
+      key={authKey}
       title={translate("todo.menu.title")}
       src="/matter/ui/?embed=1#/inbox"
       style={{
