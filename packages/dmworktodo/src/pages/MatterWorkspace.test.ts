@@ -1,9 +1,17 @@
+// @vitest-environment jsdom
 import { describe, expect, it, beforeEach } from "vitest";
-import { syncMatterAuth } from "./MatterWorkspace";
+import {
+  createMatterDetailSrc,
+  PENDING_MATTER_DETAIL_ID_KEY,
+  storePendingMatterDetailId,
+  syncMatterAuth,
+  takePendingMatterDetailId,
+} from "./matterWorkspaceBridge";
 
 describe("syncMatterAuth", () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("bridges host login identity to the Matter iframe auth keys", () => {
@@ -31,5 +39,23 @@ describe("syncMatterAuth", () => {
     expect(localStorage.getItem("uid")).toBeNull();
     expect(localStorage.getItem("name")).toBeNull();
     expect(localStorage.getItem("currentSpaceId")).toBe("space-2");
+  });
+});
+
+describe("MatterWorkspace deep links", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it("builds embedded Matter detail iframe URLs instead of standalone app URLs", () => {
+    expect(createMatterDetailSrc("M-1761/id")).toBe("/matter/ui/?embed=1#/matter/M-1761%2Fid");
+  });
+
+  it("stores and consumes a pending detail id once", () => {
+    storePendingMatterDetailId("matter-1");
+
+    expect(sessionStorage.getItem(PENDING_MATTER_DETAIL_ID_KEY)).toBe("matter-1");
+    expect(takePendingMatterDetailId()).toBe("matter-1");
+    expect(takePendingMatterDetailId()).toBeUndefined();
   });
 });

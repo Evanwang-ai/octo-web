@@ -6,7 +6,10 @@ import { ChannelTypeGroup } from "wukongimjssdk";
 import WKSDK from "wukongimjssdk";
 // matter-v2: route content swapped to the embedded workspace served by
 // octo-matter; the legacy TodoPage panel is retired (chat integrations stay).
-import MatterPage from "./pages/MatterWorkspace";
+import MatterPage, {
+  MATTER_MENU_ID,
+  storePendingMatterDetailId,
+} from "./pages/MatterWorkspace";
 import ChatMatterPanel from "./panel/ChatTodoPanel";
 import MatterDetailPanel from "./panel/MatterDetailPanel";
 import MatterLinkMenu from "./ui/MatterLinkMenu";
@@ -165,11 +168,15 @@ export default class MatterModule implements IModule {
       4001,
     );
 
-    // Action Card deep link: open matter detail page
+    // Action Card deep link: open Matter detail inside the host shell.
     WKApp.openMatterDetail = (matterId?: string) => {
-      if (matterId) {
-        window.open(`/matter/ui/#/matter/${matterId}`, "_blank");
-      }
+      if (!matterId) return;
+      storePendingMatterDetailId(matterId);
+      WKApp.switchToMenuById?.(MATTER_MENU_ID);
+      WKApp.mittBus.emit("wk:nav-menu-activated", { menuId: MATTER_MENU_ID });
+      window.setTimeout(() => {
+        WKApp.mittBus.emit("wk:open-matter-detail", { matterId });
+      }, 0);
     };
 
     // Mount global SmartCreateModal portal (handles Alt+Enter from any conversation)

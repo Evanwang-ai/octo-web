@@ -1,30 +1,24 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { WKApp, t as translate } from "@octo/base";
+import {
+  createMatterDetailSrc,
+  MATTER_INBOX_SRC,
+  MATTER_MENU_ID,
+  syncMatterAuth,
+  takePendingMatterDetailId,
+} from "./matterWorkspaceBridge";
 
-export type MatterAuthBridgeInput = {
-  token?: string;
-  uid?: string;
-  name?: string;
-  spaceId?: string;
-};
-
-export function syncMatterAuth(auth: MatterAuthBridgeInput): void {
-  try {
-    if (auth.token) localStorage.setItem("token", auth.token);
-    else localStorage.removeItem("token");
-
-    if (auth.uid) localStorage.setItem("uid", auth.uid);
-    else localStorage.removeItem("uid");
-
-    if (auth.name) localStorage.setItem("name", auth.name);
-    else localStorage.removeItem("name");
-
-    if (auth.spaceId) localStorage.setItem("currentSpaceId", auth.spaceId);
-  } catch {
-    /* storage unavailable -> the embedded app shows its connect panel */
-  }
-}
+export {
+  createMatterDetailSrc,
+  MATTER_INBOX_SRC,
+  MATTER_MENU_ID,
+  PENDING_MATTER_DETAIL_ID_KEY,
+  storePendingMatterDetailId,
+  syncMatterAuth,
+  takePendingMatterDetailId,
+} from "./matterWorkspaceBridge";
+export type { MatterAuthBridgeInput } from "./matterWorkspaceBridge";
 
 /**
  * matter-v2: the Matter workspace now lives in the octo-matter service
@@ -44,6 +38,10 @@ export function syncMatterAuth(auth: MatterAuthBridgeInput): void {
  */
 const MatterWorkspace: React.FC = () => {
   const [active, setActive] = useState(true); // mounted on first activation
+  const [iframeSrc, setIframeSrc] = useState(() => {
+    const pendingMatterId = takePendingMatterDetailId();
+    return pendingMatterId ? createMatterDetailSrc(pendingMatterId) : MATTER_INBOX_SRC;
+  });
   const spaceId = WKApp.shared.currentSpaceId || "";
   const token = WKApp.loginInfo.token || "";
   const uid = WKApp.loginInfo.uid || "";
@@ -51,13 +49,35 @@ const MatterWorkspace: React.FC = () => {
   const authKey = [spaceId, uid, name, token ? "token" : "no-token"].join("|");
 
   useEffect(() => {
+    const openPendingDetail = () => {
+      const matterId = takePendingMatterDetailId();
+      if (matterId) {
+        setIframeSrc(createMatterDetailSrc(matterId));
+      }
+    };
+
     const onMenu = (payload: unknown) => {
       const menuId = (payload as { menuId?: string } | undefined)?.menuId;
-      setActive(menuId === "matter");
+      const isMatter = menuId === MATTER_MENU_ID;
+      setActive(isMatter);
+      if (isMatter) {
+        openPendingDetail();
+      }
     };
+
+    const onOpenMatterDetail = (payload: unknown) => {
+      const matterId = (payload as { matterId?: string } | undefined)?.matterId;
+      if (!matterId) return;
+      setActive(true);
+      setIframeSrc(createMatterDetailSrc(matterId));
+    };
+
+    openPendingDetail();
     WKApp.mittBus.on("wk:nav-menu-activated", onMenu);
+    WKApp.mittBus.on("wk:open-matter-detail", onOpenMatterDetail);
     return () => {
       WKApp.mittBus.off("wk:nav-menu-activated", onMenu);
+      WKApp.mittBus.off("wk:open-matter-detail", onOpenMatterDetail);
     };
   }, []);
 
@@ -67,7 +87,7 @@ const MatterWorkspace: React.FC = () => {
     <iframe
       key={authKey}
       title={translate("todo.menu.title")}
-      src="/matter/ui/?embed=1#/inbox"
+      src={iframeSrc}
       style={{
         // iframes are replaced elements: left+right do NOT stretch them
         // (width:auto falls back to the intrinsic 300x150), so size

@@ -62,6 +62,8 @@ export type MittEvents = {
    * 不会自动 remount, 接收方需要主动 reload。
    */
   'wk:nav-menu-activated': { menuId: string };
+  /** 在主应用壳内打开 Matter 详情页，由 MatterWorkspace iframe 消费 */
+  'wk:open-matter-detail': { matterId: string };
   /**
    * 打开「密钥 / Secrets」管理面板（YUJ-3539）。由聊天反向跳转（bot 消息里的
    * 「去添加密钥」按钮）或输入框防手滑提示触发；payload 可携带预填名字 / 明文，
