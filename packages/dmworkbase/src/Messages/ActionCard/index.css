@@ -1,0 +1,82 @@
+.wk-action-card {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: min(360px, calc(100vw - 120px));
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: var(--wk-r-lg, 12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--wk-bg-bubble, #f7f7ff);
+  color: var(--wk-text-primary, rgba(9, 30, 66, 0.87));
+}
+
+.wk-action-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-item);
+  margin-bottom: 4px;
+}
+
+.wk-action-card-header-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.wk-action-card-fields {
+  margin-bottom: 4px;
+}
+
+.wk-action-card-field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wk-action-card-field-label {
+  color: var(--wk-text-tertiary, #999);
+  flex-shrink: 0;
+  min-width: 32px;
+}
+
+.wk-action-card-field-value {
+  color: var(--wk-text-item);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-action-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.wk-action-card-btn {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--wk-border-color, #ddd);
+  background: transparent;
+  color: var(--wk-text-item);
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.wk-action-card-btn:hover {
+  opacity: 0.8;
+}
+
+.wk-action-card-btn-primary {
+  background: var(--wk-color-primary, #4e83fd);
+  color: white;
+  border-color: transparent;
+}

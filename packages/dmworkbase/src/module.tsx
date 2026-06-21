@@ -113,6 +113,8 @@ import {
 } from "./Messages/ThreadCreated";
 import { SummaryCardContent } from "./Messages/SummaryCard/SummaryCardContent";
 import { SummaryCardCell } from "./Messages/SummaryCard";
+import { ActionCardContent } from "./Messages/ActionCard/ActionCardContent";
+import { ActionCardCell } from "./Messages/ActionCard";
 import { parseThreadChannelId, ThreadStatus } from "./Service/Thread";
 import { shouldShowThreadArchiveAction } from "./Service/threadPermission";
 import { runChannelSettingThreadArchive } from "./Service/threadArchiveAction";
@@ -275,6 +277,8 @@ export default class BaseModule implements IModule {
             return ApproveGroupMemberCell;
           case 15: // 智能总结卡片
             return SummaryCardCell;
+          case MessageContentTypeConst.actionCard: // 通用 Action Card
+            return ActionCardCell;
           case 98:
             return SignalMessageCell;
           default:
@@ -340,6 +344,11 @@ export default class BaseModule implements IModule {
     );
     // 智能总结卡片
     WKSDK.shared().register(15, () => new SummaryCardContent());
+    // 通用 Action Card (type=50)
+    WKSDK.shared().register(
+      MessageContentTypeConst.actionCard,
+      () => new ActionCardContent()
+    );
 
     // 富文本（图文混排）
     WKSDK.shared().register(

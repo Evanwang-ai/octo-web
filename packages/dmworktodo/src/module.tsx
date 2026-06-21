@@ -165,6 +165,13 @@ export default class MatterModule implements IModule {
       4001,
     );
 
+    // Action Card deep link: open matter detail page
+    WKApp.openMatterDetail = (matterId?: string) => {
+      if (matterId) {
+        window.open(`/matter/ui/#/matter/${matterId}`, "_blank");
+      }
+    };
+
     // Mount global SmartCreateModal portal (handles Alt+Enter from any conversation)
     mountGlobalMatterModal();
     // Mount global MatterLinkMenu portal (handles "同步到项目" button from MultiplePanel)
