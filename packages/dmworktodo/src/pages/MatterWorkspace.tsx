@@ -3,7 +3,9 @@ import ReactDOM from "react-dom";
 import { WKApp, t as translate } from "@octo/base";
 import {
   createMatterDetailSrc,
+  createMatterWorkspaceSrc,
   MATTER_INBOX_SRC,
+  MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
   syncMatterAuth,
   takePendingMatterDetailId,
@@ -11,14 +13,16 @@ import {
 
 export {
   createMatterDetailSrc,
+  createMatterWorkspaceSrc,
   MATTER_INBOX_SRC,
+  MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
   PENDING_MATTER_DETAIL_ID_KEY,
   storePendingMatterDetailId,
   syncMatterAuth,
   takePendingMatterDetailId,
 } from "./matterWorkspaceBridge";
-export type { MatterAuthBridgeInput } from "./matterWorkspaceBridge";
+export type { MatterAuthBridgeInput, MatterWorkspaceRoute } from "./matterWorkspaceBridge";
 
 /**
  * matter-v2: the Matter workspace now lives in the octo-matter service
@@ -40,7 +44,8 @@ const MatterWorkspace: React.FC = () => {
   const [active, setActive] = useState(true); // mounted on first activation
   const [iframeSrc, setIframeSrc] = useState(() => {
     const pendingMatterId = takePendingMatterDetailId();
-    return pendingMatterId ? createMatterDetailSrc(pendingMatterId) : MATTER_INBOX_SRC;
+    if (pendingMatterId) return createMatterDetailSrc(pendingMatterId);
+    return createMatterWorkspaceSrc();
   });
   const spaceId = WKApp.shared.currentSpaceId || "";
   const token = WKApp.loginInfo.token || "";
@@ -53,16 +58,29 @@ const MatterWorkspace: React.FC = () => {
       const matterId = takePendingMatterDetailId();
       if (matterId) {
         setIframeSrc(createMatterDetailSrc(matterId));
+        return true;
       }
+      return false;
     };
 
     const onMenu = (payload: unknown) => {
       const menuId = (payload as { menuId?: string } | undefined)?.menuId;
-      const isMatter = menuId === MATTER_MENU_ID;
-      setActive(isMatter);
-      if (isMatter) {
-        openPendingDetail();
+      const isMatterWorkspace = menuId === MATTER_MENU_ID || menuId === MATTER_MAILBOX_MENU_ID;
+      setActive(isMatterWorkspace);
+      if (menuId === MATTER_MAILBOX_MENU_ID) {
+        setIframeSrc(createMatterWorkspaceSrc());
+        return;
       }
+      if (menuId === MATTER_MENU_ID && !openPendingDetail()) {
+        setIframeSrc(createMatterWorkspaceSrc());
+      }
+    };
+
+    const onOpenMatterWorkspace = (payload: unknown) => {
+      const route = (payload as { route?: "inbox" } | undefined)?.route;
+      if (route !== "inbox") return;
+      setActive(true);
+      setIframeSrc(createMatterWorkspaceSrc(route));
     };
 
     const onOpenMatterDetail = (payload: unknown) => {
@@ -74,9 +92,11 @@ const MatterWorkspace: React.FC = () => {
 
     openPendingDetail();
     WKApp.mittBus.on("wk:nav-menu-activated", onMenu);
+    WKApp.mittBus.on("wk:open-matter-workspace", onOpenMatterWorkspace);
     WKApp.mittBus.on("wk:open-matter-detail", onOpenMatterDetail);
     return () => {
       WKApp.mittBus.off("wk:nav-menu-activated", onMenu);
+      WKApp.mittBus.off("wk:open-matter-workspace", onOpenMatterWorkspace);
       WKApp.mittBus.off("wk:open-matter-detail", onOpenMatterDetail);
     };
   }, []);

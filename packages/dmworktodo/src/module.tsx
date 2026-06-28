@@ -7,6 +7,7 @@ import WKSDK from "wukongimjssdk";
 // matter-v2: route content swapped to the embedded workspace served by
 // octo-matter; the legacy TodoPage panel is retired (chat integrations stay).
 import MatterPage, {
+  MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
   storePendingMatterDetailId,
 } from "./pages/MatterWorkspace";
@@ -61,6 +62,16 @@ if (import.meta.hot) {
     if (el) el.remove();
     _globalTodoModalMounted = false;
   });
+}
+
+function MailboxIcon({ active }: { active?: boolean }) {
+  const color = active ? "var(--wk-brand-primary, #7C5CFC)" : "currentColor";
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M22 7l-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7" />
+    </svg>
+  );
 }
 
 /**
@@ -163,9 +174,31 @@ export default class MatterModule implements IModule {
           <MatterIcon />,
           <MatterIcon active />,
         );
+        m.onPress = () => {
+          WKApp.mittBus.emit("wk:open-matter-workspace", { route: "inbox" });
+        };
         return m;
       },
       4001,
+    );
+
+    // Register Mailbox NavRail menu item (sort=4002, after matter=4001)
+    WKApp.menus.register(
+      MATTER_MAILBOX_MENU_ID,
+      () => {
+        const m = new Menus(
+          MATTER_MAILBOX_MENU_ID,
+          "/matter",
+          "收件箱",
+          <MailboxIcon />,
+          <MailboxIcon active />,
+        );
+        m.onPress = () => {
+          WKApp.mittBus.emit("wk:open-matter-workspace", { route: "inbox" });
+        };
+        return m;
+      },
+      4002,
     );
 
     // Action Card deep link: open Matter detail inside the host shell.

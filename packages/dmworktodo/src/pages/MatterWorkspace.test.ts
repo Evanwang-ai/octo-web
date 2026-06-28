@@ -2,6 +2,8 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   createMatterDetailSrc,
+  createMatterWorkspaceSrc,
+  MATTER_INBOX_SRC,
   PENDING_MATTER_DETAIL_ID_KEY,
   storePendingMatterDetailId,
   syncMatterAuth,
@@ -49,6 +51,11 @@ describe("MatterWorkspace deep links", () => {
 
   it("builds embedded Matter detail iframe URLs instead of standalone app URLs", () => {
     expect(createMatterDetailSrc("M-1761/id")).toBe("/matter/ui/?embed=1#/matter/M-1761%2Fid");
+  });
+
+  it("builds stable embedded workspace URLs for matters and mailbox", () => {
+    expect(MATTER_INBOX_SRC).toBe("/matter/ui/?embed=1#/inbox");
+    expect(createMatterWorkspaceSrc("inbox")).toBe("/matter/ui/?embed=1#/inbox");
   });
 
   it("stores and consumes a pending detail id once", () => {

@@ -1,6 +1,11 @@
 export const MATTER_MENU_ID = "matter";
-export const MATTER_INBOX_SRC = "/matter/ui/?embed=1#/inbox";
+export const MATTER_MAILBOX_MENU_ID = "mailbox";
+export const MATTER_WORKSPACE_SRC = "/matter/ui/?embed=1#/inbox";
+export const MATTER_MAILBOX_SRC = MATTER_WORKSPACE_SRC;
+export const MATTER_INBOX_SRC = MATTER_WORKSPACE_SRC;
 export const PENDING_MATTER_DETAIL_ID_KEY = "wk.pendingMatterDetailId";
+
+export type MatterWorkspaceRoute = "inbox";
 
 export type MatterAuthBridgeInput = {
   token?: string;
@@ -8,6 +13,10 @@ export type MatterAuthBridgeInput = {
   name?: string;
   spaceId?: string;
 };
+
+export function createMatterWorkspaceSrc(_route: MatterWorkspaceRoute = "inbox"): string {
+  return MATTER_WORKSPACE_SRC;
+}
 
 export function createMatterDetailSrc(matterId: string): string {
   return `/matter/ui/?embed=1#/matter/${encodeURIComponent(matterId)}`;
