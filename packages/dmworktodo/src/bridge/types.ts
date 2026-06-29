@@ -5,6 +5,16 @@
 // ─── Status enums ───────────────────────────────────────
 
 export type MatterStatus = "open" | "done" | "archived";
+export type MatterPriority = 0 | 1 | 2 | 3 | 4;
+export type MatterOrderBy =
+  | "created_at"
+  | "updated_at"
+  | "deadline"
+  | "priority"
+  | "manual"
+  | "title"
+  | "seq_no";
+export type MatterOrderDir = "asc" | "desc";
 
 // ─── Core models (match backend JSON exactly) ───────────
 
@@ -24,6 +34,7 @@ export interface Matter {
   description?: string;
   creator_id: string;
   status: MatterStatus;
+  priority?: MatterPriority;
   deadline?: string;
   remind_at?: string;
   source_channel_id?: string;
@@ -127,6 +138,8 @@ export interface MatterListParams {
    */
   channel_id?: string;
   q?: string;
+  order_by?: MatterOrderBy;
+  order_dir?: MatterOrderDir;
   limit?: number;
   cursor?: string;
 }
@@ -138,6 +151,7 @@ export interface CreateMatterReq {
   source_channel_id?: string;
   source_channel_type?: number;
   source_name?: string;
+  priority?: MatterPriority;
   deadline?: string;
   remind_at?: string;
   source_msgs?: ExtractMessage[];
@@ -148,6 +162,7 @@ export interface UpdateMatterReq {
   description?: string | null;
   deadline?: string | null;
   remind_at?: string | null;
+  priority?: MatterPriority;
 }
 
 // ─── Extract (AI 智能创建) ──────────────────────────────
