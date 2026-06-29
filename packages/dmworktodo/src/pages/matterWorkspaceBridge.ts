@@ -1,8 +1,9 @@
 export const MATTER_MENU_ID = "matter";
 export const MATTER_MAILBOX_MENU_ID = "mailbox";
-export const MATTER_WORKSPACE_SRC = "/matter/ui/?embed=1#/matters";
-export const MATTER_MAILBOX_SRC = "/matter/ui/?embed=1#/mailbox";
-export const MATTER_INBOX_SRC = MATTER_WORKSPACE_SRC;
+export const MATTER_EMBED_SRC = "/matter/ui/?embed=1";
+export const MATTER_WORKSPACE_SRC = MATTER_EMBED_SRC;
+export const MATTER_MAILBOX_SRC = MATTER_EMBED_SRC;
+export const MATTER_INBOX_SRC = MATTER_EMBED_SRC;
 export const PENDING_MATTER_DETAIL_ID_KEY = "wk.pendingMatterDetailId";
 export const MATTER_WORKSPACE_ROUTE_KEY = "wk.matterWorkspaceRoute";
 
@@ -15,12 +16,28 @@ export type MatterAuthBridgeInput = {
   spaceId?: string;
 };
 
-export function createMatterWorkspaceSrc(route: MatterWorkspaceRoute = "matters"): string {
-  return route === "mailbox" ? MATTER_MAILBOX_SRC : MATTER_WORKSPACE_SRC;
+export function createMatterWorkspaceSrc(_route: MatterWorkspaceRoute = "matters"): string {
+  return MATTER_EMBED_SRC;
 }
 
-export function createMatterDetailSrc(matterId: string): string {
-  return `/matter/ui/?embed=1#/matter/${encodeURIComponent(matterId)}`;
+export function createMatterDetailSrc(_matterId: string): string {
+  return MATTER_EMBED_SRC;
+}
+
+const ALLOWED_HASHES = ["#/matters", "#/matters/board", "#/mailbox", "#/projects", "#/cards", "#/automation"];
+
+export function postNavigateToIframe(hash: string): void {
+  const iframe = document.querySelector<HTMLIFrameElement>('iframe[src*="/matter/ui/"]');
+  if (!iframe?.contentWindow) return;
+  iframe.contentWindow.postMessage({ type: "octo:navigate", hash }, window.location.origin);
+}
+
+export function hashForRoute(route: MatterWorkspaceRoute): string {
+  return route === "mailbox" ? "#/mailbox" : "#/matters";
+}
+
+export function hashForMatterDetail(matterId: string): string {
+  return "#/matter/" + encodeURIComponent(matterId);
 }
 
 function getSessionStorage(storage?: Storage): Storage | undefined {

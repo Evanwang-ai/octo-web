@@ -2,22 +2,23 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { WKApp, t as translate } from "@octo/base";
 import {
-  createMatterDetailSrc,
   createMatterWorkspaceSrc,
-  MATTER_INBOX_SRC,
+  MATTER_EMBED_SRC,
   MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
   restoreMatterWorkspaceRoute,
   storeMatterWorkspaceRoute,
   syncMatterAuth,
   takePendingMatterDetailId,
+  postNavigateToIframe,
+  hashForRoute,
+  hashForMatterDetail,
 } from "./matterWorkspaceBridge";
 import type { MatterWorkspaceRoute } from "./matterWorkspaceBridge";
 
 export {
-  createMatterDetailSrc,
   createMatterWorkspaceSrc,
-  MATTER_INBOX_SRC,
+  MATTER_EMBED_SRC,
   MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
   MATTER_WORKSPACE_ROUTE_KEY,
@@ -53,12 +54,8 @@ function initialWorkspaceRoute(): MatterWorkspaceRoute {
  * integrations (SmartCreateModal / ChatMatterPanel) stay on the v1 API.
  */
 const MatterWorkspace: React.FC = () => {
-  const [active, setActive] = useState(true); // mounted on first activation
-  const [iframeSrc, setIframeSrc] = useState(() => {
-    const pendingMatterId = takePendingMatterDetailId();
-    if (pendingMatterId) return createMatterDetailSrc(pendingMatterId);
-    return createMatterWorkspaceSrc(initialWorkspaceRoute());
-  });
+  const [active, setActive] = useState(true);
+  const iframeSrc = MATTER_EMBED_SRC;
   const spaceId = WKApp.shared.currentSpaceId || "";
   const token = WKApp.loginInfo.token || "";
   const uid = WKApp.loginInfo.uid || "";
@@ -69,7 +66,7 @@ const MatterWorkspace: React.FC = () => {
     const openPendingDetail = () => {
       const matterId = takePendingMatterDetailId();
       if (matterId) {
-        setIframeSrc(createMatterDetailSrc(matterId));
+        postNavigateToIframe(hashForMatterDetail(matterId));
         return true;
       }
       return false;
@@ -81,12 +78,12 @@ const MatterWorkspace: React.FC = () => {
       setActive(isMatterWorkspace);
       if (menuId === MATTER_MAILBOX_MENU_ID) {
         storeMatterWorkspaceRoute("mailbox");
-        setIframeSrc(createMatterWorkspaceSrc("mailbox"));
+        postNavigateToIframe(hashForRoute("mailbox"));
         return;
       }
       if (menuId === MATTER_MENU_ID && !openPendingDetail()) {
         storeMatterWorkspaceRoute("matters");
-        setIframeSrc(createMatterWorkspaceSrc("matters"));
+        postNavigateToIframe(hashForRoute("matters"));
       }
     };
 
@@ -95,14 +92,14 @@ const MatterWorkspace: React.FC = () => {
       if (route !== "matters" && route !== "mailbox") return;
       setActive(true);
       storeMatterWorkspaceRoute(route);
-      setIframeSrc(createMatterWorkspaceSrc(route));
+      postNavigateToIframe(hashForRoute(route));
     };
 
     const onOpenMatterDetail = (payload: unknown) => {
       const matterId = (payload as { matterId?: string } | undefined)?.matterId;
       if (!matterId) return;
       setActive(true);
-      setIframeSrc(createMatterDetailSrc(matterId));
+      postNavigateToIframe(hashForMatterDetail(matterId));
     };
 
     openPendingDetail();
