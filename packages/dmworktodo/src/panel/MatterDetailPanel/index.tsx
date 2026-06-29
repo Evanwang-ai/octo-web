@@ -1356,7 +1356,7 @@ export { MatterDetailPanel };
 const STATUS_OPTIONS: { value: MatterStatus; labelKey: string; cls: string }[] = [
   { value: "open", labelKey: "todo.status.open", cls: "wk-mp-pill--active" },
   { value: "done", labelKey: "todo.status.done", cls: "wk-mp-pill--done" },
-  { value: "archived", labelKey: "todo.status.archived", cls: "wk-mp-pill--archived" },
+  { value: "cancelled", labelKey: "todo.status.archived", cls: "wk-mp-pill--archived" },
 ];
 
 function StatusPicker({
@@ -1386,11 +1386,11 @@ function StatusPicker({
   }, [open]);
   const visibleOptions = isCreator
     ? STATUS_OPTIONS
-    : STATUS_OPTIONS.filter((o) => o.value !== "archived");
+    : STATUS_OPTIONS.filter((o) => o.value !== "cancelled");
   const current =
     STATUS_OPTIONS.find((o) => o.value === status) || STATUS_OPTIONS[0];
-  const isArchived = status === "archived";
-  const isDisabled = isArchived || !canEditStatus;
+  const isCancelled = status === "cancelled" || status === "archived";
+  const isDisabled = isCancelled || !canEditStatus;
 
   return (
     <span className="wk-mp-status-wrap" ref={ref}>

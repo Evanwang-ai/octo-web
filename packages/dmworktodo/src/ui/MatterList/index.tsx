@@ -28,7 +28,7 @@ import "../../pages/MatterPage.css";
  * MatterList — 统一的事项列表组件
  *
  * 合并了原 ChatMatterPanel（会话右侧面板）和 MatterPage（事项页面）的优点：
- *   - 来自 MatterPage: 归档折叠区、Tab 数量标签、新建按钮、加载更多
+ *   - 来自 MatterPage: 取消折叠区、Tab 数量标签、新建按钮、加载更多
  *   - 来自 ChatMatterPanel: Splitter 拖拽、关闭按钮、inline 详情模式
  *
  * 通过 props 控制不同场景的行为差异。
@@ -63,7 +63,7 @@ export interface MatterListProps {
   showCloseButton?: boolean;
   /** 显示新建按钮（默认开启） */
   showCreateButton?: boolean;
-  /** 显示归档折叠区（默认开启） */
+  /** 显示取消折叠区（默认开启） */
   showArchivedSection?: boolean;
   /** 显示 Tab 数量（默认开启） */
   showTabCounts?: boolean;
@@ -96,7 +96,7 @@ export default function MatterList({
   onClose,
   showSplitter = mode === "channel",
   showCloseButton = mode === "channel",
-  // 新建按钮原本只有 page 模式有；归档折叠和加载更多两种模式共享。
+  // 新建按钮原本只有 page 模式有；取消折叠和加载更多两种模式共享。
   showCreateButton = mode === "page",
   showArchivedSection = true,
   showLoadMore = true,
@@ -112,7 +112,7 @@ export default function MatterList({
   );
   const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null);
   const [archivedExpanded, setArchivedExpanded] = useState(false);
-  // 未归档分组默认展开，可折叠（与已归档对称）。
+  // 未取消分组默认展开，可折叠（与已取消对称）。
   const [activeExpanded, setActiveExpanded] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -179,13 +179,13 @@ export default function MatterList({
     }
   }, [mode, activeTab, matters, myUid]);
 
-  // 分离活跃 vs 归档
+  // 分离活跃 vs 取消
   const activeMatters = useMemo(
-    () => displayMatters.filter((m) => m.status !== "archived"),
+    () => displayMatters.filter((m) => m.status !== "cancelled" && m.status !== "archived"),
     [displayMatters],
   );
   const archivedMatters = useMemo(
-    () => displayMatters.filter((m) => m.status === "archived"),
+    () => displayMatters.filter((m) => m.status === "cancelled" || m.status === "archived"),
     [displayMatters],
   );
 
@@ -215,7 +215,7 @@ export default function MatterList({
     };
   }, [mode, matters, displayMatters, activeTab, myUid]);
 
-  // 当前 tab 的活跃/归档数量（从已加载数据计算）
+  // 当前 tab 的活跃/取消数量（从已加载数据计算）
   const activeCount = activeMatters.length;
   const archivedCount = archivedMatters.length;
 
@@ -477,7 +477,7 @@ export default function MatterList({
           </div>
         )}
 
-        {/* 未归档分组（可折叠） */}
+        {/* 未取消分组（可折叠） */}
         {!loading && activeMatters.length > 0 && (
           <button
             type="button"
@@ -521,7 +521,7 @@ export default function MatterList({
             />
           ))}
 
-        {/* 已归档折叠区 */}
+        {/* 已取消折叠区 */}
         {showArchivedSection && !loading && (
           <button
             type="button"
@@ -563,7 +563,7 @@ export default function MatterList({
             />
           ))}
 
-        {/* 加载更多（未归档折叠时隐藏，避免列表收起还露出按钮） */}
+        {/* 加载更多（未取消折叠时隐藏，避免列表收起还露出按钮） */}
         {showLoadMore && activeExpanded && !loading && hasMore && (
           <button
             type="button"
