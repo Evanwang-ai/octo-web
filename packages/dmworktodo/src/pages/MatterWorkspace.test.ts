@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it, beforeEach } from "vitest";
 import {
-  createMatterDetailSrc,
   createMatterWorkspaceSrc,
-  MATTER_INBOX_SRC,
+  MATTER_EMBED_SRC,
   MATTER_WORKSPACE_ROUTE_KEY,
   PENDING_MATTER_DETAIL_ID_KEY,
   restoreMatterWorkspaceRoute,
@@ -11,6 +10,8 @@ import {
   storePendingMatterDetailId,
   syncMatterAuth,
   takePendingMatterDetailId,
+  hashForRoute,
+  hashForMatterDetail,
 } from "./matterWorkspaceBridge";
 
 describe("syncMatterAuth", () => {
@@ -47,19 +48,24 @@ describe("syncMatterAuth", () => {
   });
 });
 
-describe("MatterWorkspace deep links", () => {
+describe("MatterWorkspace postMessage routing", () => {
   beforeEach(() => {
     sessionStorage.clear();
   });
 
-  it("builds embedded Matter detail iframe URLs instead of standalone app URLs", () => {
-    expect(createMatterDetailSrc("M-1761/id")).toBe("/matter/ui/?embed=1#/matter/M-1761%2Fid");
+  it("returns a fixed embed URL for all routes (no hash in src)", () => {
+    expect(MATTER_EMBED_SRC).toBe("/matter/ui/?embed=1");
+    expect(createMatterWorkspaceSrc("matters")).toBe("/matter/ui/?embed=1");
+    expect(createMatterWorkspaceSrc("mailbox")).toBe("/matter/ui/?embed=1");
   });
 
-  it("builds stable embedded workspace URLs for matters and mailbox", () => {
-    expect(MATTER_INBOX_SRC).toBe("/matter/ui/?embed=1#/matters");
-    expect(createMatterWorkspaceSrc("matters")).toBe("/matter/ui/?embed=1#/matters");
-    expect(createMatterWorkspaceSrc("mailbox")).toBe("/matter/ui/?embed=1#/mailbox");
+  it("maps routes to correct hash strings for postMessage", () => {
+    expect(hashForRoute("matters")).toBe("#/matters");
+    expect(hashForRoute("mailbox")).toBe("#/mailbox");
+  });
+
+  it("builds matter detail hash with encoded ID", () => {
+    expect(hashForMatterDetail("M-1761/id")).toBe("#/matter/M-1761%2Fid");
   });
 
   it("stores and consumes a pending detail id once", () => {
