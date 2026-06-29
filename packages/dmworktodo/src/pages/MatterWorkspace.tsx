@@ -7,9 +7,12 @@ import {
   MATTER_INBOX_SRC,
   MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
+  restoreMatterWorkspaceRoute,
+  storeMatterWorkspaceRoute,
   syncMatterAuth,
   takePendingMatterDetailId,
 } from "./matterWorkspaceBridge";
+import type { MatterWorkspaceRoute } from "./matterWorkspaceBridge";
 
 export {
   createMatterDetailSrc,
@@ -17,12 +20,21 @@ export {
   MATTER_INBOX_SRC,
   MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
+  MATTER_WORKSPACE_ROUTE_KEY,
   PENDING_MATTER_DETAIL_ID_KEY,
+  restoreMatterWorkspaceRoute,
+  storeMatterWorkspaceRoute,
   storePendingMatterDetailId,
   syncMatterAuth,
   takePendingMatterDetailId,
 } from "./matterWorkspaceBridge";
 export type { MatterAuthBridgeInput, MatterWorkspaceRoute } from "./matterWorkspaceBridge";
+
+function initialWorkspaceRoute(): MatterWorkspaceRoute {
+  if (WKApp.currentMenuId === MATTER_MAILBOX_MENU_ID) return "mailbox";
+  if (WKApp.currentMenuId === MATTER_MENU_ID) return "matters";
+  return restoreMatterWorkspaceRoute();
+}
 
 /**
  * matter-v2: the Matter workspace now lives in the octo-matter service
@@ -45,7 +57,7 @@ const MatterWorkspace: React.FC = () => {
   const [iframeSrc, setIframeSrc] = useState(() => {
     const pendingMatterId = takePendingMatterDetailId();
     if (pendingMatterId) return createMatterDetailSrc(pendingMatterId);
-    return createMatterWorkspaceSrc();
+    return createMatterWorkspaceSrc(initialWorkspaceRoute());
   });
   const spaceId = WKApp.shared.currentSpaceId || "";
   const token = WKApp.loginInfo.token || "";
@@ -68,18 +80,21 @@ const MatterWorkspace: React.FC = () => {
       const isMatterWorkspace = menuId === MATTER_MENU_ID || menuId === MATTER_MAILBOX_MENU_ID;
       setActive(isMatterWorkspace);
       if (menuId === MATTER_MAILBOX_MENU_ID) {
-        setIframeSrc(createMatterWorkspaceSrc());
+        storeMatterWorkspaceRoute("mailbox");
+        setIframeSrc(createMatterWorkspaceSrc("mailbox"));
         return;
       }
       if (menuId === MATTER_MENU_ID && !openPendingDetail()) {
-        setIframeSrc(createMatterWorkspaceSrc());
+        storeMatterWorkspaceRoute("matters");
+        setIframeSrc(createMatterWorkspaceSrc("matters"));
       }
     };
 
     const onOpenMatterWorkspace = (payload: unknown) => {
-      const route = (payload as { route?: "inbox" } | undefined)?.route;
-      if (route !== "inbox") return;
+      const route = (payload as { route?: "matters" | "mailbox" } | undefined)?.route || "matters";
+      if (route !== "matters" && route !== "mailbox") return;
       setActive(true);
+      storeMatterWorkspaceRoute(route);
       setIframeSrc(createMatterWorkspaceSrc(route));
     };
 

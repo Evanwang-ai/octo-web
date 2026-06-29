@@ -9,6 +9,7 @@ import WKSDK from "wukongimjssdk";
 import MatterPage, {
   MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
+  storeMatterWorkspaceRoute,
   storePendingMatterDetailId,
 } from "./pages/MatterWorkspace";
 import ChatMatterPanel from "./panel/ChatTodoPanel";
@@ -175,7 +176,8 @@ export default class MatterModule implements IModule {
           <MatterIcon active />,
         );
         m.onPress = () => {
-          WKApp.mittBus.emit("wk:open-matter-workspace", { route: "inbox" });
+          storeMatterWorkspaceRoute("matters");
+          WKApp.mittBus.emit("wk:open-matter-workspace", { route: "matters" });
         };
         return m;
       },
@@ -194,7 +196,8 @@ export default class MatterModule implements IModule {
           <MailboxIcon active />,
         );
         m.onPress = () => {
-          WKApp.mittBus.emit("wk:open-matter-workspace", { route: "inbox" });
+          storeMatterWorkspaceRoute("mailbox");
+          WKApp.mittBus.emit("wk:open-matter-workspace", { route: "mailbox" });
         };
         return m;
       },

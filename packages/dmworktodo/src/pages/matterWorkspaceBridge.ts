@@ -1,11 +1,12 @@
 export const MATTER_MENU_ID = "matter";
 export const MATTER_MAILBOX_MENU_ID = "mailbox";
-export const MATTER_WORKSPACE_SRC = "/matter/ui/?embed=1#/inbox";
-export const MATTER_MAILBOX_SRC = MATTER_WORKSPACE_SRC;
+export const MATTER_WORKSPACE_SRC = "/matter/ui/?embed=1#/matters";
+export const MATTER_MAILBOX_SRC = "/matter/ui/?embed=1#/mailbox";
 export const MATTER_INBOX_SRC = MATTER_WORKSPACE_SRC;
 export const PENDING_MATTER_DETAIL_ID_KEY = "wk.pendingMatterDetailId";
+export const MATTER_WORKSPACE_ROUTE_KEY = "wk.matterWorkspaceRoute";
 
-export type MatterWorkspaceRoute = "inbox";
+export type MatterWorkspaceRoute = "matters" | "mailbox";
 
 export type MatterAuthBridgeInput = {
   token?: string;
@@ -14,8 +15,8 @@ export type MatterAuthBridgeInput = {
   spaceId?: string;
 };
 
-export function createMatterWorkspaceSrc(_route: MatterWorkspaceRoute = "inbox"): string {
-  return MATTER_WORKSPACE_SRC;
+export function createMatterWorkspaceSrc(route: MatterWorkspaceRoute = "matters"): string {
+  return route === "mailbox" ? MATTER_MAILBOX_SRC : MATTER_WORKSPACE_SRC;
 }
 
 export function createMatterDetailSrc(matterId: string): string {
@@ -24,6 +25,26 @@ export function createMatterDetailSrc(matterId: string): string {
 
 function getSessionStorage(storage?: Storage): Storage | undefined {
   return storage ?? (typeof window === "undefined" ? undefined : window.sessionStorage);
+}
+
+export function normalizeMatterWorkspaceRoute(route?: string): MatterWorkspaceRoute {
+  return route === "mailbox" ? "mailbox" : "matters";
+}
+
+export function storeMatterWorkspaceRoute(route: MatterWorkspaceRoute, storage?: Storage): void {
+  try {
+    getSessionStorage(storage)?.setItem(MATTER_WORKSPACE_ROUTE_KEY, normalizeMatterWorkspaceRoute(route));
+  } catch {
+    /* storage unavailable -> callers still pass the route in memory */
+  }
+}
+
+export function restoreMatterWorkspaceRoute(storage?: Storage): MatterWorkspaceRoute {
+  try {
+    return normalizeMatterWorkspaceRoute(getSessionStorage(storage)?.getItem(MATTER_WORKSPACE_ROUTE_KEY) || undefined);
+  } catch {
+    return "matters";
+  }
 }
 
 export function storePendingMatterDetailId(matterId: string, storage?: Storage): void {

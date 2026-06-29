@@ -63,7 +63,7 @@ export type MittEvents = {
    */
   'wk:nav-menu-activated': { menuId: string };
   /** 在主应用壳内打开 Matter workspace 的顶层视图，由 MatterWorkspace iframe 消费 */
-  'wk:open-matter-workspace': { route: 'inbox' };
+  'wk:open-matter-workspace': { route: 'matters' | 'mailbox' };
   /** 在主应用壳内打开 Matter 详情页，由 MatterWorkspace iframe 消费 */
   'wk:open-matter-detail': { matterId: string };
   /**

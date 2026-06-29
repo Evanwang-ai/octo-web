@@ -4,7 +4,10 @@ import {
   createMatterDetailSrc,
   createMatterWorkspaceSrc,
   MATTER_INBOX_SRC,
+  MATTER_WORKSPACE_ROUTE_KEY,
   PENDING_MATTER_DETAIL_ID_KEY,
+  restoreMatterWorkspaceRoute,
+  storeMatterWorkspaceRoute,
   storePendingMatterDetailId,
   syncMatterAuth,
   takePendingMatterDetailId,
@@ -54,8 +57,9 @@ describe("MatterWorkspace deep links", () => {
   });
 
   it("builds stable embedded workspace URLs for matters and mailbox", () => {
-    expect(MATTER_INBOX_SRC).toBe("/matter/ui/?embed=1#/inbox");
-    expect(createMatterWorkspaceSrc("inbox")).toBe("/matter/ui/?embed=1#/inbox");
+    expect(MATTER_INBOX_SRC).toBe("/matter/ui/?embed=1#/matters");
+    expect(createMatterWorkspaceSrc("matters")).toBe("/matter/ui/?embed=1#/matters");
+    expect(createMatterWorkspaceSrc("mailbox")).toBe("/matter/ui/?embed=1#/mailbox");
   });
 
   it("stores and consumes a pending detail id once", () => {
@@ -64,5 +68,15 @@ describe("MatterWorkspace deep links", () => {
     expect(sessionStorage.getItem(PENDING_MATTER_DETAIL_ID_KEY)).toBe("matter-1");
     expect(takePendingMatterDetailId()).toBe("matter-1");
     expect(takePendingMatterDetailId()).toBeUndefined();
+  });
+
+  it("persists the last workspace route so mailbox reloads do not fall back to matters", () => {
+    storeMatterWorkspaceRoute("mailbox");
+
+    expect(sessionStorage.getItem(MATTER_WORKSPACE_ROUTE_KEY)).toBe("mailbox");
+    expect(restoreMatterWorkspaceRoute()).toBe("mailbox");
+
+    storeMatterWorkspaceRoute("matters");
+    expect(restoreMatterWorkspaceRoute()).toBe("matters");
   });
 });
