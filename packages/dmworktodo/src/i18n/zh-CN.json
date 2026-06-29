@@ -197,16 +197,16 @@
     "syncing": "同步中..."
   },
   "status": {
-    "archived": "已归档",
-    "archivedCount": "已归档 {{count}}",
-    "cannotChangeArchived": "已归档回路不可修改状态",
+    "archived": "已取消",
+    "archivedCount": "已取消 {{count}}",
+    "cannotChangeArchived": "已取消回路不可修改状态",
     "clickToChange": "点击切换状态",
     "done": "已完成",
     "onlyCreatorOrAssignee": "仅创建人或负责人可修改",
     "open": "进行中",
     "pending": "待处理",
-    "unarchived": "未归档",
-    "unarchivedCount": "未归档 {{count}}"
+    "unarchived": "未取消",
+    "unarchivedCount": "未取消 {{count}}"
   },
   "sync": {
     "daysAgo": "{{count}} 天前同步",
@@ -274,7 +274,7 @@
     "loadCommentsFailed": "加载评论失败",
     "loadFailed": "加载失败",
     "noMessagesToSync": "没有可同步的消息",
-    "onlyCreatorArchive": "只有创建人可以归档回路",
+    "onlyCreatorArchive": "只有创建人可以取消回路",
     "operationFailed": "操作失败",
     "removeAssigneeFailed": "移除负责人失败",
     "saved": "已保存",

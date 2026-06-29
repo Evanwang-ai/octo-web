@@ -197,16 +197,16 @@
     "syncing": "Syncing..."
   },
   "status": {
-    "archived": "Archived",
-    "archivedCount": "Archived {{count}}",
-    "cannotChangeArchived": "Archived tasks cannot change status",
+    "archived": "Cancelled",
+    "archivedCount": "Cancelled {{count}}",
+    "cannotChangeArchived": "Cancelled loops cannot change status",
     "clickToChange": "Click to change status",
     "done": "Done",
     "onlyCreatorOrAssignee": "Only the creator or assignees can edit this",
     "open": "In progress",
     "pending": "Pending",
-    "unarchived": "Unarchived",
-    "unarchivedCount": "Unarchived {{count}}"
+    "unarchived": "Active",
+    "unarchivedCount": "Active {{count}}"
   },
   "sync": {
     "daysAgo": "Synced {{count}} days ago",
@@ -274,7 +274,7 @@
     "loadCommentsFailed": "Failed to load comments",
     "loadFailed": "Failed to load",
     "noMessagesToSync": "No messages to sync",
-    "onlyCreatorArchive": "Only the creator can archive this task",
+    "onlyCreatorArchive": "Only the creator can cancel this loop",
     "operationFailed": "Operation failed",
     "removeAssigneeFailed": "Failed to remove assignee",
     "saved": "Saved",
