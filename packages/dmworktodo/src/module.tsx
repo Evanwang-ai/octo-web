@@ -191,7 +191,7 @@ export default class MatterModule implements IModule {
         const m = new Menus(
           MATTER_MAILBOX_MENU_ID,
           "/matter",
-          "收件箱",
+          translate("todo.menu.mailboxTitle"),
           <MailboxIcon />,
           <MailboxIcon active />,
         );

@@ -160,7 +160,8 @@
     "everyone": "@所有人"
   },
   "menu": {
-    "title": "事项"
+    "title": "事项",
+    "mailboxTitle": "收件箱"
   },
   "messageType": {
     "contactCard": "[联系人卡片]",

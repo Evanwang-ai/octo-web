@@ -116,7 +116,9 @@ const MatterWorkspace: React.FC = () => {
     };
   }, []);
 
-  syncMatterAuth({ token, uid, name, spaceId });
+  useEffect(() => {
+    syncMatterAuth({ token, uid, name, spaceId });
+  }, [token, uid, name, spaceId]);
 
   return ReactDOM.createPortal(
     <iframe
