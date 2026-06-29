@@ -223,7 +223,7 @@ export default class MatterModule implements IModule {
     mountGlobalSmartCreateModal();
 
     // Chat integration
-    // this.registerChatContextMenu(); // 已禁用：移除单条消息右键菜单中的"创建事项"选项
+    // this.registerChatContextMenu(); // 已禁用：移除单条消息右键菜单中的"创建回路"选项
     this.registerChatToolbar();
     this.registerChatMatterPanel();
     this.registerChatHeaderIcon();
@@ -322,7 +322,7 @@ export default class MatterModule implements IModule {
 
   /**
    * Register matter icon in chat header (right side).
-   * 点击打开事项列表面板（ChatMatterPanel）。
+   * 点击打开回路列表面板（ChatMatterPanel）。
    */
   private registerChatHeaderIcon(): void {
     WKApp.endpoints.registerChannelHeaderRightItem(
@@ -787,7 +787,7 @@ function GlobalSmartCreateModal() {
       onClose={async () => {
         // 提交中不允许关闭（防止 Escape/native cancel 在 confirm 期间触发 delete）
         if (submittingRef.current) return;
-        // 用户主动取消：关闭弹窗 + 清理孤儿事项
+        // 用户主动取消：关闭弹窗 + 清理孤儿回路
         closedRef.current = true;
         setOpen(false);
         const idToDelete = extractedMatterIdRef.current;
@@ -810,7 +810,7 @@ function GlobalSmartCreateModal() {
         try {
           const matterId = extractedMatterIdRef.current;
           if (matterId) {
-            // 后端在 extractMatter 时已创建事项，这里执行编辑
+            // 后端在 extractMatter 时已创建回路，这里执行编辑
             await updateMatter(matterId, {
               title: req.title,
               description: req.description,

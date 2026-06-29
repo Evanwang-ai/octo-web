@@ -1,8 +1,8 @@
 {
   "action": {
     "add": "添加",
-    "create": "创建事项",
-    "deleteMatter": "删除事项",
+    "create": "创建回路",
+    "deleteMatter": "删除回路",
     "editDescription": "点击编辑描述",
     "editTitle": "点击编辑标题",
     "linkNewGroup": "关联新会话",
@@ -10,7 +10,7 @@
     "loadMoreComments": "加载更多评论",
     "markDone": "标记完成",
     "more": "更多",
-    "new": "新建事项",
+    "new": "新建回路",
     "remove": "移除",
     "reopen": "重新打开",
     "timeSort": "时间排序",
@@ -31,7 +31,7 @@
       "statusChanged": "状态变更",
       "titleChanged": "标题变更"
     },
-    "createdMatter": "创建了事项",
+    "createdMatter": "创建了回路",
     "empty": "暂无变更记录",
     "filter": {
       "all": "全部",
@@ -82,15 +82,15 @@
     "send": "发送"
   },
   "confirm": {
-    "deleteMatter": "确定删除事项「{{title}}」吗？",
+    "deleteMatter": "确定删除回路「{{title}}」吗？",
     "discardUnsaved": "还有未保存的内容，确定关闭吗？",
     "unlinkChannel": "确定取消关联该群聊吗？"
   },
   "create": {
-    "aiExtracting": "AI 正在提取事项...",
-    "sendAndCreate": "发送并创建事项",
-    "smartTitle": "智能创建事项",
-    "title": "新建事项"
+    "aiExtracting": "AI 正在提取回路...",
+    "sendAndCreate": "发送并创建回路",
+    "smartTitle": "智能创建回路",
+    "title": "新建回路"
   },
   "day": {
     "today": "今天",
@@ -113,13 +113,13 @@
     "deadline": "截止日期",
     "goal": "主要目标",
     "goalPlaceholder": "请输入主要目标",
-    "title": "事项名称"
+    "title": "回路名称"
   },
   "filter": {
-    "searchPlaceholder": "搜索事项"
+    "searchPlaceholder": "搜索回路"
   },
   "footer": {
-    "tagline": "由聊天内容驱动的事项协作"
+    "tagline": "由聊天内容驱动的回路协作"
   },
   "label": {
     "assignee": "负责人",
@@ -160,7 +160,7 @@
     "everyone": "@所有人"
   },
   "menu": {
-    "title": "事项",
+    "title": "回路",
     "mailboxTitle": "收件箱"
   },
   "messageType": {
@@ -185,21 +185,21 @@
   },
   "quickAdd": {
     "fullForm": "打开完整表单",
-    "placeholder": "快速添加事项"
+    "placeholder": "快速添加回路"
   },
   "state": {
-    "empty": "暂无事项",
+    "empty": "暂无回路",
     "loadFailed": "加载失败",
     "loadFailedRetry": "加载失败，请稍后重试",
     "loading": "加载中...",
-    "selectMatter": "请选择事项",
+    "selectMatter": "请选择回路",
     "submitting": "提交中...",
     "syncing": "同步中..."
   },
   "status": {
     "archived": "已归档",
     "archivedCount": "已归档 {{count}}",
-    "cannotChangeArchived": "已归档事项不可修改状态",
+    "cannotChangeArchived": "已归档回路不可修改状态",
     "clickToChange": "点击切换状态",
     "done": "已完成",
     "onlyCreatorOrAssignee": "仅创建人或负责人可修改",
@@ -266,7 +266,7 @@
     "aiUnavailable": "AI 服务不可用",
     "assigneeUpdateFailed": "负责人更新失败",
     "createFailed": "创建失败",
-    "created": "已创建事项",
+    "created": "已创建回路",
     "deleteFailed": "删除失败",
     "deleted": "已删除",
     "descriptionUpdateFailed": "描述修改失败",
@@ -274,7 +274,7 @@
     "loadCommentsFailed": "加载评论失败",
     "loadFailed": "加载失败",
     "noMessagesToSync": "没有可同步的消息",
-    "onlyCreatorArchive": "只有创建人可以归档事项",
+    "onlyCreatorArchive": "只有创建人可以归档回路",
     "operationFailed": "操作失败",
     "removeAssigneeFailed": "移除负责人失败",
     "saved": "已保存",
