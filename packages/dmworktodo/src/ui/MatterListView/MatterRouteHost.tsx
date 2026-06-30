@@ -75,13 +75,19 @@ export default function MatterRouteHost() {
   // 行点击 → 详情(暂经 iframe,详情 React 化后改为原生)。
   const openDetail = (matterId: string) => navigateIframe(hashForMatterDetail(matterId));
 
+  // 显示原生列表 —— 统一三处入口(子导航/NavRail/open-workspace),避免 section/view 不同步。
+  const showMatterList = () => {
+    setActive(true);
+    setView("matters");
+    setSection("matters");
+  };
+
   // 子导航:全部回路→原生列表;项目/自动化/经验→iframe(绞杀式)。
   const onNavigate = (key: SubNavKey) => {
-    setSection(key);
     if (key === "matters") {
-      setActive(true);
-      setView("matters");
+      showMatterList();
     } else {
+      setSection(key);
       navigateIframe(SUBNAV_HASH[key]);
     }
   };
@@ -90,9 +96,7 @@ export default function MatterRouteHost() {
     const onMenu = (payload: unknown) => {
       const id = (payload as { menuId?: string } | undefined)?.menuId;
       if (id === MATTER_MENU_ID) {
-        setActive(true);
-        setView("matters");
-        setSection("matters");
+        showMatterList();
       } else if (id === MATTER_MAILBOX_MENU_ID) {
         storeMatterWorkspaceRoute("mailbox");
         navigateIframe(hashForRoute("mailbox"));
@@ -108,8 +112,7 @@ export default function MatterRouteHost() {
         storeMatterWorkspaceRoute("mailbox");
         navigateIframe(hashForRoute("mailbox"));
       } else {
-        setActive(true);
-        setView("matters");
+        showMatterList();
       }
     };
     const onOpenDetail = (payload: unknown) => {

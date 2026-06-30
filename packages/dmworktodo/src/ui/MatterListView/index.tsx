@@ -91,6 +91,53 @@ function MatterRowItem({
   );
 }
 
+function BoardCard({
+  m,
+  project,
+  onOpen,
+}: {
+  m: MatterRow;
+  project?: string;
+  onOpen?: (id: string) => void;
+}) {
+  const leader = m.leader_uid;
+  return (
+    <div
+      className="mlv-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.(m.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen?.(m.id);
+        }
+      }}
+    >
+      <div className="mlv-card-top">
+        <PriorityIcon level={m.priority ?? 0} size={14} />
+        <span className="mlv-card-id">M-{m.seq_no}</span>
+        <span className="mlv-flex" />
+        <span className="mlv-card-date">{relTime(m.last_activity_at || m.updated_at)}</span>
+      </div>
+      <div className="mlv-card-title">{m.title || "无标题"}</div>
+      <div className="mlv-card-foot">
+        {project && <span className="mlv-card-proj">{project}</span>}
+        <span className="mlv-flex" />
+        {leader && (
+          <span className="mlv-card-leader">
+            <WKAvatar
+              channel={new Channel(leader, ChannelTypePerson)}
+              style={{ width: 18, height: 18, borderRadius: "50%" }}
+            />
+            {isBot(leader) && <span className="mlv-ai">AI</span>}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function MatterListView({
   onOpenDetail,
 }: { onOpenDetail?: (id: string) => void } = {}) {
@@ -98,6 +145,7 @@ export default function MatterListView({
   const [tab, setTab] = useState<Tab>("all");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
+  const [layout, setLayout] = useState<"list" | "board">("list");
 
   // 项目 id→名 映射(行内项目 chip)。一次拉取,失败静默。
   useEffect(() => {
@@ -171,6 +219,35 @@ export default function MatterListView({
           ))}
         </div>
         <div className="mlv-tools">
+          <div className="mlv-seg" role="group" aria-label="视图切换">
+            <button
+              type="button"
+              className={`mlv-seg-btn${layout === "list" ? " is-active" : ""}`}
+              onClick={() => setLayout("list")}
+              title="列表"
+              aria-label="列表视图"
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <path d="M5.5 4h7M5.5 8h7M5.5 12h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="3" cy="4" r="1" fill="currentColor" />
+                <circle cx="3" cy="8" r="1" fill="currentColor" />
+                <circle cx="3" cy="12" r="1" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={`mlv-seg-btn${layout === "board" ? " is-active" : ""}`}
+              onClick={() => setLayout("board")}
+              title="看板"
+              aria-label="看板视图"
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="3" width="3.4" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                <rect x="6.3" y="3" width="3.4" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                <rect x="10.6" y="3" width="3.4" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
+              </svg>
+            </button>
+          </div>
           <span className="mlv-count">{matters.length} 个回路</span>
           <button className="mlv-tbtn" disabled title="增量2 接入">
             筛选
@@ -181,11 +258,12 @@ export default function MatterListView({
         </div>
       </div>
 
-      <div className="mlv-list">
-        {loading && <div className="mlv-state">加载中…</div>}
-        {!loading && groups.length === 0 && <div className="mlv-state">暂无回路</div>}
-        {!loading &&
-          groups.map((g) => (
+      {loading && <div className="mlv-state">加载中…</div>}
+      {!loading && groups.length === 0 && <div className="mlv-state">暂无回路</div>}
+
+      {!loading && layout === "list" && (
+        <div className="mlv-list">
+          {groups.map((g) => (
             <div key={g.status} className="mlv-group">
               <button
                 className="mlv-group-head"
@@ -207,12 +285,37 @@ export default function MatterListView({
                 ))}
             </div>
           ))}
-        {hasMore && !loading && (
-          <button className="mlv-more" onClick={loadMore}>
-            加载更多
-          </button>
-        )}
-      </div>
+          {hasMore && (
+            <button className="mlv-more" onClick={loadMore}>
+              加载更多
+            </button>
+          )}
+        </div>
+      )}
+
+      {!loading && layout === "board" && (
+        <div className="mlv-board">
+          {groups.map((g) => (
+            <div key={g.status} className="mlv-col">
+              <div className="mlv-col-head">
+                <StatusIcon status={g.status} size={14} />
+                <span className="mlv-col-label">{g.label}</span>
+                <span className="mlv-col-count">{g.items.length}</span>
+              </div>
+              <div className="mlv-col-cards">
+                {g.items.map((m) => (
+                  <BoardCard
+                    key={m.id}
+                    m={m}
+                    project={m.project_id ? projectMap[m.project_id] : undefined}
+                    onOpen={onOpenDetail}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
