@@ -317,6 +317,10 @@
 }
 
 /* ── 加载更多 ── */
+.mlv-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--wk-brand-tint-06);
+}
 .mlv-more {
   margin: 8px 16px;
   height: 32px;

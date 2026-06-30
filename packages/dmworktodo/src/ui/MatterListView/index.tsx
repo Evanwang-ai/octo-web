@@ -145,7 +145,13 @@ export default function MatterListView({
   const [tab, setTab] = useState<Tab>("all");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
-  const [layout, setLayout] = useState<"list" | "board">("list");
+  const [layout, setLayout] = useState<"list" | "board">(() => {
+    try {
+      return sessionStorage.getItem("mlv.layout") === "board" ? "board" : "list";
+    } catch {
+      return "list";
+    }
+  });
 
   // 项目 id→名 映射(行内项目 chip)。一次拉取,失败静默。
   useEffect(() => {
@@ -162,6 +168,15 @@ export default function MatterListView({
       alive = false;
     };
   }, []);
+
+  // 持久化 list/board 偏好(切走再回保留)。
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("mlv.layout", layout);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [layout]);
 
   const initialFilters = useMemo(
     () =>
@@ -226,8 +241,9 @@ export default function MatterListView({
               onClick={() => setLayout("list")}
               title="列表"
               aria-label="列表视图"
+              aria-pressed={layout === "list"}
             >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path d="M5.5 4h7M5.5 8h7M5.5 12h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                 <circle cx="3" cy="4" r="1" fill="currentColor" />
                 <circle cx="3" cy="8" r="1" fill="currentColor" />
@@ -240,8 +256,9 @@ export default function MatterListView({
               onClick={() => setLayout("board")}
               title="看板"
               aria-label="看板视图"
+              aria-pressed={layout === "board"}
             >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <rect x="2" y="3" width="3.4" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
                 <rect x="6.3" y="3" width="3.4" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" />
                 <rect x="10.6" y="3" width="3.4" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
@@ -285,11 +302,6 @@ export default function MatterListView({
                 ))}
             </div>
           ))}
-          {hasMore && (
-            <button className="mlv-more" onClick={loadMore}>
-              加载更多
-            </button>
-          )}
         </div>
       )}
 
@@ -314,6 +326,14 @@ export default function MatterListView({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && hasMore && (
+        <div className="mlv-footer">
+          <button className="mlv-more" onClick={loadMore}>
+            加载更多
+          </button>
         </div>
       )}
     </div>
