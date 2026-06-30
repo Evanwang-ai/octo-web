@@ -1,7 +1,7 @@
 // L3 | MatterDetailView — 原生 React 回路详情(目标① 替 iframe 详情)。
 // 数据复用 getMatter/listTimeline/listOutputs/addTimelineEntry/transitionMatter。
 // 区块对齐 feat/loop:标题 + 状态 + Brief + 计划(mode) + 进度 timeline + 产出 + 发车 composer + Inspector(状态流转/编号/优先级/发起人/领队/协作者/项目)。
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import WKAvatar from "@octo/base/src/Components/WKAvatar";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import {
@@ -19,8 +19,15 @@ import type {
   TimelineReq,
 } from "../../bridge/types";
 import UserName from "../UserName";
+import { Toast } from "../../utils/toast";
 import { StatusIcon, PriorityIcon, STATUS_ORDER, STATUS_LABEL } from "./icons";
 import "./detail.css";
+
+// 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
+type MatterDetailFull = MatterDetail & {
+  mode?: string;
+  leader_uid?: string;
+};
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 const PRIORITY_LABEL = ["无", "低", "中", "高", "紧急"];
@@ -72,33 +79,51 @@ export default function MatterDetailView({
   projectName?: string;
   onBack?: () => void;
 }) {
-  const [matter, setMatter] = useState<MatterDetail | null>(null);
+  const [matter, setMatter] = useState<MatterDetailFull | null>(null);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [outputs, setOutputs] = useState<MatterOutput[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const reloadTimeline = useCallback(() => {
     listTimeline(matterId)
-      .then((tl) => setTimeline(tl.data || []))
+      .then((tl) => {
+        if (mountedRef.current) setTimeline(tl.data || []);
+      })
       .catch(() => {});
   }, [matterId]);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    Promise.all([getMatter(matterId), listTimeline(matterId), listOutputs(matterId)])
-      .then(([m, tl, out]) => {
-        if (!alive) return;
-        setMatter(m);
-        setTimeline(tl.data || []);
-        setOutputs(out.data || []);
+    // getMatter 关键请求:决定加载态与是否"未找到"。
+    getMatter(matterId)
+      .then((m) => {
+        if (alive) setMatter(m);
       })
       .catch(() => {})
       .finally(() => {
         if (alive) setLoading(false);
       });
+    // timeline / outputs 非关键:各自兜底,失败不拖垮详情。
+    listTimeline(matterId)
+      .then((tl) => {
+        if (alive) setTimeline(tl.data || []);
+      })
+      .catch(() => {});
+    listOutputs(matterId)
+      .then((out) => {
+        if (alive) setOutputs(out.data || []);
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -110,21 +135,23 @@ export default function MatterDetailView({
     setSending(true);
     try {
       await addTimelineEntry(matterId, { content: text } as TimelineReq);
+      if (!mountedRef.current) return;
       setDraft("");
       reloadTimeline();
     } catch {
-      /* surfaced by toast layer elsewhere */
+      if (mountedRef.current) Toast.error("发送失败");
     } finally {
-      setSending(false);
+      if (mountedRef.current) setSending(false);
     }
   };
 
-  const changeStatus = async (status: MatterStatus) => {
+  const changeStatus = async (status: string) => {
     try {
-      const m = await transitionMatter(matterId, status);
-      setMatter(m);
+      const m = await transitionMatter(matterId, status as MatterStatus);
+      if (mountedRef.current) setMatter(m);
     } catch {
-      /* invalid transition rejected by backend */
+      // 非法流转被后端拒绝(400/409):受控 select 自动回弹到 matter.status,补提示。
+      if (mountedRef.current) Toast.error("状态流转被拒绝");
     }
   };
 
@@ -180,10 +207,10 @@ export default function MatterDetailView({
           <div className="mdv-section-head">
             进度<span className="mdv-section-count">{timeline.length} 条</span>
           </div>
-          <div className="mdv-timeline">
+          <div className="mdv-timeline" role="list">
             {timeline.length === 0 && <div className="mdv-empty">还没有动态</div>}
             {timeline.map((e) => (
-              <div key={e.id} className="mdv-tl-row">
+              <div key={e.id} className="mdv-tl-row" role="listitem">
                 <span className="mdv-tl-av">
                   <WKAvatar
                     channel={new Channel(e.user_id, ChannelTypePerson)}
@@ -229,6 +256,7 @@ export default function MatterDetailView({
         <div className="mdv-composer">
           <input
             className="mdv-input"
+            aria-label="添加进展"
             placeholder="说一句 — 会记进这单的动态"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -254,8 +282,9 @@ export default function MatterDetailView({
         <div className="mdv-insp-status">
           <select
             className="mdv-status-sel"
+            aria-label="状态"
             value={matter.status}
-            onChange={(e) => changeStatus(e.target.value as MatterStatus)}
+            onChange={(e) => changeStatus(e.target.value)}
           >
             {STATUS_ORDER.map((s) => (
               <option key={s} value={s}>
