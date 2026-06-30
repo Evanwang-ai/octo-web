@@ -20,8 +20,15 @@ import {
   hashForMatterDetail,
 } from "../../pages/matterWorkspaceBridge";
 import MatterListView from "./index";
+import MatterSubNav, { SubNavKey } from "./MatterSubNav";
 
 type View = "matters" | "iframe";
+
+const SUBNAV_HASH: Record<Exclude<SubNavKey, "matters">, string> = {
+  projects: "#/projects",
+  automation: "#/automation",
+  cards: "#/cards",
+};
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -31,6 +38,7 @@ export default function MatterRouteHost() {
   const [view, setView] = useState<View>(
     menuId === MATTER_MAILBOX_MENU_ID ? "iframe" : "matters",
   );
+  const [section, setSection] = useState<SubNavKey>("matters");
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   // refs 镜像,避免总线监听器(空依赖,只注册一次)读到 stale 闭包值。
   const iframeSrcRef = useRef<string | null>(null);
@@ -67,12 +75,24 @@ export default function MatterRouteHost() {
   // 行点击 → 详情(暂经 iframe,详情 React 化后改为原生)。
   const openDetail = (matterId: string) => navigateIframe(hashForMatterDetail(matterId));
 
+  // 子导航:全部回路→原生列表;项目/自动化/经验→iframe(绞杀式)。
+  const onNavigate = (key: SubNavKey) => {
+    setSection(key);
+    if (key === "matters") {
+      setActive(true);
+      setView("matters");
+    } else {
+      navigateIframe(SUBNAV_HASH[key]);
+    }
+  };
+
   useEffect(() => {
     const onMenu = (payload: unknown) => {
       const id = (payload as { menuId?: string } | undefined)?.menuId;
       if (id === MATTER_MENU_ID) {
         setActive(true);
         setView("matters");
+        setSection("matters");
       } else if (id === MATTER_MAILBOX_MENU_ID) {
         storeMatterWorkspaceRoute("mailbox");
         navigateIframe(hashForRoute("mailbox"));
@@ -114,27 +134,33 @@ export default function MatterRouteHost() {
 
   return createPortal(
     <div className="mlv-host" style={{ display: active ? "block" : "none" }}>
-      <div
-        className="mlv-host-pane"
-        style={{ display: view === "matters" ? "block" : "none", height: "100%" }}
-      >
-        <MatterListView onOpenDetail={openDetail} />
+      <div className="mlv-host-row">
+        {/* 子导航:列表态显示原生导航;iframe 表面让 SPA 自带导航接管(避免双栏)。 */}
+        {view === "matters" && <MatterSubNav current={section} onNavigate={onNavigate} />}
+        <div className="mlv-host-content">
+          <div
+            className="mlv-host-pane"
+            style={{ display: view === "matters" ? "block" : "none" }}
+          >
+            <MatterListView onOpenDetail={openDetail} />
+          </div>
+          {iframeSrc && (
+            <iframe
+              title="回路"
+              className="mlv-host-iframe"
+              src={iframeSrc}
+              style={{ display: view === "iframe" ? "block" : "none" }}
+              onLoad={() => {
+                iframeLoadedRef.current = true;
+                if (pendingHashRef.current) {
+                  postNavigateToIframe(pendingHashRef.current);
+                  pendingHashRef.current = null;
+                }
+              }}
+            />
+          )}
+        </div>
       </div>
-      {iframeSrc && (
-        <iframe
-          title="回路"
-          className="mlv-host-iframe"
-          src={iframeSrc}
-          style={{ display: view === "iframe" ? "block" : "none" }}
-          onLoad={() => {
-            iframeLoadedRef.current = true;
-            if (pendingHashRef.current) {
-              postNavigateToIframe(pendingHashRef.current);
-              pendingHashRef.current = null;
-            }
-          }}
-        />
-      )}
     </div>,
     document.body,
   );
