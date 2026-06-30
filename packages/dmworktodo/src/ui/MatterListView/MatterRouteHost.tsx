@@ -14,15 +14,12 @@ import {
   takePendingMatterDetailId,
   storeMatterWorkspaceRoute,
 } from "../../pages/MatterWorkspace";
-import {
-  postNavigateToIframe,
-  hashForRoute,
-  hashForMatterDetail,
-} from "../../pages/matterWorkspaceBridge";
+import { postNavigateToIframe, hashForRoute } from "../../pages/matterWorkspaceBridge";
 import MatterListView from "./index";
 import MatterSubNav, { SubNavKey } from "./MatterSubNav";
+import MatterDetailView from "./MatterDetailView";
 
-type View = "matters" | "iframe";
+type View = "matters" | "iframe" | "detail";
 
 const SUBNAV_HASH: Record<Exclude<SubNavKey, "matters">, string> = {
   projects: "#/projects",
@@ -39,6 +36,7 @@ export default function MatterRouteHost() {
     menuId === MATTER_MAILBOX_MENU_ID ? "iframe" : "matters",
   );
   const [section, setSection] = useState<SubNavKey>("matters");
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   // refs 镜像,避免总线监听器(空依赖,只注册一次)读到 stale 闭包值。
   const iframeSrcRef = useRef<string | null>(null);
@@ -72,8 +70,13 @@ export default function MatterRouteHost() {
     }
   };
 
-  // 行点击 → 详情(暂经 iframe,详情 React 化后改为原生)。
-  const openDetail = (matterId: string) => navigateIframe(hashForMatterDetail(matterId));
+  // 行/卡片点击 → 原生详情(MatterDetailView)。
+  const openDetail = (matterId: string) => {
+    setActive(true);
+    setDetailId(matterId);
+    setView("detail");
+    setSection("matters");
+  };
 
   // 显示原生列表 —— 统一三处入口(子导航/NavRail/open-workspace),避免 section/view 不同步。
   const showMatterList = () => {
@@ -138,8 +141,10 @@ export default function MatterRouteHost() {
   return createPortal(
     <div className="mlv-host" style={{ display: active ? "block" : "none" }}>
       <div className="mlv-host-row">
-        {/* 子导航:列表态显示原生导航;iframe 表面让 SPA 自带导航接管(避免双栏)。 */}
-        {view === "matters" && <MatterSubNav current={section} onNavigate={onNavigate} />}
+        {/* 子导航:列表/详情态显示原生导航;iframe 表面让 SPA 自带导航接管(避免双栏)。 */}
+        {(view === "matters" || view === "detail") && (
+          <MatterSubNav current={section} onNavigate={onNavigate} />
+        )}
         <div className="mlv-host-content">
           <div
             className="mlv-host-pane"
@@ -147,6 +152,9 @@ export default function MatterRouteHost() {
           >
             <MatterListView onOpenDetail={openDetail} />
           </div>
+          {view === "detail" && detailId && (
+            <MatterDetailView key={detailId} matterId={detailId} onBack={showMatterList} />
+          )}
           {iframeSrc && (
             <iframe
               title="回路"
