@@ -2,11 +2,12 @@
 // 数据复用 useMatterList + todoApi;UI 用 dmworkbase 原子 + --wk-* 砌 S1 设计。
 // 增量1:状态分组 + 密集行(优先级/状态/标题/M-id/领队/日期)+ Tab。
 // 待续(增量2+):项目名 chip、详情导航、Display/筛选面板、批量、看板。
-import React, { useMemo, useState } from "react";
-import { WKApp, useI18n } from "@octo/base";
+import React, { useEffect, useMemo, useState } from "react";
+import { WKApp } from "@octo/base";
 import WKAvatar from "@octo/base/src/Components/WKAvatar";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import { useMatterList } from "../../hooks/useTodoList";
+import { listProjects } from "../../api/todoApi";
 import type { Matter } from "../../bridge/types";
 import UserName from "../UserName";
 import { PriorityIcon, StatusIcon, STATUS_ORDER, STATUS_LABEL } from "./icons";
@@ -39,7 +40,15 @@ function relTime(iso?: string): string {
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 
-function MatterRowItem({ m, onOpen }: { m: MatterRow; onOpen?: (id: string) => void }) {
+function MatterRowItem({
+  m,
+  project,
+  onOpen,
+}: {
+  m: MatterRow;
+  project?: string;
+  onOpen?: (id: string) => void;
+}) {
   const leader = m.leader_uid;
   return (
     <div
@@ -63,6 +72,7 @@ function MatterRowItem({ m, onOpen }: { m: MatterRow; onOpen?: (id: string) => v
       <span className="mlv-title">{m.title || "无标题"}</span>
       {m.has_children && <span className="mlv-subicon" title="含子任务">⋯</span>}
       <span className="mlv-flex" />
+      {project && <span className="mlv-proj">{project}</span>}
       <span className="mlv-id">M-{m.seq_no}</span>
       {leader && (
         <span className="mlv-leader">
@@ -84,10 +94,26 @@ function MatterRowItem({ m, onOpen }: { m: MatterRow; onOpen?: (id: string) => v
 export default function MatterListView({
   onOpenDetail,
 }: { onOpenDetail?: (id: string) => void } = {}) {
-  const { t } = useI18n();
   const myUid = WKApp.loginInfo.uid ?? "";
   const [tab, setTab] = useState<Tab>("all");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [projectMap, setProjectMap] = useState<Record<string, string>>({});
+
+  // 项目 id→名 映射(行内项目 chip)。一次拉取,失败静默。
+  useEffect(() => {
+    let alive = true;
+    listProjects()
+      .then((ps) => {
+        if (!alive) return;
+        const map: Record<string, string> = {};
+        ps.forEach((p) => (map[p.id] = p.name));
+        setProjectMap(map);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const initialFilters = useMemo(
     () =>
@@ -129,7 +155,7 @@ export default function MatterListView({
   return (
     <div className="mlv">
       <div className="mlv-head">
-        <h1 className="mlv-h1">{t("todo.menu.title") || "全部回路"}</h1>
+        <h1 className="mlv-h1">全部回路</h1>
       </div>
 
       <div className="mlv-toolbar">
@@ -172,7 +198,12 @@ export default function MatterListView({
               </button>
               {!collapsed[g.status] &&
                 g.items.map((m) => (
-                  <MatterRowItem key={m.id} m={m} onOpen={onOpenDetail} />
+                  <MatterRowItem
+                    key={m.id}
+                    m={m}
+                    project={m.project_id ? projectMap[m.project_id] : undefined}
+                    onOpen={onOpenDetail}
+                  />
                 ))}
             </div>
           ))}

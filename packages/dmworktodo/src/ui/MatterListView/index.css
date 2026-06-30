@@ -194,6 +194,15 @@
 .mlv-flex {
   flex: 1 1 auto;
 }
+.mlv-proj {
+  flex: 0 0 auto;
+  max-width: 120px;
+  font-size: 12.5px;
+  color: var(--wk-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .mlv-id {
   flex: 0 0 auto;
   font-family: var(--wk-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
