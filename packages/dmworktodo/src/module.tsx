@@ -6,7 +6,7 @@ import { ChannelTypeGroup } from "wukongimjssdk";
 import WKSDK from "wukongimjssdk";
 // matter-v2: route content swapped to the embedded workspace served by
 // octo-matter; the legacy TodoPage panel is retired (chat integrations stay).
-import MatterPage, {
+import {
   MATTER_MAILBOX_MENU_ID,
   MATTER_MENU_ID,
   storeMatterWorkspaceRoute,
@@ -16,6 +16,7 @@ import ChatMatterPanel from "./panel/ChatTodoPanel";
 import MatterDetailPanel from "./panel/MatterDetailPanel";
 import MatterLinkMenu from "./ui/MatterLinkMenu";
 import SmartCreateModal from "./ui/SmartCreateModal";
+import MatterRouteHost from "./ui/MatterListView/MatterRouteHost"; // matter-react: 原生列表宿主(绞杀式·替代 iframe 列表)
 import {
   createMatter,
   extractMatter,
@@ -162,7 +163,9 @@ export default class MatterModule implements IModule {
     });
 
     // Register route
-    WKApp.route.register("/matter", () => <MatterPage />);
+    // matter-react 绞杀式迁移:回路列表走原生 React(MatterListView),其余表面(详情/收件箱/项目…)
+    // 暂留 iframe(MatterPage)。增量1 仅列表;待补模块壳 + 子路由后再分流。
+    WKApp.route.register("/matter", () => <MatterRouteHost />);
 
     // Register NavRail menu item (sort=4001, after contacts=4000)
     WKApp.menus.register(
