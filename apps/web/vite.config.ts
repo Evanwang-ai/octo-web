@@ -131,6 +131,18 @@ export default defineConfig(({ mode }) => {
             ? (path: string) => path.replace(/^\/matter/, "")
             : undefined,
         },
+        // Matter embedded SPA (vanilla, served by the matter service) — proxy the UI HTML+assets
+        // path so the Loop iframe (/matter/ui/?embed=1) loads the real SPA from the docker gateway
+        // instead of vite's SPA fallback (which would recursively render octo-web → infinite iframe
+        // nesting). Temporary bridge until Matter is rebuilt as a native React module (no iframe).
+        "/matter/ui": {
+          target: env.VITE_MATTER_API_URL || apiOrigin,
+          changeOrigin: true,
+          secure: false,
+          rewrite: env.VITE_MATTER_API_URL
+            ? (path: string) => path.replace(/^\/matter/, "")
+            : undefined,
+        },
         "/api/": {
           target: apiOrigin,
           changeOrigin: true,
