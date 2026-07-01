@@ -22,6 +22,8 @@ import type {
   PreferenceCard,
   UpdatePreferenceCardReq,
   CreatePreferenceCardReq,
+  Schedule,
+  SaveScheduleReq,
 } from "../bridge/types";
 
 /**
@@ -387,4 +389,26 @@ export async function createPreferenceCard(
 
 export async function deletePreferenceCard(id: string): Promise<void> {
   return del<void>(`/preference-cards/${id}`);
+}
+
+// ─── Schedules (自动化) ─────────────────────────────────
+
+export async function listSchedules(): Promise<Schedule[]> {
+  return unwrapList(await get<{ data: Schedule[] } | Schedule[]>("/schedules"));
+}
+
+export async function createSchedule(req: SaveScheduleReq): Promise<Schedule> {
+  return post<Schedule>("/schedules", req);
+}
+
+/** 全量更新 + 开关(toggle)共用:传 Partial 即可。 */
+export async function updateSchedule(
+  id: string,
+  req: Partial<SaveScheduleReq> & { enabled?: boolean },
+): Promise<Schedule> {
+  return put<Schedule>(`/schedules/${id}`, req);
+}
+
+export async function deleteSchedule(id: string): Promise<void> {
+  return del<void>(`/schedules/${id}`);
 }

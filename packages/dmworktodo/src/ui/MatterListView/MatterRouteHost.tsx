@@ -19,8 +19,9 @@ import MatterListView from "./index";
 import MatterSubNav, { SubNavKey } from "./MatterSubNav";
 import MatterDetailView from "./MatterDetailView";
 import CardsView from "./CardsView";
+import AutomationView from "./AutomationView";
 
-type View = "matters" | "iframe" | "detail" | "cards";
+type View = "matters" | "iframe" | "detail" | "cards" | "automation";
 
 const SUBNAV_HASH: Record<Exclude<SubNavKey, "matters">, string> = {
   projects: "#/projects",
@@ -92,13 +93,25 @@ export default function MatterRouteHost() {
     setView("cards");
     setSection("cards");
   };
+  // 显示原生自动化页(替 iframe 列表;巨型 create/edit modal 仍走 iframe 编辑器)。
+  const showAutomation = () => {
+    setActive(true);
+    setView("automation");
+    setSection("automation");
+  };
+  const openAutomationEditor = () => {
+    setSection("automation");
+    navigateIframe(SUBNAV_HASH.automation);
+  };
 
-  // 子导航:全部回路/经验→原生;项目/自动化→iframe(绞杀式,逐个迁)。
+  // 子导航:全部回路/经验/自动化→原生;项目→iframe(绞杀式,逐个迁)。
   const onNavigate = (key: SubNavKey) => {
     if (key === "matters") {
       showMatterList();
     } else if (key === "cards") {
       showCards();
+    } else if (key === "automation") {
+      showAutomation();
     } else {
       setSection(key);
       navigateIframe(SUBNAV_HASH[key]);
@@ -152,7 +165,10 @@ export default function MatterRouteHost() {
     <div className="mlv-host" style={{ display: active ? "block" : "none" }}>
       <div className="mlv-host-row">
         {/* 子导航:列表/详情/经验(原生态)显示原生导航;iframe 表面让 SPA 自带导航接管(避免双栏)。 */}
-        {(view === "matters" || view === "detail" || view === "cards") && (
+        {(view === "matters" ||
+          view === "detail" ||
+          view === "cards" ||
+          view === "automation") && (
           <MatterSubNav current={section} onNavigate={onNavigate} />
         )}
         <div className="mlv-host-content">
@@ -166,6 +182,7 @@ export default function MatterRouteHost() {
             <MatterDetailView key={detailId} matterId={detailId} onBack={showMatterList} />
           )}
           {view === "cards" && <CardsView />}
+          {view === "automation" && <AutomationView onOpenEditor={openAutomationEditor} />}
           {iframeSrc && (
             <iframe
               title="回路"

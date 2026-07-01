@@ -355,6 +355,46 @@ export interface CreatePreferenceCardReq {
   avoid?: string;
 }
 
+// ─── Schedules (自动化) ─────────────────────────────────
+
+/**
+ * Schedule — 定时自动化规则(让 bot 按点执行 runbook)。
+ * output_mode: "track"(产出进回路列表)/ "runonly"(发到目标群 target_channel)。
+ * enabled/… 后端返回 int 0/1,判真用 !!。字段以 feat/loop 活 API 实测为准。
+ */
+export interface Schedule {
+  id: string;
+  space_id: string;
+  title: string;
+  runbook: string;
+  cron_expr: string;
+  timezone: string;
+  executor_uid: string;
+  output_mode: string;
+  target_channel_id?: string;
+  target_channel_name?: string;
+  project_id?: string;
+  creator_id: string;
+  enabled: number | boolean;
+  last_run_at?: string;
+  next_run_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaveScheduleReq {
+  title: string;
+  runbook: string;
+  cron_expr: string;
+  timezone: string;
+  executor_uid: string;
+  output_mode: string;
+  target_channel_id?: string | null;
+  target_channel_name?: string | null;
+  project_id?: string | null;
+  enabled?: boolean;
+}
+
 // ─── API error ──────────────────────────────────────────
 
 export interface ApiError {
