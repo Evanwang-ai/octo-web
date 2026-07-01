@@ -197,10 +197,12 @@ function MatterRowItem({
 function BoardCard({
   m,
   project,
+  props,
   on,
 }: {
   m: MatterRow;
   project?: string;
+  props: DisplayProps;
   on: RowHandlers;
 }) {
   // 看板显示人对齐 vanilla:领队优先,无则退 assignees[0];others>0 时缀"等 N 人"。
@@ -240,24 +242,28 @@ function BoardCard({
       onContextMenu={(e) => on.context(e, m)}
     >
       <div className="mlv-card-top">
-        <button
-          type="button"
-          className="mlv-icon-btn"
-          title="改优先级"
-          aria-label="优先级"
-          onClick={(e) => on.priorityMenu(e, m)}
-        >
-          <PriorityIcon level={m.priority ?? 0} size={14} />
-        </button>
-        <span className="mlv-card-id">M-{m.seq_no}</span>
+        {props.priority !== false && (
+          <button
+            type="button"
+            className="mlv-icon-btn"
+            title="改优先级"
+            aria-label="优先级"
+            onClick={(e) => on.priorityMenu(e, m)}
+          >
+            <PriorityIcon level={m.priority ?? 0} size={14} />
+          </button>
+        )}
+        {props.id !== false && <span className="mlv-card-id">M-{m.seq_no}</span>}
         <span className="mlv-flex" />
-        <span className="mlv-card-date">{relTime(m.last_activity_at || m.updated_at)}</span>
+        {props.startDate !== false && (
+          <span className="mlv-card-date">{relTime(m.last_activity_at || m.updated_at)}</span>
+        )}
       </div>
       <div className="mlv-card-title">{m.title || "无标题"}</div>
       <div className="mlv-card-foot">
-        {project && <span className="mlv-card-proj">{project}</span>}
+        {props.project !== false && project && <span className="mlv-card-proj">{project}</span>}
         <span className="mlv-flex" />
-        {displayed && (
+        {props.assignee !== false && displayed && (
           <span className="mlv-card-leader">
             <WKAvatar
               channel={new Channel(displayed, ChannelTypePerson)}
@@ -681,6 +687,7 @@ export default function MatterListView({
                     key={m.id}
                     m={m}
                     project={m.project_id ? projectMap[m.project_id] : undefined}
+                    props={viewSpec.displayProps}
                     on={rowHandlers}
                   />
                 ))}

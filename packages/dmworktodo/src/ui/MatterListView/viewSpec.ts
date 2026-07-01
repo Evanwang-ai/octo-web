@@ -97,18 +97,30 @@ export const VIEW_SPEC_DEFAULTS: ViewSpec = {
 // 独立 sessionStorage key —— 与 vanilla iframe 的 octo-view-v2:* 隔离(同源共享 storage,避免结构互踩)。
 const SS_KEY = "mlv.viewspec";
 
+// 校验 filters 类型:损坏/旧 JSON 里 statuses 若非数组,后续 .includes() 会崩 —— 归一化兜底。
+function normalizeFilters(f: unknown): MatterFilters {
+  const o = (f || {}) as Record<string, unknown>;
+  return {
+    statuses: Array.isArray(o.statuses)
+      ? (o.statuses as unknown[]).filter((s): s is string => typeof s === "string")
+      : [],
+    creator: typeof o.creator === "string" ? o.creator : "",
+    project: typeof o.project === "string" ? o.project : "",
+  };
+}
+
 export function loadViewSpec(): ViewSpec {
   try {
     const raw = sessionStorage.getItem(SS_KEY);
     if (!raw) return { ...VIEW_SPEC_DEFAULTS };
     const p = JSON.parse(raw);
-    // 深合并默认,容忍旧结构/缺字段。
+    // 深合并默认 + 类型归一化,容忍旧结构/缺字段/损坏值。
     return {
       ...VIEW_SPEC_DEFAULTS,
       ...p,
       displayProps: { ...VIEW_SPEC_DEFAULTS.displayProps, ...(p.displayProps || {}) },
       board: { ...VIEW_SPEC_DEFAULTS.board, ...(p.board || {}) },
-      filters: { ...VIEW_SPEC_DEFAULTS.filters, ...(p.filters || {}) },
+      filters: normalizeFilters(p.filters),
     };
   } catch {
     return { ...VIEW_SPEC_DEFAULTS };

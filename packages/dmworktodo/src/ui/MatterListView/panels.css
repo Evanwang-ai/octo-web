@@ -1,10 +1,12 @@
 /* L3 | Display/Filter popover 样式 — 一切色取 dmworkbase --wk-*。
    被 DisplayPanel/FilterMenu 共用;锚定在工具条按钮下方右对齐。 */
 
-/* 锚点(包住触发按钮 + popover) */
+/* 锚点(包住触发按钮 + popover)。z-index 高于遮罩(940),
+   使另一个触发按钮在某 popover 打开时仍可一次点中切换,而非先撞遮罩。 */
 .mlv-pop-anchor {
   position: relative;
   display: inline-flex;
+  z-index: 942;
 }
 
 /* 全屏透明遮罩:捕获外部点击关闭 */
