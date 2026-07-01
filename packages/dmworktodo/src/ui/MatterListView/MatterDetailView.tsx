@@ -1,9 +1,9 @@
 /**
  * [INPUT]: 依赖 api/todoApi 的 getMatter/listTimeline/listOutputs/listActivities/addTimelineEntry/
- *          transitionMatter/updateMatter/listProjects;@octo/base 的 WKApp/WKAvatar/ContextMenus;
+ *          transitionMatter/updateMatter/listProjects/getIterations;@octo/base 的 WKApp/WKAvatar/ContextMenus;
  *          ./rowMenus 的 priorityMenu、./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
  * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker·review banner/Brief/计划(mode)/
- *          进度(activities)/动态(timeline)/产出/发车 composer/Inspector[状态·优先级·项目 可编辑])。
+ *          迭代(iterations 轮次)/进度(activities)/动态(timeline)/产出/发车 composer/Inspector[状态·优先级·项目 可编辑])。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
  *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -22,7 +22,9 @@ import {
   transitionMatter,
   updateMatter,
   listProjects,
+  getIterations,
 } from "../../api/todoApi";
+import type { MatterIterations } from "../../api/todoApi";
 import type {
   MatterDetail,
   TimelineEntry,
@@ -53,6 +55,14 @@ const MODE_LABEL: Record<string, string> = {
   roundtable: "圆桌",
   swarm: "蜂群",
   single: "单兵",
+};
+// 迭代轮次结果人话(/iterations outcome + current_outcome)。
+const OUTCOME_LABEL: Record<string, string> = {
+  pending_review: "待确认",
+  accepted: "已通过",
+  needs_revision: "需修改",
+  rejected: "已否决",
+  in_progress: "进行中",
 };
 
 // activities 人话(对齐 vanilla actHuman);detail 形状随 action 变。
@@ -134,6 +144,7 @@ export default function MatterDetailView({
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [outputs, setOutputs] = useState<MatterOutput[]>([]);
   const [activities, setActivities] = useState<MatterActivity[]>([]);
+  const [iterations, setIterations] = useState<MatterIterations | null>(null);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -191,6 +202,12 @@ export default function MatterDetailView({
     listActivities(matterId, { limit: 20 })
       .then((ac) => {
         if (alive) setActivities(ac.data || []);
+      })
+      .catch(() => {});
+    // 迭代轮次:非关键,失败静默(单兵/无多轮的回路可能返回空或 404)。
+    getIterations(matterId)
+      .then((it) => {
+        if (alive) setIterations(it);
       })
       .catch(() => {});
     return () => {
@@ -333,6 +350,41 @@ export default function MatterDetailView({
           <div className="mdv-plan">
             <span className="mdv-plan-label">计划</span>
             <span className="mdv-plan-mode">{MODE_LABEL[matter.mode] || matter.mode}</span>
+          </div>
+        )}
+
+        {/* 迭代轮次(/iterations):领队多轮提交/反馈周期。current_outcome=当前态。 */}
+        {iterations && iterations.rounds.length > 0 && (
+          <div className="mdv-section">
+            <div className="mdv-section-head">
+              迭代<span className="mdv-section-count">{iterations.total_rounds} 轮</span>
+              {iterations.current_outcome && (
+                <span
+                  className="mdv-iter-outcome"
+                  data-outcome={iterations.current_outcome}
+                >
+                  {OUTCOME_LABEL[iterations.current_outcome] || iterations.current_outcome}
+                </span>
+              )}
+            </div>
+            <div className="mdv-iters" role="list">
+              {iterations.rounds.map((r) => (
+                <div key={r.round} className="mdv-iter" role="listitem">
+                  <span className="mdv-iter-round">第 {r.round} 轮</span>
+                  <span className="mdv-iter-badge" data-outcome={r.outcome || ""}>
+                    {OUTCOME_LABEL[r.outcome || ""] || r.outcome || "—"}
+                  </span>
+                  {r.submitted_by && (
+                    <span className="mdv-iter-by">
+                      <UserName uid={r.submitted_by} />
+                    </span>
+                  )}
+                  <span className="mdv-iter-time">
+                    {relTime(r.submitted_at || r.started_at)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

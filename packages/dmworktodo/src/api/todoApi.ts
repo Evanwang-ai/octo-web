@@ -279,6 +279,64 @@ export async function deleteTimelineEntry(
   return del<void>(`/matters/${matterId}/timeline/${entryId}`);
 }
 
+// ─── 详情长尾(tree / iterations / feedback / send-back)──────────
+// 后端 feat/loop 全就绪(curl 实测:tree/iterations 200、feedback/send-back 路由在)。
+// 类型本地定义(照 ProjectItem/Schedule 先例,additive,不动共享 MatterStatus)。
+
+/** 一轮迭代(critic/roundtable 等模式下领队多轮提交的记录)。 */
+export interface IterationRound {
+  round: number;
+  started_at?: string;
+  submitted_at?: string;
+  submitted_by?: string;
+  outcome?: string; // pending_review / accepted / needs_revision …
+}
+export interface MatterIterations {
+  matter_id: string;
+  total_rounds: number;
+  current_outcome?: string;
+  rounds: IterationRound[];
+}
+export async function getIterations(matterId: string): Promise<MatterIterations> {
+  return get<MatterIterations>(`/matters/${matterId}/iterations`);
+}
+
+/** 回路树节点(递归):matter + 协作模式契约 + 子节点。plan/角色图与派子任务的数据源。 */
+export interface MatterTreeNode {
+  matter: MatterDetail & {
+    mode?: string;
+    leader_uid?: string;
+    project_id?: string;
+    has_children?: boolean;
+  };
+  mode?: string;
+  children: MatterTreeNode[];
+  barrier_state?: string; // none / waiting / ready …
+  join_ready?: boolean;
+  contract?: { inputs?: string; report_to?: string; visibility?: string };
+}
+export async function getMatterTree(matterId: string): Promise<MatterTreeNode> {
+  return get<MatterTreeNode>(`/matters/${matterId}/tree`);
+}
+
+/** "圈一笔"人类批注(feedback_handler.go feedbackReq 实测):content 必填,可锚到 timeline
+ *  条目(entry_id)或结构化锚点(anchor,如选中文字);target_uid 指定针对谁。仅人类可发。
+ *  注:"需要修改"打回 = status 流转 review→in_progress(transitionMatter),非本请求字段。 */
+export interface FeedbackReq {
+  content: string;
+  entry_id?: string;
+  anchor?: unknown; // 结构化锚点(json.RawMessage),如 {selection,...}
+  target_uid?: string;
+}
+export async function addFeedback(matterId: string, req: FeedbackReq): Promise<void> {
+  return post<void>(`/matters/${matterId}/feedback`, req);
+}
+
+/** 发回来源群(把回路进展推回来源 IM 会话)。无 body,后端返 {status:queued}(agent_handler SendBack)。 */
+export async function sendBack(matterId: string): Promise<void> {
+  return post<void>(`/matters/${matterId}/send-back`, {});
+}
+
 // ─── 项目共享上下文（设计 06 §9.3:来源=聊天记录引用）────────
 
 // 富字段(getProjects 实测返回);id/name 为核心,其余可选 —— 老消费方(只用 id/name)不受影响。

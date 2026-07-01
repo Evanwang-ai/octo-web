@@ -21,7 +21,7 @@ AutomationView.tsx: 原生自动化列表(替 iframe 列表),listSchedules + cro
 automation.css: 自动化页样式(开关/卡片),全 --wk-*。
 ProjectsView.tsx: 原生项目列表(替 iframe 列表),listProjects(富字段)+ 名称/领队/范围/创建 表格 + 新建项目 modal(name+scope→createProject)+ 归档切换(updateProject archived,乐观+pending)+ 显示已归档;项目详情(内嵌看板/成员/上下文,GET /projects/:id 404 靠列表缓存)暂走 iframe(onOpenDetail→#/project/:id 单数)。真相源 vanilla renderProjects。
 projects.css: 项目页样式(表格行/新建 modal),全 --wk-*。
-MatterDetailView.tsx: 原生详情,getMatter/listTimeline/listOutputs/listActivities;区块:标题/状态/**blocker·"轮到你了"review banner**/Brief/计划(mode)/**进度=activities 审计轨迹(actHuman 人话)**/动态=timeline/产出=outputs/发车 composer(addTimelineEntry);Inspector:状态 select、优先级(**可编辑**→ContextMenus+updateMatter,补 vanilla 未接线按钮)、项目(**可编辑 select**→updateMatter project_id)、编号/发起人/领队/协作者(只读,对齐 vanilla)。真相源 vanilla paintMatter/paintInspector。
+MatterDetailView.tsx: 原生详情,getMatter/listTimeline/listOutputs/listActivities/**getIterations**;区块:标题/状态/**blocker·"轮到你了"review banner**/Brief/计划(mode)/**迭代=iterations 轮次(第N轮+outcome 徽章 待确认/已通过/需修改)**/**进度=activities 审计轨迹(actHuman 人话)**/动态=timeline/产出=outputs/发车 composer(addTimelineEntry);Inspector:状态 select、优先级(**可编辑**→ContextMenus+updateMatter)、项目(**可编辑 select**→updateMatter project_id)、编号/发起人/领队/协作者(只读,对齐 vanilla)。**详情长尾(P1)**:todoApi 新增 getIterations/getMatterTree/addFeedback/sendBack(feat/loop 后端就绪,curl 实测)。真相源 vanilla paintMatter/paintInspector。
 detail.css: 详情 + Inspector 样式,全 `--wk-*`。
 
 法则: 成员完整·一行一文件·复用设计系统件·真相源 vanilla feat/loop·不碰 Go 后端
