@@ -218,6 +218,15 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
             >
                 {m.icon && <CtxIcon path={m.icon} />}
                 <span style={{ flex: 1 }}>{m.title}</span>
+                {m.checked && !hasChildren && (
+                    <span style={{
+                        color: 'var(--wk-brand-primary, #1C1C23)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        flexShrink: 0,
+                        marginLeft: 4,
+                    }}>✓</span>
+                )}
                 {hasChildren && (
                     <>
                         <ArrowIcon />

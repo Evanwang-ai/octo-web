@@ -101,7 +101,37 @@
 /* ── 标题 ── */
 .mlv-head {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 22px 28px 8px;
+}
+/* 主操作:新建回路(品牌黑) */
+.mlv-new {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.mlv-new:hover {
+  background: var(--wk-brand-primary-hover);
+}
+.mlv-new-plus {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  margin-top: -1px;
 }
 .mlv-h1 {
   margin: 0;
@@ -230,13 +260,59 @@
   gap: 8px;
   height: 40px;
   margin: 0 8px;
-  padding: 0 10px 0 28px;
+  padding: 0 10px;
   border-radius: var(--wk-r-md, 8px);
   cursor: pointer;
   transition: background 0.1s;
 }
 .mlv-row:hover {
   background: var(--wk-brand-tint-06);
+}
+.mlv-row.is-selected,
+.mlv-row.is-selected:hover {
+  background: var(--wk-bg-selected);
+}
+
+/* checkbox 装订线:默认隐,hover/选中/选择态显现,宽度常驻不跳版 */
+.mlv-check {
+  flex: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.mlv-check input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--wk-brand-primary);
+}
+.mlv-row:hover .mlv-check,
+.mlv-row.is-selected .mlv-check,
+.mlv-list.has-selection .mlv-check {
+  opacity: 1;
+}
+
+/* 优先级/状态图标 = 可点快改按钮(重置原生按钮样式 + hover) */
+.mlv-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  color: inherit;
+  line-height: 0;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.mlv-icon-btn:hover {
+  background: var(--wk-brand-tint-10);
 }
 .mlv-cell {
   display: inline-flex;
@@ -467,4 +543,63 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* ── 批量条(选中即现,主操作品牌黑,删除危险色) ── */
+.mlv-batchbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 24px 8px;
+  padding: 0 12px;
+  height: 42px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface);
+  box-shadow: var(--wk-shadow-sm);
+}
+.mlv-batch-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+.mlv-batch-sel {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mlv-batch-del {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-color-error);
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.mlv-batch-del:hover {
+  background: color-mix(in srgb, var(--wk-color-error) 8%, transparent);
+}
+.mlv-batch-clear {
+  height: 28px;
+  padding: 0 10px;
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color 0.1s;
+}
+.mlv-batch-clear:hover {
+  color: var(--wk-text-secondary);
 }

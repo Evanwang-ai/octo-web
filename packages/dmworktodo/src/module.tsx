@@ -448,8 +448,9 @@ function GlobalMatterModal() {
   };
 
   const handleConfirm = async (req: Parameters<typeof createMatter>[0]) => {
+    let created: Awaited<ReturnType<typeof createMatter>>;
     try {
-      await createMatter(req);
+      created = await createMatter(req);
     } catch (e) {
       Toast.error(t("todo.toast.createFailed"));
       throw e; // re-throw 让 SmartCreateModal 保持打开
@@ -461,6 +462,11 @@ function GlobalMatterModal() {
         channelId: payload.channelId,
         channelType: payload.channelType,
       });
+    }
+    // 广播"变更即重载"信号 —— 任何回路列表(原生 MatterListView / 旧 MatterList)据此静默刷新。
+    // 创建也是列表的一次变更,复用 matter-updated 而非新增事件(单一信号源)。
+    if (created?.id) {
+      WKApp.mittBus.emit("wk:matter-updated", { matterId: created.id });
     }
     Toast.success(t("todo.toast.created"));
     setOpen(false);
