@@ -109,11 +109,7 @@ export default function MatterRouteHost() {
     setView("automation");
     setSection("automation");
   };
-  const openAutomationEditor = () => {
-    setSection("automation");
-    navigateIframe(SUBNAV_HASH.automation);
-  };
-  // 显示原生项目列表(替 iframe 列表);项目详情(内嵌看板/成员/上下文)暂走 iframe。
+  // 显示原生项目列表(替 iframe 列表);项目详情原生化(见 openProjectDetail)。
   const showProjects = () => {
     setActive(true);
     setView("projects");
@@ -209,7 +205,7 @@ export default function MatterRouteHost() {
             <MatterDetailView key={detailId} matterId={detailId} onBack={showMatterList} />
           )}
           {view === "cards" && <CardsView />}
-          {view === "automation" && <AutomationView onOpenEditor={openAutomationEditor} />}
+          {view === "automation" && <AutomationView />}
           {view === "projects" && <ProjectsView onOpenDetail={openProjectDetail} />}
           {view === "projectDetail" && projectDetailId && (
             <ProjectDetailView

@@ -473,6 +473,17 @@ export async function removeProjectSource(projectId: string, sourceId: string): 
   return del<void>(`/projects/${projectId}/sources/${sourceId}`);
 }
 
+/** bot 所在的群/频道(自动化"发到哪个群"的 target 源;curl 实测 200)。 */
+export interface BotChannel {
+  group_no: string;
+  name: string;
+  space_id?: string;
+}
+export async function listBotChannels(botUid: string): Promise<BotChannel[]> {
+  const res = await get<{ data: BotChannel[] } | BotChannel[]>(`/bots/${botUid}/channels`);
+  return Array.isArray(res) ? res : res.data;
+}
+
 // ─── 兼容旧 API（deprecated） ────────────────────────────
 
 /** @deprecated 使用 listTimeline 替代 */

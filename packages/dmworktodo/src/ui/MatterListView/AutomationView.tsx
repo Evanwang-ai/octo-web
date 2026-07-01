@@ -1,8 +1,10 @@
 /**
- * [INPUT]: 依赖 api/todoApi 的 listSchedules/updateSchedule/listProjects;utils/toast;../UserName。
- * [OUTPUT]: 默认导出 AutomationView(原生自动化页:schedule 卡列表 + cron 人话 + enabled 开关;新建/编辑经 onOpenEditor)。
- * [POS]: dmworktodo/ui/MatterListView 的自动化(automation)视图,被 MatterRouteHost 以 view="automation" 挂载(替 iframe 的列表);
- *        真相源 vanilla feat/loop renderAutomation。巨型 create/edit modal 暂路由 iframe 编辑器(绞杀式 partial)。
+ * [INPUT]: 依赖 api/todoApi 的 listSchedules/updateSchedule/listProjects;./automationCron 的 cronHuman;
+ *          ./ScheduleModal(原生 create/edit modal);utils/toast;../UserName。
+ * [OUTPUT]: 默认导出 AutomationView(原生自动化页:schedule 卡列表 + cron 人话 + enabled 开关 +
+ *          原生 ScheduleModal 新建/编辑,内部 editing 状态驱动)。
+ * [POS]: dmworktodo/ui/MatterListView 的自动化(automation)视图,被 MatterRouteHost 以 view="automation" 挂载(替 iframe);
+ *        真相源 vanilla feat/loop renderAutomation。**巨型 modal 已原生化,自动化编辑器 iframe 已杀**。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -10,24 +12,9 @@ import { listSchedules, updateSchedule, listProjects } from "../../api/todoApi";
 import type { Schedule } from "../../bridge/types";
 import { Toast } from "../../utils/toast";
 import UserName from "../UserName";
+import { cronHuman } from "./automationCron";
+import ScheduleModal from "./ScheduleModal";
 import "./automation.css";
-
-const WEEK = ["日", "一", "二", "三", "四", "五", "六"];
-
-// cron 人话(对齐 vanilla parseCronSimple:每天/工作日/每周X/每月X号;其余原样)。
-function cronHuman(cron: string): string {
-  const parts = (cron || "").trim().split(/\s+/);
-  if (parts.length < 5) return cron || "";
-  const [min, hour, dom, , dow] = parts;
-  // 分/时非纯数字(含 * / , - 步进/范围/通配)= 无固定时刻 → 不硬套"每天",原样显示。
-  if (!/^\d+$/.test(min) || !/^\d+$/.test(hour)) return cron;
-  const time = `${hour.padStart(2, "0")}:${min.padStart(2, "0")}`;
-  if (dom === "*" && dow === "*") return `每天 ${time}`;
-  if (dom === "*" && dow === "1-5") return `工作日 ${time}`;
-  if (dom === "*" && /^[0-6]$/.test(dow)) return `每周${WEEK[+dow]} ${time}`;
-  if (/^\d+$/.test(dom) && dow === "*") return `每月${dom}号 ${time}`;
-  return cron; // 高级 cron 原样
-}
 
 function relFuture(iso?: string): string {
   if (!iso) return "";
@@ -43,21 +30,26 @@ function relFuture(iso?: string): string {
 }
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 
-export default function AutomationView({
-  onOpenEditor,
-}: {
-  onOpenEditor?: (id?: string) => void;
-}) {
+export default function AutomationView() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<Set<string>>(new Set()); // 开关在途,防连点乱序
+  const [editing, setEditing] = useState<Schedule | "new" | null>(null); // 原生编辑 modal
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+
+  const reloadSchedules = useCallback(() => {
+    listSchedules()
+      .then((ss) => {
+        if (mountedRef.current) setSchedules(ss);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -120,7 +112,7 @@ export default function AutomationView({
     <div className="av">
       <div className="av-head">
         <h1 className="av-h1">自动化</h1>
-        <button className="av-new" type="button" onClick={() => onOpenEditor?.()}>
+        <button className="av-new" type="button" onClick={() => setEditing("new")}>
           <span className="av-new-plus">+</span>新建自动化
         </button>
       </div>
@@ -151,11 +143,11 @@ export default function AutomationView({
                   className="av-card-body"
                   role="button"
                   tabIndex={0}
-                  onClick={() => onOpenEditor?.(s.id)}
+                  onClick={() => setEditing(s)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      onOpenEditor?.(s.id);
+                      setEditing(s);
                     }
                   }}
                 >
@@ -181,6 +173,14 @@ export default function AutomationView({
             );
           })}
         </div>
+      )}
+
+      {editing && (
+        <ScheduleModal
+          editing={editing}
+          onClose={() => setEditing(null)}
+          onSaved={reloadSchedules}
+        />
       )}
     </div>
   );
