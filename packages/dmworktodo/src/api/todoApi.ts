@@ -281,15 +281,41 @@ export async function deleteTimelineEntry(
 
 // ─── 项目共享上下文（设计 06 §9.3:来源=聊天记录引用）────────
 
+// 富字段(getProjects 实测返回);id/name 为核心,其余可选 —— 老消费方(只用 id/name)不受影响。
 export interface ProjectItem {
   id: string;
   name: string;
+  description?: string;
+  scope?: string; // default(系统收件箱)/space(共享)/private(私有)
+  archived?: number | boolean; // 后端返 0/1
+  creator_id?: string;
+  default_leader_uid?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export async function listProjects(): Promise<ProjectItem[]> {
-  const res = await get<{ data: ProjectItem[] } | ProjectItem[]>(`/projects`);
+export interface SaveProjectReq {
+  name?: string;
+  scope?: string;
+  archived?: boolean;
+}
+
+/** archived=1 时含已归档项目(项目详情靠此列表缓存,后端无 GET /projects/:id)。 */
+export async function listProjects(includeArchived = false): Promise<ProjectItem[]> {
+  const res = await get<{ data: ProjectItem[] } | ProjectItem[]>(
+    `/projects`,
+    includeArchived ? { archived: 1 } : undefined,
+  );
   const arr = Array.isArray(res) ? res : (res as { data: ProjectItem[] }).data;
   return arr ?? [];
+}
+
+export async function createProject(req: SaveProjectReq): Promise<ProjectItem> {
+  return post<ProjectItem>(`/projects`, req);
+}
+
+export async function updateProject(id: string, req: SaveProjectReq): Promise<ProjectItem> {
+  return put<ProjectItem>(`/projects/${id}`, req);
 }
 
 export interface ProjectSourceReq {

@@ -20,8 +20,9 @@ import MatterSubNav, { SubNavKey } from "./MatterSubNav";
 import MatterDetailView from "./MatterDetailView";
 import CardsView from "./CardsView";
 import AutomationView from "./AutomationView";
+import ProjectsView from "./ProjectsView";
 
-type View = "matters" | "iframe" | "detail" | "cards" | "automation";
+type View = "matters" | "iframe" | "detail" | "cards" | "automation" | "projects";
 
 const SUBNAV_HASH: Record<Exclude<SubNavKey, "matters">, string> = {
   projects: "#/projects",
@@ -103,8 +104,18 @@ export default function MatterRouteHost() {
     setSection("automation");
     navigateIframe(SUBNAV_HASH.automation);
   };
+  // 显示原生项目列表(替 iframe 列表);项目详情(内嵌看板/成员/上下文)暂走 iframe。
+  const showProjects = () => {
+    setActive(true);
+    setView("projects");
+    setSection("projects");
+  };
+  const openProjectDetail = (id: string) => {
+    setSection("projects");
+    navigateIframe(`#/project/${id}`); // 单数 route(对齐 vanilla)
+  };
 
-  // 子导航:全部回路/经验/自动化→原生;项目→iframe(绞杀式,逐个迁)。
+  // 子导航四项全部原生列表;项目详情/自动化编辑器走 iframe(绞杀式 partial)。
   const onNavigate = (key: SubNavKey) => {
     if (key === "matters") {
       showMatterList();
@@ -112,6 +123,8 @@ export default function MatterRouteHost() {
       showCards();
     } else if (key === "automation") {
       showAutomation();
+    } else if (key === "projects") {
+      showProjects();
     } else {
       setSection(key);
       navigateIframe(SUBNAV_HASH[key]);
@@ -168,7 +181,8 @@ export default function MatterRouteHost() {
         {(view === "matters" ||
           view === "detail" ||
           view === "cards" ||
-          view === "automation") && (
+          view === "automation" ||
+          view === "projects") && (
           <MatterSubNav current={section} onNavigate={onNavigate} />
         )}
         <div className="mlv-host-content">
@@ -183,6 +197,7 @@ export default function MatterRouteHost() {
           )}
           {view === "cards" && <CardsView />}
           {view === "automation" && <AutomationView onOpenEditor={openAutomationEditor} />}
+          {view === "projects" && <ProjectsView onOpenDetail={openProjectDetail} />}
           {iframeSrc && (
             <iframe
               title="回路"
