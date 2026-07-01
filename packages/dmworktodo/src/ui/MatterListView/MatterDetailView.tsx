@@ -320,17 +320,15 @@ export default function MatterDetailView({
     const content = reviseNote.trim();
     if (!content || reviseBusy) return;
     setReviseBusy(true);
+    // Codex#2:纳入 writeGenRef 代际守护 —— 晚到的打回响应不覆盖更新的本地写。
+    const gen = ++writeGenRef.current;
     try {
       await addFeedback(matterId, { content });
       if (!mountedRef.current) return;
       setReviseNote("");
       setReviseOpen(false);
       const m = await getMatter(matterId); // 拉新状态(后端已自动打回)
-      if (mountedRef.current) {
-        setMatter(m as MatterDetailFull);
-        reloadActivities();
-        WKApp.mittBus.emit("wk:matter-updated", { matterId });
-      }
+      applyIfLatest(gen, m as MatterDetailFull); // 仅最新代际落地(内含 setMatter+emit+reloadActivities)
     } catch {
       if (mountedRef.current) Toast.error("打回失败");
     } finally {

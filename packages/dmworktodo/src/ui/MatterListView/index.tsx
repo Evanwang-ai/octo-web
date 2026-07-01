@@ -29,6 +29,7 @@ import {
   groupMatters,
   groupStaticLabel,
   activeFilterCount,
+  EMBED_SPEC_KEY,
 } from "./viewSpec";
 import type { ViewSpec, GroupBy, MatterRow, DisplayPropKey } from "./viewSpec";
 import DisplayPanel from "./DisplayPanel";
@@ -301,14 +302,19 @@ export default function MatterListView({
   const [filterOpen, setFilterOpen] = useState(false);
   const ctxRef = useRef<ContextMenusContext | null>(null);
   // 单一视图规格:分组/排序/筛选/显示属性/看板选项,sessionStorage 持久化。
-  const [viewSpec, setViewSpec] = useState<ViewSpec>(loadViewSpec);
-  const patchSpec = useCallback((patch: Partial<ViewSpec>) => {
-    setViewSpec((s) => {
-      const next = { ...s, ...patch };
-      saveViewSpec(next);
-      return next;
-    });
-  }, []);
+  // 内嵌(项目详情)用独立 storageKey,避免主列表 viewSpec 的 project filter 泄入致空列表(Codex#1)。
+  const specKey = embedded ? EMBED_SPEC_KEY : undefined;
+  const [viewSpec, setViewSpec] = useState<ViewSpec>(() => loadViewSpec(specKey));
+  const patchSpec = useCallback(
+    (patch: Partial<ViewSpec>) => {
+      setViewSpec((s) => {
+        const next = { ...s, ...patch };
+        saveViewSpec(next, specKey);
+        return next;
+      });
+    },
+    [specKey],
+  );
   // 卸载哨兵:守护写操作异步回调里的 setState 触达(批量/单条),防 setState-after-unmount。
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -383,13 +389,17 @@ export default function MatterListView({
     () =>
       groupMatters(
         sortMatters(
-          filterMatters(matters as MatterRow[], viewSpec.filters),
+          // 内嵌:project 已由 baseFilters 服务端强制,剥离 client 端 project filter 防冲突(Codex#1)。
+          filterMatters(
+            matters as MatterRow[],
+            embedded ? { ...viewSpec.filters, project: "" } : viewSpec.filters,
+          ),
           viewSpec.orderBy,
           viewSpec.orderDir,
         ),
         viewSpec.groupBy,
       ),
-    [matters, viewSpec.filters, viewSpec.orderBy, viewSpec.orderDir, viewSpec.groupBy],
+    [matters, viewSpec.filters, viewSpec.orderBy, viewSpec.orderDir, viewSpec.groupBy, embedded],
   );
   const shownCount = useMemo(() => view.reduce((n, g) => n + g.items.length, 0), [view]);
 

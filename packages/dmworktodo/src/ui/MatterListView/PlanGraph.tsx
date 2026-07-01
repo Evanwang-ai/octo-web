@@ -129,7 +129,8 @@ export default function PlanGraph({
       c.id,
       c.step_id || "子任务",
       c.title,
-      c.assignees?.[0]?.user_id,
+      // Codex#5:assignee 两种形态,user_id 缺则回落 id,避免误显"没人接"。
+      c.assignees?.[0]?.user_id ?? c.assignees?.[0]?.id,
       RING[c.status] || "todo",
       STATE_TEXT[c.status] || c.status,
       "pg-child",

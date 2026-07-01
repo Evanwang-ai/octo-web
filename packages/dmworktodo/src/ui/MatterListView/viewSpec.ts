@@ -109,9 +109,9 @@ function normalizeFilters(f: unknown): MatterFilters {
   };
 }
 
-export function loadViewSpec(): ViewSpec {
+export function loadViewSpec(key: string = SS_KEY): ViewSpec {
   try {
-    const raw = sessionStorage.getItem(SS_KEY);
+    const raw = sessionStorage.getItem(key);
     if (!raw) return { ...VIEW_SPEC_DEFAULTS };
     const p = JSON.parse(raw);
     // 深合并默认 + 类型归一化,容忍旧结构/缺字段/损坏值。
@@ -127,13 +127,16 @@ export function loadViewSpec(): ViewSpec {
   }
 }
 
-export function saveViewSpec(spec: ViewSpec): void {
+export function saveViewSpec(spec: ViewSpec, key: string = SS_KEY): void {
   try {
-    sessionStorage.setItem(SS_KEY, JSON.stringify(spec));
+    sessionStorage.setItem(key, JSON.stringify(spec));
   } catch {
     /* storage unavailable */
   }
 }
+
+// 内嵌(项目详情)用独立 key,避免主列表 viewSpec(尤其 project filter)泄入(Codex#1)。
+export const EMBED_SPEC_KEY = "mlv.viewspec.embed";
 
 // 活跃筛选计数(工具条徽标)。
 export function activeFilterCount(f: MatterFilters): number {

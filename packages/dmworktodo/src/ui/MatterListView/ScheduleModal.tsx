@@ -80,8 +80,13 @@ export default function ScheduleModal({
       .catch(() => {});
   }, []);
 
-  // 执行方变 → 拉它的群(target 候选)。
+  // 执行方变 → 拉它的群(target 候选)。用户切换 executor(非初始)时清掉旧 bot 的 target(Codex#3)。
+  const prevExecRef = useRef(executorUid);
   useEffect(() => {
+    if (prevExecRef.current !== executorUid) {
+      setTargetChannelId(""); // 旧 target 属于旧 bot,不能带到新 bot
+      prevExecRef.current = executorUid;
+    }
     if (!executorUid) {
       setChannels([]);
       return;
@@ -105,7 +110,9 @@ export default function ScheduleModal({
     if (!executorUid) return Toast.error("先选执行方 bot");
     if (!cronExpr.trim()) return Toast.error("先填时间表");
     setBusy(true);
-    const chName = channels.find((c) => c.group_no === targetChannelId)?.name;
+    // Codex#3:target 必须属于当前 executor 的群(否则视为未选,不提交旧 bot 的群)。
+    const validTarget = channels.some((c) => c.group_no === targetChannelId) ? targetChannelId : "";
+    const chName = channels.find((c) => c.group_no === validTarget)?.name;
     const req: SaveScheduleReq = {
       title: title.trim(),
       runbook: runbook.trim(),
@@ -115,7 +122,7 @@ export default function ScheduleModal({
       output_mode: outputMode,
       enabled,
       project_id: outputMode === "track" ? projectId || null : null,
-      target_channel_id: outputMode === "runonly" ? targetChannelId || null : null,
+      target_channel_id: outputMode === "runonly" ? validTarget || null : null,
       target_channel_name: outputMode === "runonly" ? chName || null : null,
     };
     try {
@@ -131,15 +138,20 @@ export default function ScheduleModal({
     }
   };
 
+  // Codex#4:保存中禁止关闭 —— 防写成功但组件卸载导致 onSaved 跳过、列表不刷新。
+  const close = () => {
+    if (!busy) onClose();
+  };
+
   return (
-    <div className="sm-overlay" onClick={onClose}>
+    <div className="sm-overlay" onClick={close}>
       <div className="sm" onClick={(e) => e.stopPropagation()}>
         <div className="sm-head">
           <div className="sm-head-t">
             <span className="sm-title">{isNew ? "新建自动化" : "编辑自动化"}</span>
             <span className="sm-sub">周期性的 AI 任务</span>
           </div>
-          <button type="button" className="sm-x" onClick={onClose} aria-label="关闭">
+          <button type="button" className="sm-x" onClick={close} disabled={busy} aria-label="关闭">
             ×
           </button>
         </div>
@@ -291,7 +303,7 @@ export default function ScheduleModal({
         <div className="sm-foot">
           <span className="sm-foot-note">⚡ 保存后会自动运行,直到暂停</span>
           <div className="sm-foot-btns">
-            <button type="button" className="sm-cancel" onClick={onClose}>
+            <button type="button" className="sm-cancel" onClick={close} disabled={busy}>
               取消
             </button>
             <button
