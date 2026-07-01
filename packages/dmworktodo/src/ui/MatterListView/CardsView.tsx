@@ -6,7 +6,7 @@
  *        真相源 vanilla feat/loop renderCards/paintCards;bespoke 绿/琥珀 chip 统一到 --wk-*。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { WKApp } from "@octo/base";
 import {
   listPreferenceCards,
@@ -59,7 +59,9 @@ export default function CardsView() {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<Set<string>>(new Set()); // 写操作在途的卡 id(禁按 + 防连点)
   const fullRef = useRef<PreferenceCard[]>([]); // 全量缓存,搜索降级用
+  const searchGenRef = useRef(0); // 搜索代际:只让最新 query 的响应落地
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -93,6 +95,8 @@ export default function CardsView() {
   // 搜索:后端优先,500/失败降级到内存过滤(vanilla 空 query 也走内存)。
   useEffect(() => {
     const q = query.trim();
+    // 每次 query 变化占一代;含清空 query —— 旧搜索响应回来时代际不符即丢弃,不覆盖新态。
+    const gen = ++searchGenRef.current;
     if (!q) {
       setCards(fullRef.current);
       return;
@@ -102,48 +106,84 @@ export default function CardsView() {
     const timer = setTimeout(() => {
       searchPreferenceCards(q)
         .then((cs) => {
-          if (mountedRef.current) setCards(cs);
+          if (mountedRef.current && gen === searchGenRef.current) setCards(cs);
         })
         .catch(() => {
-          if (mountedRef.current) setCards(localFilter());
+          if (mountedRef.current && gen === searchGenRef.current) setCards(localFilter());
         });
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
 
   const groups = useMemo(() => {
-    return SCOPE_GROUPS.map((g) => ({
-      ...g,
-      items: cards.filter((c) => g.match(c.scope)),
-    })).filter((g) => g.items.length > 0);
+    const seen = new Set<string>();
+    const gs = SCOPE_GROUPS.map((g) => {
+      const items = cards.filter((c) => g.match(c.scope));
+      items.forEach((c) => seen.add(c.id));
+      return { key: g.key, label: g.label, items };
+    }).filter((g) => g.items.length > 0);
+    // 兜底:scope 不在四组的卡归"其他",绝不静默丢弃。
+    const others = cards.filter((c) => !seen.has(c.id));
+    if (others.length) gs.push({ key: "other", label: "其他", items: others });
+    return gs;
   }, [cards]);
 
-  // 本地即时改状态 + 落库(失败回滚)。
   const patchLocal = (id: string, patch: Partial<PreferenceCard>) => {
     const apply = (list: PreferenceCard[]) =>
       list.map((c) => (c.id === id ? { ...c, ...patch } : c));
     fullRef.current = apply(fullRef.current);
     setCards((prev) => apply(prev));
   };
-  const setStatus = useCallback((card: PreferenceCard, status: string) => {
+  const markPending = (id: string, on: boolean) =>
+    setPending((p) => {
+      const n = new Set(p);
+      if (on) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+
+  // 改状态:乐观 + 落库,失败回滚;在途禁止同卡再触发(防乱序覆盖)。
+  const setStatus = (card: PreferenceCard, status: string) => {
+    if (pending.has(card.id)) return;
     const prev = card.status;
+    markPending(card.id, true);
     patchLocal(card.id, { status });
-    updatePreferenceCard(card.id, { status }).catch(() => {
-      if (mountedRef.current) {
-        patchLocal(card.id, { status: prev });
-        Toast.error("操作失败");
-      }
-    });
-  }, []);
-  const remove = useCallback((card: PreferenceCard) => {
+    updatePreferenceCard(card.id, { status })
+      .catch(() => {
+        if (mountedRef.current) {
+          patchLocal(card.id, { status: prev });
+          Toast.error("操作失败");
+        }
+      })
+      .finally(() => {
+        if (mountedRef.current) markPending(card.id, false);
+      });
+  };
+
+  // 删除:乐观移除 + 失败回滚(快照全量 + 可见态,失败恢复两者)。
+  const remove = (card: PreferenceCard) => {
+    if (pending.has(card.id)) return;
     if (!window.confirm("删除这条经验?此操作不可撤销。")) return;
-    const dropFrom = (list: PreferenceCard[]) => list.filter((c) => c.id !== card.id);
-    fullRef.current = dropFrom(fullRef.current);
-    setCards((prev) => dropFrom(prev));
-    deletePreferenceCard(card.id).catch(() => {
-      if (mountedRef.current) Toast.error("删除失败");
+    const snapFull = fullRef.current;
+    let snapCards: PreferenceCard[] = [];
+    markPending(card.id, true);
+    fullRef.current = fullRef.current.filter((c) => c.id !== card.id);
+    setCards((prev) => {
+      snapCards = prev;
+      return prev.filter((c) => c.id !== card.id);
     });
-  }, []);
+    deletePreferenceCard(card.id)
+      .catch(() => {
+        if (mountedRef.current) {
+          fullRef.current = snapFull;
+          setCards(snapCards);
+          Toast.error("删除失败");
+        }
+      })
+      .finally(() => {
+        if (mountedRef.current) markPending(card.id, false);
+      });
+  };
 
   const openSource = (matterId?: string) => {
     if (matterId) WKApp.mittBus.emit("wk:open-matter-detail", { matterId });
@@ -186,6 +226,7 @@ export default function CardsView() {
                 const st = CARD_STATUS[c.status] || { label: c.status, cls: "is-draft" };
                 const meta = scopeMeta(c);
                 const isOpen = !!expanded[c.id];
+                const busy = pending.has(c.id); // 写在途:禁写按钮防乱序
                 return (
                   <div key={c.id} className={`cv-card${isOpen ? " is-open" : ""}`}>
                     <div
@@ -225,17 +266,28 @@ export default function CardsView() {
                             <button
                               type="button"
                               className="cv-act is-primary"
+                              disabled={busy}
                               onClick={() => setStatus(c, "authorized")}
                             >
                               确认生效
                             </button>
                           )}
                           {c.status === "discarded" ? (
-                            <button type="button" className="cv-act" onClick={() => setStatus(c, "authorized")}>
+                            <button
+                              type="button"
+                              className="cv-act"
+                              disabled={busy}
+                              onClick={() => setStatus(c, "authorized")}
+                            >
                               恢复
                             </button>
                           ) : (
-                            <button type="button" className="cv-act" onClick={() => setStatus(c, "discarded")}>
+                            <button
+                              type="button"
+                              className="cv-act"
+                              disabled={busy}
+                              onClick={() => setStatus(c, "discarded")}
+                            >
                               弃用
                             </button>
                           )}
@@ -245,7 +297,12 @@ export default function CardsView() {
                             </button>
                           )}
                           <span className="cv-flex" />
-                          <button type="button" className="cv-act is-danger" onClick={() => remove(c)}>
+                          <button
+                            type="button"
+                            className="cv-act is-danger"
+                            disabled={busy}
+                            onClick={() => remove(c)}
+                          >
                             删除
                           </button>
                         </div>

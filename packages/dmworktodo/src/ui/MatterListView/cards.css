@@ -192,8 +192,12 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.cv-act:hover {
+.cv-act:hover:not(:disabled) {
   background: var(--wk-brand-tint-06);
+}
+.cv-act:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .cv-act.is-primary {
   border-color: var(--wk-brand-primary);
