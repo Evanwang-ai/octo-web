@@ -1,10 +1,11 @@
 /**
  * [INPUT]: 依赖 hooks/useTodoList 的 useMatterList、api/todoApi 的 listProjects/transitionMatter/deleteMatter;
- *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./useMatterActions、./rowMenus、./icons;utils/toast。
- * [OUTPUT]: 默认导出 MatterListView(原生回路列表:list/board 双布局、状态分组、Tab、领队 chip、项目 chip、
- *          新建/多选批量/优先级·状态快改/行右键菜单/实时刷新;看板卡拖拽换列 + 协作者"等 N 人")。
+ *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./useMatterActions、./rowMenus、./icons;
+ *          ./viewSpec(单一视图规格 + 筛选/排序/分组)、./DisplayPanel、./FilterMenu;utils/toast。
+ * [OUTPUT]: 默认导出 MatterListView(原生回路列表:ViewSpec 驱动 list/board、分组/排序/筛选/显示属性、Tab、
+ *          新建/多选批量/优先级·状态快改/行右键菜单/实时刷新;看板卡拖拽换列(按分组分派)+ 协作者"等 N 人")。
  * [POS]: dmworktodo/ui/MatterListView 的主视图,被 MatterRouteHost 以 view="matters" 挂载;
- *        兄弟:MatterDetailView(详情)、MatterSubNav(左导航)、icons/rowMenus/useMatterActions(原子层)。
+ *        兄弟:MatterDetailView(详情)、MatterSubNav(左导航)、viewSpec/DisplayPanel/FilterMenu/icons/rowMenus/useMatterActions。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -14,24 +15,28 @@ import WKAvatar from "@octo/base/src/Components/WKAvatar";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import { useMatterList } from "../../hooks/useTodoList";
 import { listProjects, transitionMatter, deleteMatter } from "../../api/todoApi";
-import type { Matter, MatterStatus } from "../../bridge/types";
+import type { MatterStatus } from "../../bridge/types";
 import { Toast } from "../../utils/toast";
 import UserName from "../UserName";
 import { PriorityIcon, StatusIcon, STATUS_ORDER, STATUS_LABEL } from "./icons";
 import { useMatterActions } from "./useMatterActions";
 import { priorityMenu, statusMenu, rowContextMenu } from "./rowMenus";
+import {
+  loadViewSpec,
+  saveViewSpec,
+  filterMatters,
+  sortMatters,
+  groupMatters,
+  groupStaticLabel,
+  activeFilterCount,
+} from "./viewSpec";
+import type { ViewSpec, GroupBy, MatterRow, DisplayPropKey } from "./viewSpec";
+import DisplayPanel from "./DisplayPanel";
+import FilterMenu from "./FilterMenu";
 import "./index.css";
 
-// 真实后端字段比 bridge/types 多(stale),本地增广。
-type MatterRow = Matter & {
-  leader_uid?: string;
-  project_id?: string;
-  has_children?: boolean;
-  last_activity_at?: string;
-  mode?: string;
-};
-
 type Tab = "all" | "created" | "assigned";
+type DisplayProps = Record<DisplayPropKey, boolean>;
 
 // 行/卡片共用的交互回调集合(由 MatterListView 注入)。
 interface RowHandlers {
@@ -59,16 +64,61 @@ function relTime(iso?: string): string {
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 
+// 分组头内容:按 groupBy 决定图标/标签(status→状态图标、priority→优先级图标、project/leader→名字)。
+function GroupHeader({
+  groupBy,
+  gkey,
+  projectMap,
+}: {
+  groupBy: GroupBy;
+  gkey: string;
+  projectMap: Record<string, string>;
+}) {
+  if (groupBy === "status") {
+    return (
+      <>
+        <StatusIcon status={gkey} size={14} />
+        <span className="mlv-group-label">{STATUS_LABEL[gkey] || gkey}</span>
+      </>
+    );
+  }
+  if (groupBy === "priority") {
+    return (
+      <>
+        <PriorityIcon level={Number(gkey)} size={14} />
+        <span className="mlv-group-label">{groupStaticLabel(gkey, "priority")}</span>
+      </>
+    );
+  }
+  if (groupBy === "project_id") {
+    return (
+      <span className="mlv-group-label">
+        {gkey === "_none" ? "未指定项目" : projectMap[gkey] || gkey}
+      </span>
+    );
+  }
+  if (groupBy === "leader_uid") {
+    return (
+      <span className="mlv-group-label">
+        {gkey === "_none" ? "未指定负责人" : <UserName uid={gkey} />}
+      </span>
+    );
+  }
+  return <span className="mlv-group-label">{groupStaticLabel(gkey, groupBy)}</span>;
+}
+
 // ─────────────────────────── 列表行 ───────────────────────────
 function MatterRowItem({
   m,
   project,
   selected,
+  props,
   on,
 }: {
   m: MatterRow;
   project?: string;
   selected: boolean;
+  props: DisplayProps;
   on: RowHandlers;
 }) {
   const leader = m.leader_uid;
@@ -94,30 +144,37 @@ function MatterRowItem({
           aria-label="选择回路"
         />
       </label>
-      <button
-        type="button"
-        className="mlv-cell mlv-icon-btn mlv-pri"
-        title="改优先级"
-        aria-label="优先级"
-        onClick={(e) => on.priorityMenu(e, m)}
-      >
-        <PriorityIcon level={m.priority ?? 0} size={16} />
-      </button>
-      <button
-        type="button"
-        className="mlv-cell mlv-icon-btn mlv-status"
-        title="改状态"
-        aria-label="状态"
-        onClick={(e) => on.statusMenu(e, m)}
-      >
-        <StatusIcon status={m.status} size={16} />
-      </button>
+      {props.priority !== false && (
+        <button
+          type="button"
+          className="mlv-cell mlv-icon-btn mlv-pri"
+          title="改优先级"
+          aria-label="优先级"
+          onClick={(e) => on.priorityMenu(e, m)}
+        >
+          <PriorityIcon level={m.priority ?? 0} size={16} />
+        </button>
+      )}
+      {props.status !== false && (
+        <button
+          type="button"
+          className="mlv-cell mlv-icon-btn mlv-status"
+          title="改状态"
+          aria-label="状态"
+          onClick={(e) => on.statusMenu(e, m)}
+        >
+          <StatusIcon status={m.status} size={16} />
+        </button>
+      )}
       <span className="mlv-title">{m.title || "无标题"}</span>
       {m.has_children && <span className="mlv-subicon" title="含子任务">⋯</span>}
       <span className="mlv-flex" />
-      {project && <span className="mlv-proj">{project}</span>}
-      <span className="mlv-id">M-{m.seq_no}</span>
-      {leader && (
+      {props.source !== false && m.source_name && (
+        <span className="mlv-src">{m.source_name}</span>
+      )}
+      {props.project !== false && project && <span className="mlv-proj">{project}</span>}
+      {props.id !== false && <span className="mlv-id">M-{m.seq_no}</span>}
+      {props.assignee !== false && leader && (
         <span className="mlv-leader">
           <WKAvatar
             channel={new Channel(leader, ChannelTypePerson)}
@@ -129,7 +186,9 @@ function MatterRowItem({
           {isBot(leader) && <span className="mlv-ai">AI</span>}
         </span>
       )}
-      <span className="mlv-date">{relTime(m.last_activity_at || m.updated_at)}</span>
+      {props.startDate !== false && (
+        <span className="mlv-date">{relTime(m.last_activity_at || m.updated_at)}</span>
+      )}
     </div>
   );
 }
@@ -145,10 +204,15 @@ function BoardCard({
   on: RowHandlers;
 }) {
   // 看板显示人对齐 vanilla:领队优先,无则退 assignees[0];others>0 时缀"等 N 人"。
+  // 去重 user_id(防 API 偶发重复 assignee 导致计数虚高)。
   const displayed = m.leader_uid || m.assignees?.[0]?.user_id;
   const others = displayed
-    ? (m.assignees || []).filter((a) => a.user_id !== displayed).length
+    ? new Set(
+        (m.assignees || []).filter((a) => a.user_id !== displayed).map((a) => a.user_id),
+      ).size
     : 0;
+  // 拖拽结束时间戳:守护 Safari/FF 可能在 dragend 后仍触发 onClick(误开详情)。
+  const lastDragEndRef = useRef(0);
   return (
     <div
       className="mlv-card"
@@ -159,8 +223,14 @@ function BoardCard({
         e.dataTransfer.setData("text/matter-id", m.id);
         e.dataTransfer.effectAllowed = "move";
       }}
-      onDragEnd={on.dragEnd}
-      onClick={() => on.open(m.id)}
+      onDragEnd={() => {
+        lastDragEndRef.current = Date.now();
+        on.dragEnd();
+      }}
+      onClick={() => {
+        if (Date.now() - lastDragEndRef.current < 200) return; // 刚拖完的点击,忽略
+        on.open(m.id);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -211,9 +281,20 @@ export default function MatterListView({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const [menuData, setMenuData] = useState<ContextMenusData[]>([]);
+  const [displayOpen, setDisplayOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const ctxRef = useRef<ContextMenusContext | null>(null);
+  // 单一视图规格:分组/排序/筛选/显示属性/看板选项,sessionStorage 持久化。
+  const [viewSpec, setViewSpec] = useState<ViewSpec>(loadViewSpec);
+  const patchSpec = useCallback((patch: Partial<ViewSpec>) => {
+    setViewSpec((s) => {
+      const next = { ...s, ...patch };
+      saveViewSpec(next);
+      return next;
+    });
+  }, []);
   // 卸载哨兵:守护写操作异步回调里的 setState 触达(批量/单条),防 setState-after-unmount。
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -222,15 +303,8 @@ export default function MatterListView({
       mountedRef.current = false;
     };
   }, []);
-  const [layout, setLayout] = useState<"list" | "board">(() => {
-    try {
-      return sessionStorage.getItem("mlv.layout") === "board" ? "board" : "list";
-    } catch {
-      return "list";
-    }
-  });
 
-  // 项目 id→名 映射(行内项目 chip)。一次拉取,失败静默。
+  // 项目 id→名 映射(行内项目 chip + 筛选候选)。一次拉取,失败静默。
   useEffect(() => {
     let alive = true;
     listProjects()
@@ -245,15 +319,10 @@ export default function MatterListView({
       alive = false;
     };
   }, []);
-
-  // 持久化 list/board 偏好(切走再回保留)。
-  useEffect(() => {
-    try {
-      sessionStorage.setItem("mlv.layout", layout);
-    } catch {
-      /* storage unavailable */
-    }
-  }, [layout]);
+  const projectList = useMemo(
+    () => Object.entries(projectMap).map(([id, name]) => ({ id, name })),
+    [projectMap],
+  );
 
   const initialFilters = useMemo(
     () =>
@@ -267,6 +336,12 @@ export default function MatterListView({
 
   const { matters, loading, hasMore, loadMore, reload, optimisticUpdate, removeOptimistic } =
     useMatterList({ initialFilters, pageSize: 50 });
+
+  // 拖放读最新 matters(handleCardDrop 若闭包捕获 render 时快照,拖拽中列表刷新会读 stale)。
+  const mattersRef = useRef(matters);
+  useEffect(() => {
+    mattersRef.current = matters;
+  }, [matters]);
 
   // 单条写操作(优先级/状态/删除)—— 乐观 + 广播 + 回滚,列表与看板复用。
   const actions = useMatterActions({ optimisticUpdate, removeOptimistic, reload }, mountedRef);
@@ -284,21 +359,31 @@ export default function MatterListView({
     };
   }, [reload]);
 
-  const groups = useMemo(() => {
-    const bucket: Record<string, MatterRow[]> = {};
-    (matters as MatterRow[]).forEach((m) => {
-      (bucket[m.status] ||= []).push(m);
-    });
-    const order = STATUS_ORDER as readonly string[];
-    const known = order
-      .filter((s) => bucket[s]?.length)
-      .map((s) => ({ status: s, label: STATUS_LABEL[s] || s, items: bucket[s] }));
-    // 兜底:任何不在 STATUS_ORDER 的状态(stale 的 archived / 后端新增)追加末尾,绝不静默丢弃。
-    const extra = Object.keys(bucket)
-      .filter((s) => !order.includes(s))
-      .map((s) => ({ status: s, label: STATUS_LABEL[s] || s, items: bucket[s] }));
-    return [...known, ...extra];
-  }, [matters]);
+  // ViewSpec 驱动:筛选 → 排序 → 分组(全 client-side,对齐 vanilla)。
+  const view = useMemo(
+    () =>
+      groupMatters(
+        sortMatters(
+          filterMatters(matters as MatterRow[], viewSpec.filters),
+          viewSpec.orderBy,
+          viewSpec.orderDir,
+        ),
+        viewSpec.groupBy,
+      ),
+    [matters, viewSpec.filters, viewSpec.orderBy, viewSpec.orderDir, viewSpec.groupBy],
+  );
+  const shownCount = useMemo(() => view.reduce((n, g) => n + g.items.length, 0), [view]);
+
+  // 看板列:按状态分组时补齐全 7 态空列(除非隐藏空列);其它分组仅 present 组。
+  const boardColumns = useMemo(() => {
+    if (viewSpec.groupBy !== "status") return view;
+    const byKey: Record<string, MatterRow[]> = {};
+    view.forEach((g) => (byKey[g.key] = g.items));
+    const known = STATUS_ORDER.map((s) => ({ key: s as string, items: byKey[s] || [] }));
+    const extra = view.filter((g) => !(STATUS_ORDER as readonly string[]).includes(g.key));
+    const cols = [...known, ...extra];
+    return viewSpec.board.hideEmpty ? cols.filter((c) => c.items.length > 0) : cols;
+  }, [view, viewSpec.groupBy, viewSpec.board.hideEmpty]);
 
   // ── 交互:新建 / 多选 / 快改菜单 / 右键 ──
   const openCreate = () =>
@@ -340,20 +425,25 @@ export default function MatterListView({
         );
         ctxRef.current?.show(e);
       },
-      dragEnd: () => setDragOverStatus(null),
+      dragEnd: () => setDragOverKey(null),
     }),
     [actions, toggleSelect, onOpenDetail],
   );
 
-  // 看板拖放:卡片落到某列 → 若状态变了则流转(乐观移动 + 落库,非法 409 由 actions 回滚)。
-  const handleCardDrop = (targetStatus: string, e: React.DragEvent) => {
+  // 看板拖放:落到某列 → 按当前分组分派(status→改状态、priority→改优先级;项目/负责人无简单 API 故不动)。
+  const handleCardDrop = (targetKey: string, e: React.DragEvent) => {
     e.preventDefault();
-    setDragOverStatus(null);
+    setDragOverKey(null);
     const id = e.dataTransfer.getData("text/matter-id");
     if (!id) return;
-    const cur = (matters as MatterRow[]).find((x) => x.id === id);
-    if (cur && cur.status !== targetStatus) actions.setStatus(id, targetStatus);
+    const cur = (mattersRef.current as MatterRow[]).find((x) => x.id === id);
+    if (!cur) return;
+    const gb = viewSpec.groupBy;
+    if (gb === "status" && cur.status !== targetKey) actions.setStatus(id, targetKey);
+    else if (gb === "priority" && String(cur.priority ?? 0) !== targetKey)
+      actions.setPriority(id, Number(targetKey));
   };
+  const canDrag = viewSpec.groupBy === "status" || viewSpec.groupBy === "priority";
 
   // ── 批量(无批量端点 → 并发单调,每项自兜底为 true/false,汇总计数) ──
   const batchStatus = (status: string) => {
@@ -405,6 +495,8 @@ export default function MatterListView({
     { id: "created", label: "我发起的" },
     { id: "assigned", label: "我参与的" },
   ];
+  const isBoard = viewSpec.layout === "board";
+  const filterCount = activeFilterCount(viewSpec.filters);
 
   return (
     <div className="mlv">
@@ -431,11 +523,11 @@ export default function MatterListView({
           <div className="mlv-seg" role="group" aria-label="视图切换">
             <button
               type="button"
-              className={`mlv-seg-btn${layout === "list" ? " is-active" : ""}`}
-              onClick={() => setLayout("list")}
+              className={`mlv-seg-btn${!isBoard ? " is-active" : ""}`}
+              onClick={() => patchSpec({ layout: "list" })}
               title="列表"
               aria-label="列表视图"
-              aria-pressed={layout === "list"}
+              aria-pressed={!isBoard}
             >
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path d="M5.5 4h7M5.5 8h7M5.5 12h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -446,11 +538,11 @@ export default function MatterListView({
             </button>
             <button
               type="button"
-              className={`mlv-seg-btn${layout === "board" ? " is-active" : ""}`}
-              onClick={() => setLayout("board")}
+              className={`mlv-seg-btn${isBoard ? " is-active" : ""}`}
+              onClick={() => patchSpec({ layout: "board" })}
               title="看板"
               aria-label="看板视图"
-              aria-pressed={layout === "board"}
+              aria-pressed={isBoard}
             >
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <rect x="2" y="3" width="3.4" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
@@ -459,13 +551,48 @@ export default function MatterListView({
               </svg>
             </button>
           </div>
-          <span className="mlv-count">{matters.length} 个回路</span>
-          <button className="mlv-tbtn" disabled title="M3 Display">
-            筛选
-          </button>
-          <button className="mlv-tbtn" disabled title="M3 Display">
-            显示
-          </button>
+          <span className="mlv-count">{shownCount} 个回路</span>
+          <span className="mlv-pop-anchor">
+            <button
+              type="button"
+              className={`mlv-tbtn${filterCount > 0 ? " is-active" : ""}`}
+              onClick={() => {
+                setFilterOpen((o) => !o);
+                setDisplayOpen(false);
+              }}
+            >
+              筛选
+              {filterCount > 0 && <span className="mlv-tbtn-badge">{filterCount}</span>}
+            </button>
+            {filterOpen && (
+              <FilterMenu
+                filters={viewSpec.filters}
+                matters={matters as MatterRow[]}
+                projects={projectList}
+                onChange={(f) => patchSpec({ filters: f })}
+                onClose={() => setFilterOpen(false)}
+              />
+            )}
+          </span>
+          <span className="mlv-pop-anchor">
+            <button
+              type="button"
+              className="mlv-tbtn"
+              onClick={() => {
+                setDisplayOpen((o) => !o);
+                setFilterOpen(false);
+              }}
+            >
+              显示
+            </button>
+            {displayOpen && (
+              <DisplayPanel
+                spec={viewSpec}
+                onChange={patchSpec}
+                onClose={() => setDisplayOpen(false)}
+              />
+            )}
+          </span>
         </div>
       </div>
 
@@ -498,28 +625,30 @@ export default function MatterListView({
       )}
 
       {loading && <div className="mlv-state">加载中…</div>}
-      {!loading && groups.length === 0 && <div className="mlv-state">暂无回路</div>}
+      {!loading && shownCount === 0 && <div className="mlv-state">暂无回路</div>}
 
-      {!loading && layout === "list" && (
+      {!loading && !isBoard && shownCount > 0 && (
         <div className={`mlv-list${selected.size > 0 ? " has-selection" : ""}`}>
-          {groups.map((g) => (
-            <div key={g.status} className="mlv-group">
-              <button
-                className="mlv-group-head"
-                onClick={() => setCollapsed((c) => ({ ...c, [g.status]: !c[g.status] }))}
-              >
-                <span className={`mlv-chev${collapsed[g.status] ? "" : " is-open"}`}>›</span>
-                <StatusIcon status={g.status} size={14} />
-                <span className="mlv-group-label">{g.label}</span>
-                <span className="mlv-group-count">{g.items.length}</span>
-              </button>
-              {!collapsed[g.status] &&
+          {view.map((g) => (
+            <div key={g.key} className="mlv-group">
+              {viewSpec.groupBy !== "none" && (
+                <button
+                  className="mlv-group-head"
+                  onClick={() => setCollapsed((c) => ({ ...c, [g.key]: !c[g.key] }))}
+                >
+                  <span className={`mlv-chev${collapsed[g.key] ? "" : " is-open"}`}>›</span>
+                  <GroupHeader groupBy={viewSpec.groupBy} gkey={g.key} projectMap={projectMap} />
+                  <span className="mlv-group-count">{g.items.length}</span>
+                </button>
+              )}
+              {!collapsed[g.key] &&
                 g.items.map((m) => (
                   <MatterRowItem
                     key={m.id}
                     m={m}
                     project={m.project_id ? projectMap[m.project_id] : undefined}
                     selected={selected.has(m.id)}
+                    props={viewSpec.displayProps}
                     on={rowHandlers}
                   />
                 ))}
@@ -528,22 +657,22 @@ export default function MatterListView({
         </div>
       )}
 
-      {!loading && layout === "board" && (
-        <div className="mlv-board">
-          {groups.map((g) => (
+      {!loading && isBoard && shownCount > 0 && (
+        <div className={`mlv-board${viewSpec.board.density === "compact" ? " is-compact" : ""}`}>
+          {boardColumns.map((g) => (
             <div
-              key={g.status}
-              className={`mlv-col${dragOverStatus === g.status ? " is-dragover" : ""}`}
+              key={g.key}
+              className={`mlv-col${dragOverKey === g.key ? " is-dragover" : ""}`}
               onDragOver={(e) => {
+                if (!canDrag) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
-                if (dragOverStatus !== g.status) setDragOverStatus(g.status);
+                if (dragOverKey !== g.key) setDragOverKey(g.key);
               }}
-              onDrop={(e) => handleCardDrop(g.status, e)}
+              onDrop={(e) => handleCardDrop(g.key, e)}
             >
               <div className="mlv-col-head">
-                <StatusIcon status={g.status} size={14} />
-                <span className="mlv-col-label">{g.label}</span>
+                <GroupHeader groupBy={viewSpec.groupBy} gkey={g.key} projectMap={projectMap} />
                 <span className="mlv-col-count">{g.items.length}</span>
               </div>
               <div className="mlv-col-cards">

@@ -1,0 +1,234 @@
+/* L3 | Display/Filter popover 样式 — 一切色取 dmworkbase --wk-*。
+   被 DisplayPanel/FilterMenu 共用;锚定在工具条按钮下方右对齐。 */
+
+/* 锚点(包住触发按钮 + popover) */
+.mlv-pop-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 全屏透明遮罩:捕获外部点击关闭 */
+.mlv-pop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 940;
+}
+
+/* popover 主体 */
+.mlv-pop {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  z-index: 941;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface);
+  box-shadow: var(--wk-shadow-dropdown);
+  font-size: 12.5px;
+  color: var(--wk-text-primary);
+}
+.mlv-display-pop {
+  width: 260px;
+}
+.mlv-filter-pop {
+  width: 236px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* 分段切换(布局 / 密度) */
+.mlv-pop-seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 7px;
+  background: var(--wk-bg-base);
+}
+.mlv-pop-seg-btn {
+  flex: 1 1 auto;
+  height: 26px;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.mlv-pop-seg-btn:hover {
+  color: var(--wk-text-primary);
+}
+.mlv-pop-seg-btn.is-active {
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-weight: 650;
+  box-shadow: var(--wk-shadow-sm);
+}
+.mlv-pop-seg-sm {
+  flex: 1 1 auto;
+}
+
+/* label + 控件行 */
+.mlv-pop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mlv-pop-label {
+  flex: 0 0 auto;
+  width: 44px;
+  color: var(--wk-text-tertiary);
+}
+.mlv-pop-sel {
+  flex: 1 1 auto;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mlv-pop-dir {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.mlv-pop-dir:hover {
+  background: var(--wk-brand-tint-06);
+}
+
+/* checkbox 行 */
+.mlv-pop-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+.mlv-pop-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--wk-brand-primary);
+  cursor: pointer;
+}
+
+/* 分隔线 + 小标题 */
+.mlv-pop-sep {
+  height: 1px;
+  margin: 2px 0;
+  background: var(--wk-border-default);
+}
+.mlv-pop-subhead {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wk-text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+/* 显示属性 chips */
+.mlv-pop-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mlv-pop-chip {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 13px;
+  background: var(--wk-bg-surface);
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.mlv-pop-chip:hover {
+  border-color: var(--wk-brand-tint-35);
+}
+.mlv-pop-chip.is-on {
+  background: var(--wk-brand-primary);
+  border-color: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand);
+  font-weight: 600;
+}
+
+/* 重置 */
+.mlv-pop-reset {
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mlv-pop-reset:hover {
+  color: var(--wk-text-secondary);
+}
+
+/* 筛选:head + 选项行 */
+.mlv-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mlv-pop-title {
+  font-weight: 650;
+  color: var(--wk-text-primary);
+}
+.mlv-pop-clear {
+  border: none;
+  background: transparent;
+  color: var(--wk-color-info);
+  font-size: 12px;
+  cursor: pointer;
+}
+.mlv-pop-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mlv-pop-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.mlv-pop-opt:hover {
+  background: var(--wk-brand-tint-06);
+}
+.mlv-pop-opt input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--wk-brand-primary);
+}
+.mlv-pop-opt-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
