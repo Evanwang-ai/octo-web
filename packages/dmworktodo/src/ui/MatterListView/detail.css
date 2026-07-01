@@ -607,3 +607,136 @@
   font-size: 12px;
   color: var(--wk-text-secondary);
 }
+
+/* ── 计划图(几何即语义:领队 → 子任务 → 汇总,SVG 连线) ── */
+.plan-graph {
+  position: relative;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+}
+.pg-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.pg-edges path {
+  fill: none;
+  stroke: var(--wk-border-strong, var(--wk-border-default));
+  stroke-width: 1.5;
+}
+.pg-cols {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 44px;
+  min-width: min-content;
+}
+.pg-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+.pg-col-fan {
+  gap: 10px;
+}
+.pg-node {
+  width: 168px;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-bg-surface);
+  box-shadow: var(--wk-shadow-sm);
+}
+.pg-node.pg-root {
+  border-color: color-mix(in srgb, var(--wk-color-success) 40%, var(--wk-border-default));
+}
+.pg-node.pg-join {
+  border-style: dashed;
+}
+.pg-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.pg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.pg-dot.todo,
+.pg-dot.cancel {
+  background: var(--wk-text-disabled);
+}
+.pg-dot.doing {
+  background: var(--wk-color-info);
+}
+.pg-dot.review {
+  background: var(--wk-color-warning);
+}
+.pg-dot.done {
+  background: var(--wk-color-success);
+}
+.pg-dot.block {
+  background: var(--wk-color-error);
+}
+.pg-role-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--wk-text-tertiary);
+}
+.pg-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  line-height: 1.35;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-asg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  margin-bottom: 6px;
+}
+.pg-noone {
+  color: var(--wk-text-disabled);
+}
+.pg-state {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--wk-brand-tint-06);
+  color: var(--wk-text-secondary);
+}
+.pg-state.doing {
+  background: color-mix(in srgb, var(--wk-color-info) 12%, transparent);
+  color: var(--wk-color-info);
+}
+.pg-state.review {
+  background: color-mix(in srgb, var(--wk-color-warning) 14%, transparent);
+  color: var(--wk-color-warning);
+}
+.pg-state.done {
+  background: color-mix(in srgb, var(--wk-color-success) 14%, transparent);
+  color: var(--wk-color-success);
+}
+.pg-state.block {
+  background: color-mix(in srgb, var(--wk-color-error) 12%, transparent);
+  color: var(--wk-color-error);
+}

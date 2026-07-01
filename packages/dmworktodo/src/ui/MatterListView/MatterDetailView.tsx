@@ -4,8 +4,8 @@
  *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./rowMenus 的 priorityMenu、
  *          ./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
  * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker banner/review banner[通过=done·需要修改=feedback打回]/
- *          Brief/计划(mode)/子任务(children+派子任务)/迭代(iterations 轮次)/进度(activities)/动态(timeline)/产出/
- *          发车 composer/Inspector[状态·优先级·项目 可编辑])。
+ *          Brief/计划(mode)/子任务(计划图 PlanGraph[有子任务时]+派子任务)/迭代(iterations 轮次)/
+ *          进度(activities)/动态(timeline)/产出/发车 composer/Inspector[状态·优先级·项目 可编辑])。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
  *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -44,6 +44,7 @@ import { Toast } from "../../utils/toast";
 import { StatusIcon, PriorityIcon } from "./icons";
 import { priorityMenu } from "./rowMenus";
 import { STATUS_ORDER, STATUS_LABEL } from "./icons";
+import PlanGraph from "./PlanGraph";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
@@ -520,23 +521,12 @@ export default function MatterDetailView({
             </div>
           )}
           {children.length > 0 ? (
-            <div className="mdv-subs" role="list">
-              {children.map((c) => {
-                const who = c.assignees?.[0]?.user_id;
-                return (
-                  <div key={c.id} className="mdv-sub" role="listitem">
-                    <StatusIcon status={c.status as MatterStatus} size={14} />
-                    <span className="mdv-sub-id">M-{c.seq_no}</span>
-                    <span className="mdv-sub-title">{c.title}</span>
-                    {who && (
-                      <span className="mdv-sub-leader">
-                        <UserName uid={who} />
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <PlanGraph
+              leaderUid={matter.leader_uid}
+              mode={matter.mode}
+              status={matter.status}
+              nodes={children}
+            />
           ) : (
             !subOpen && <div className="mdv-empty">暂无子任务</div>
           )}
