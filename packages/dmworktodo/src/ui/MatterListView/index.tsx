@@ -15,7 +15,7 @@ import WKAvatar from "@octo/base/src/Components/WKAvatar";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import { useMatterList } from "../../hooks/useTodoList";
 import { listProjects, transitionMatter, deleteMatter } from "../../api/todoApi";
-import type { MatterStatus } from "../../bridge/types";
+import type { MatterStatus, MatterListParams } from "../../bridge/types";
 import { Toast } from "../../utils/toast";
 import UserName from "../UserName";
 import { PriorityIcon, StatusIcon, STATUS_ORDER, STATUS_LABEL } from "./icons";
@@ -281,7 +281,15 @@ function BoardCard({
 // ─────────────────────────── 主视图 ───────────────────────────
 export default function MatterListView({
   onOpenDetail,
-}: { onOpenDetail?: (id: string) => void } = {}) {
+  baseFilters,
+  embedded = false,
+}: {
+  onOpenDetail?: (id: string) => void;
+  /** 强制并入列表查询的基础过滤(如项目详情内嵌:{project_id})。 */
+  baseFilters?: MatterListParams;
+  /** 内嵌模式(项目详情内):收窄内边距,项目 chip 冗余可留。 */
+  embedded?: boolean;
+} = {}) {
   const myUid = WKApp.loginInfo.uid ?? "";
   const [tab, setTab] = useState<Tab>("all");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -330,14 +338,19 @@ export default function MatterListView({
     [projectMap],
   );
 
+  const baseFiltersKey = JSON.stringify(baseFilters ?? {});
   const initialFilters = useMemo(
-    () =>
-      tab === "created"
+    () => ({
+      ...(baseFilters ?? {}),
+      ...(tab === "created"
         ? { creator_id: myUid }
         : tab === "assigned"
           ? { assignee_id: myUid }
-          : {},
-    [tab, myUid],
+          : {}),
+    }),
+    // baseFiltersKey 稳定化对象引用,避免每次渲染重建过滤器
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tab, myUid, baseFiltersKey],
   );
 
   const { matters, loading, hasMore, loadMore, reload, optimisticUpdate, removeOptimistic } =
@@ -505,7 +518,7 @@ export default function MatterListView({
   const filterCount = activeFilterCount(viewSpec.filters);
 
   return (
-    <div className="mlv">
+    <div className={`mlv${embedded ? " is-embedded" : ""}`}>
       <div className="mlv-head">
         <h1 className="mlv-h1">全部回路</h1>
         <button className="mlv-new" type="button" onClick={openCreate}>

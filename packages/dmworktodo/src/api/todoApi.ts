@@ -414,6 +414,65 @@ export async function addProjectSource(
   return post<void>(`/projects/${projectId}/sources`, req);
 }
 
+// ─── 项目详情:常驻成员 / 常驻 bot / 上下文来源(P2,端点 curl 实测 200)──────
+// 权限沿用 IM:加人免费、加自己的 bot(主人主权);creator 可踢人。真相源 Matter-项目级成员设计.md。
+
+/** 项目常驻成员(人)。role: creator | member。 */
+export interface ProjectMember {
+  id: string;
+  project_id: string;
+  user_uid: string;
+  role: string;
+  added_by?: string;
+  created_at?: string;
+}
+export async function listProjectMembers(projectId: string): Promise<ProjectMember[]> {
+  const res = await get<{ data: ProjectMember[] } | ProjectMember[]>(`/projects/${projectId}/members`);
+  return Array.isArray(res) ? res : res.data;
+}
+export async function addProjectMember(projectId: string, userUid: string): Promise<void> {
+  return post<void>(`/projects/${projectId}/members`, { user_uid: userUid });
+}
+export async function removeProjectMember(projectId: string, userUid: string): Promise<void> {
+  return del<void>(`/projects/${projectId}/members/${userUid}`);
+}
+
+/** 项目常驻可调度 bot(主人主权)。 */
+export interface ProjectBot {
+  id: string;
+  project_id: string;
+  bot_uid: string;
+  owner_uid?: string;
+  created_at?: string;
+}
+export async function listProjectBots(projectId: string): Promise<ProjectBot[]> {
+  const res = await get<{ data: ProjectBot[] } | ProjectBot[]>(`/projects/${projectId}/bots`);
+  return Array.isArray(res) ? res : res.data;
+}
+export async function addProjectBot(projectId: string, botUid: string): Promise<void> {
+  return post<void>(`/projects/${projectId}/bots`, { bot_uid: botUid });
+}
+export async function removeProjectBot(projectId: string, botUid: string): Promise<void> {
+  return del<void>(`/projects/${projectId}/bots/${botUid}`);
+}
+
+/** 项目上下文来源(聊天引用/文件/链接)。 */
+export interface ProjectSource {
+  id: string;
+  kind: string;
+  title: string;
+  ref?: string;
+  snippet?: string;
+  created_at?: string;
+}
+export async function listProjectSources(projectId: string): Promise<ProjectSource[]> {
+  const res = await get<{ data: ProjectSource[] } | ProjectSource[]>(`/projects/${projectId}/sources`);
+  return Array.isArray(res) ? res : res.data;
+}
+export async function removeProjectSource(projectId: string, sourceId: string): Promise<void> {
+  return del<void>(`/projects/${projectId}/sources/${sourceId}`);
+}
+
 // ─── 兼容旧 API（deprecated） ────────────────────────────
 
 /** @deprecated 使用 listTimeline 替代 */

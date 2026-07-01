@@ -141,6 +141,8 @@ export interface MatterListParams {
    */
   channel_id?: string;
   q?: string;
+  /** 按项目过滤(后端已支持;前端类型补齐)。项目详情内嵌看板用。 */
+  project_id?: string;
   order_by?: MatterOrderBy;
   order_dir?: MatterOrderDir;
   limit?: number;
