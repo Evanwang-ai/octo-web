@@ -1,32 +1,49 @@
-// L3 | MatterDetailView — 原生 React 回路详情(目标① 替 iframe 详情)。
-// 数据复用 getMatter/listTimeline/listOutputs/addTimelineEntry/transitionMatter。
-// 区块对齐 feat/loop:标题 + 状态 + Brief + 计划(mode) + 进度 timeline + 产出 + 发车 composer + Inspector(状态流转/编号/优先级/发起人/领队/协作者/项目)。
+/**
+ * [INPUT]: 依赖 api/todoApi 的 getMatter/listTimeline/listOutputs/listActivities/addTimelineEntry/
+ *          transitionMatter/updateMatter/listProjects;@octo/base 的 WKApp/WKAvatar/ContextMenus;
+ *          ./rowMenus 的 priorityMenu、./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
+ * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker·review banner/Brief/计划(mode)/
+ *          进度(activities)/动态(timeline)/产出/发车 composer/Inspector[状态·优先级·项目 可编辑])。
+ * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
+ *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
+ * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ */
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { WKApp, ContextMenus } from "@octo/base";
+import type { ContextMenusContext, ContextMenusData } from "@octo/base";
 import WKAvatar from "@octo/base/src/Components/WKAvatar";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import {
   getMatter,
   listTimeline,
   listOutputs,
+  listActivities,
   addTimelineEntry,
   transitionMatter,
+  updateMatter,
+  listProjects,
 } from "../../api/todoApi";
 import type {
   MatterDetail,
   TimelineEntry,
   MatterOutput,
+  MatterActivity,
   MatterStatus,
+  MatterPriority,
   TimelineReq,
 } from "../../bridge/types";
 import UserName from "../UserName";
 import { Toast } from "../../utils/toast";
-import { StatusIcon, PriorityIcon, STATUS_ORDER, STATUS_LABEL } from "./icons";
+import { StatusIcon, PriorityIcon } from "./icons";
+import { priorityMenu } from "./rowMenus";
+import { STATUS_ORDER, STATUS_LABEL } from "./icons";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
 type MatterDetailFull = MatterDetail & {
   mode?: string;
   leader_uid?: string;
+  project_id?: string;
 };
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
@@ -37,6 +54,34 @@ const MODE_LABEL: Record<string, string> = {
   swarm: "蜂群",
   single: "单兵",
 };
+
+// activities 人话(对齐 vanilla actHuman);detail 形状随 action 变。
+function actHuman(a: MatterActivity): string {
+  const d = (a.detail || {}) as Record<string, unknown>;
+  const st = (k: unknown) => STATUS_LABEL[k as string] || String(k ?? "");
+  switch (a.action) {
+    case "created":
+      return "创建了回路";
+    case "status_changed":
+      return `状态 ${st(d.from)} → ${st(d.to)}`;
+    case "title_changed":
+      return "改了标题";
+    case "description_changed":
+      return "更新了 Brief";
+    case "deadline_changed":
+      return "改了截止时间";
+    case "assignee_added":
+      return "加了协作者";
+    case "assignee_removed":
+      return "移除了协作者";
+    case "channel_linked":
+      return "关联了频道";
+    case "channel_unlinked":
+      return "取消关联频道";
+    default:
+      return a.action;
+  }
+}
 
 function relTime(iso?: string): string {
   if (!iso) return "";
@@ -72,19 +117,23 @@ function PropAvatar({ label, uid }: { label: string; uid: string }) {
 
 export default function MatterDetailView({
   matterId,
-  projectName,
   onBack,
 }: {
   matterId: string;
   projectName?: string;
   onBack?: () => void;
 }) {
+  const myUid = WKApp.loginInfo.uid ?? "";
   const [matter, setMatter] = useState<MatterDetailFull | null>(null);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [outputs, setOutputs] = useState<MatterOutput[]>([]);
+  const [activities, setActivities] = useState<MatterActivity[]>([]);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [menuData, setMenuData] = useState<ContextMenusData[]>([]);
+  const ctxRef = useRef<ContextMenusContext | null>(null);
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -100,6 +149,13 @@ export default function MatterDetailView({
       })
       .catch(() => {});
   }, [matterId]);
+  const reloadActivities = useCallback(() => {
+    listActivities(matterId, { limit: 20 })
+      .then((ac) => {
+        if (mountedRef.current) setActivities(ac.data || []);
+      })
+      .catch(() => {});
+  }, [matterId]);
 
   useEffect(() => {
     let alive = true;
@@ -107,13 +163,13 @@ export default function MatterDetailView({
     // getMatter 关键请求:决定加载态与是否"未找到"。
     getMatter(matterId)
       .then((m) => {
-        if (alive) setMatter(m);
+        if (alive) setMatter(m as MatterDetailFull);
       })
       .catch(() => {})
       .finally(() => {
         if (alive) setLoading(false);
       });
-    // timeline / outputs 非关键:各自兜底,失败不拖垮详情。
+    // timeline / outputs / activities 非关键:各自兜底,失败不拖垮详情。
     listTimeline(matterId)
       .then((tl) => {
         if (alive) setTimeline(tl.data || []);
@@ -124,10 +180,28 @@ export default function MatterDetailView({
         if (alive) setOutputs(out.data || []);
       })
       .catch(() => {});
+    listActivities(matterId, { limit: 20 })
+      .then((ac) => {
+        if (alive) setActivities(ac.data || []);
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
   }, [matterId]);
+
+  // 项目候选(Inspector 改项目 select)。一次拉取,失败静默。
+  useEffect(() => {
+    let alive = true;
+    listProjects()
+      .then((ps) => {
+        if (alive) setProjects(ps);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const send = async () => {
     const text = draft.trim();
@@ -148,10 +222,39 @@ export default function MatterDetailView({
   const changeStatus = async (status: string) => {
     try {
       const m = await transitionMatter(matterId, status as MatterStatus);
-      if (mountedRef.current) setMatter(m);
+      if (mountedRef.current) {
+        setMatter(m as MatterDetailFull);
+        WKApp.mittBus.emit("wk:matter-updated", { matterId });
+        reloadActivities();
+      }
     } catch {
       // 非法流转被后端拒绝(400/409):受控 select 自动回弹到 matter.status,补提示。
       if (mountedRef.current) Toast.error("状态流转被拒绝");
+    }
+  };
+
+  const changePriority = async (p: number) => {
+    try {
+      const m = await updateMatter(matterId, { priority: p as MatterPriority });
+      if (mountedRef.current) {
+        setMatter(m as MatterDetailFull);
+        WKApp.mittBus.emit("wk:matter-updated", { matterId });
+      }
+    } catch {
+      if (mountedRef.current) Toast.error("优先级修改失败");
+    }
+  };
+
+  const changeProject = async (pid: string) => {
+    try {
+      const m = await updateMatter(matterId, { project_id: pid || null });
+      if (mountedRef.current) {
+        setMatter(m as MatterDetailFull);
+        WKApp.mittBus.emit("wk:matter-updated", { matterId });
+        reloadActivities();
+      }
+    } catch {
+      if (mountedRef.current) Toast.error("项目修改失败");
     }
   };
 
@@ -189,6 +292,27 @@ export default function MatterDetailView({
           <span>{STATUS_LABEL[matter.status] || matter.status}</span>
         </div>
 
+        {/* 状态 banner:受阻(可解除)/ 待确认("轮到你了")—— 对齐 vanilla blocker/review banner */}
+        {matter.status === "blocked" && (
+          <div className="mdv-banner is-block">
+            <span className="mdv-banner-txt">当前卡点 · 需要处理</span>
+            <button
+              type="button"
+              className="mdv-banner-btn"
+              onClick={() => changeStatus("in_progress")}
+            >
+              解除阻塞
+            </button>
+          </div>
+        )}
+        {matter.status === "review" && (
+          <div className="mdv-banner is-review">
+            <span className="mdv-banner-txt">
+              {matter.creator_id === myUid ? "轮到你了 · 有结果待确认" : "等待确认中"}
+            </span>
+          </div>
+        )}
+
         {matter.description && (
           <div className="mdv-brief">
             <div className="mdv-brief-label">Brief</div>
@@ -203,9 +327,31 @@ export default function MatterDetailView({
           </div>
         )}
 
+        {/* 进度 = activities 审计轨迹(对齐 vanilla:进度取 /activities) */}
+        {activities.length > 0 && (
+          <div className="mdv-section">
+            <div className="mdv-section-head">
+              进度<span className="mdv-section-count">{activities.length} 条</span>
+            </div>
+            <div className="mdv-acts" role="list">
+              {activities.map((a) => (
+                <div key={a.id} className="mdv-act" role="listitem">
+                  <span className="mdv-act-dot" />
+                  <span className="mdv-act-actor">
+                    <UserName uid={a.actor_id} />
+                  </span>
+                  <span className="mdv-act-text">{actHuman(a)}</span>
+                  <span className="mdv-act-time">{relTime(a.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 动态 = timeline(发车 composer 写入的进展/讨论) */}
         <div className="mdv-section">
           <div className="mdv-section-head">
-            进度<span className="mdv-section-count">{timeline.length} 条</span>
+            动态<span className="mdv-section-count">{timeline.length} 条</span>
           </div>
           <div className="mdv-timeline" role="list">
             {timeline.length === 0 && <div className="mdv-empty">还没有动态</div>}
@@ -298,26 +444,48 @@ export default function MatterDetailView({
             <span className="mdv-prop-label">编号</span>
             <span className="mdv-prop-val mdv-mono">M-{matter.seq_no}</span>
           </div>
+          {/* 优先级:可编辑(点开 ContextMenus 菜单;补 vanilla detail 未接线的按钮) */}
           <div className="mdv-prop">
             <span className="mdv-prop-label">优先级</span>
-            <span className="mdv-prop-val">
+            <button
+              type="button"
+              className="mdv-prop-val mdv-prop-edit"
+              onClick={(e) => {
+                setMenuData(priorityMenu(matter.priority, changePriority));
+                ctxRef.current?.show(e);
+              }}
+            >
               <PriorityIcon level={matter.priority ?? 0} size={14} />
               {PRIORITY_LABEL[matter.priority ?? 0]}
-            </span>
+            </button>
           </div>
           <PropAvatar label="发起人" uid={matter.creator_id} />
           {matter.leader_uid && <PropAvatar label="领队" uid={matter.leader_uid} />}
           {(matter.assignees || []).map((a) => (
             <PropAvatar key={a.id} label="协作者" uid={a.user_id} />
           ))}
-          {projectName && (
-            <div className="mdv-prop">
-              <span className="mdv-prop-label">项目</span>
-              <span className="mdv-prop-val">{projectName}</span>
-            </div>
-          )}
+          {/* 项目:可编辑 select */}
+          <div className="mdv-prop">
+            <span className="mdv-prop-label">项目</span>
+            <select
+              className="mdv-prop-sel"
+              aria-label="项目"
+              value={matter.project_id || ""}
+              onChange={(e) => changeProject(e.target.value)}
+            >
+              <option value="">未指定</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </aside>
+
+      {/* 优先级快改菜单(单实例,数据驱动) */}
+      <ContextMenus onContext={(c) => { ctxRef.current = c; }} menus={menuData} />
     </div>
   );
 }

@@ -4,7 +4,16 @@
 
 // ─── Status enums ───────────────────────────────────────
 
-export type MatterStatus = "open" | "done" | "archived";
+// 真实后端七态(feat/loop 活 API 实测);archived 保留兼容旧数据/调用。
+export type MatterStatus =
+  | "backlog"
+  | "open"
+  | "in_progress"
+  | "review"
+  | "done"
+  | "cancelled"
+  | "blocked"
+  | "archived";
 export type MatterPriority = 0 | 1 | 2 | 3 | 4;
 export type MatterOrderBy =
   | "created_at"
@@ -163,6 +172,8 @@ export interface UpdateMatterReq {
   deadline?: string | null;
   remind_at?: string | null;
   priority?: MatterPriority;
+  /** 改项目(后端 PUT /matters/:id 接受;vanilla detail projSel 即走此字段)。 */
+  project_id?: string | null;
 }
 
 // ─── Extract (AI 智能创建) ──────────────────────────────

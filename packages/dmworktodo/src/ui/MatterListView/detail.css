@@ -300,3 +300,102 @@
   color: var(--wk-color-accent);
   background: color-mix(in srgb, var(--wk-color-accent) 12%, transparent);
 }
+
+/* ── 状态 banner(受阻 / 待确认) ── */
+.mdv-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--wk-r-md);
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+.mdv-banner-txt {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+.mdv-banner.is-block {
+  background: color-mix(in srgb, var(--wk-color-error) 10%, transparent);
+  color: var(--wk-color-error);
+}
+.mdv-banner.is-review {
+  background: color-mix(in srgb, var(--wk-color-warning) 12%, transparent);
+  color: var(--wk-color-warning);
+}
+.mdv-banner-btn {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--wk-color-error);
+  color: var(--wk-text-on-brand);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mdv-banner-btn:hover {
+  opacity: 0.9;
+}
+
+/* ── 进度 activities 轨迹 ── */
+.mdv-acts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mdv-act {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--wk-text-secondary);
+}
+.mdv-act-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wk-text-disabled);
+}
+.mdv-act-actor {
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+.mdv-act-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mdv-act-time {
+  flex: 0 0 auto;
+  color: var(--wk-text-disabled);
+}
+
+/* ── Inspector 可编辑控件(优先级按钮 / 项目 select) ── */
+.mdv-prop-edit {
+  border: none;
+  background: transparent;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  transition: background 0.1s;
+}
+.mdv-prop-edit:hover {
+  background: var(--wk-brand-tint-06);
+}
+.mdv-prop-sel {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  font-size: 12.5px;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+}

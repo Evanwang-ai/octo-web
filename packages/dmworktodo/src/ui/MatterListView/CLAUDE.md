@@ -15,7 +15,7 @@ icons.tsx: 优先级(紧急琥珀方块/三柱)+ 状态(Linear 几何七态)SVG 
 rowMenus.ts: ContextMenus 菜单数据构建器(纯函数),priorityMenu/statusMenu/rowContextMenu;落库由调用方注入的 onPick/on* 闭包完成,无副作用。
 useMatterActions.ts: 单条回路写操作 hook,setPriority/setStatus/remove = 乐观更新 + updateMatter/transitionMatter/deleteMatter 落库 + emit wk:matter-updated 广播 + 失败 reload 回滚;列表快改·看板拖拽复用的单一真相。
 MatterSubNav.tsx: 左子导航(全部回路/项目/自动化/经验),内联 SVG 图标;SubNavKey 类型。
-MatterDetailView.tsx: 原生详情,getMatter/listTimeline/listOutputs + composer addTimelineEntry + 状态流转 transitionMatter + Inspector(编号/优先级/发起人/领队/协作者/项目)+ Brief 软卡片。
+MatterDetailView.tsx: 原生详情,getMatter/listTimeline/listOutputs/listActivities;区块:标题/状态/**blocker·"轮到你了"review banner**/Brief/计划(mode)/**进度=activities 审计轨迹(actHuman 人话)**/动态=timeline/产出=outputs/发车 composer(addTimelineEntry);Inspector:状态 select、优先级(**可编辑**→ContextMenus+updateMatter,补 vanilla 未接线按钮)、项目(**可编辑 select**→updateMatter project_id)、编号/发起人/领队/协作者(只读,对齐 vanilla)。真相源 vanilla paintMatter/paintInspector。
 detail.css: 详情 + Inspector 样式,全 `--wk-*`。
 
 法则: 成员完整·一行一文件·复用设计系统件·真相源 vanilla feat/loop·不碰 Go 后端
