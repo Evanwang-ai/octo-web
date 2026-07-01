@@ -63,7 +63,13 @@ function actHuman(a: MatterActivity): string {
     case "created":
       return "创建了回路";
     case "status_changed":
-      return `状态 ${st(d.from)} → ${st(d.to)}`;
+      return d.from || d.to ? `状态 ${st(d.from)} → ${st(d.to)}` : "更新了状态";
+    case "priority_changed":
+      return "改了优先级";
+    case "project_changed":
+      return "改了项目";
+    case "leader_changed":
+      return "换了领队";
     case "title_changed":
       return "改了标题";
     case "description_changed":
@@ -135,6 +141,8 @@ export default function MatterDetailView({
   const [menuData, setMenuData] = useState<ContextMenusData[]>([]);
   const ctxRef = useRef<ContextMenusContext | null>(null);
   const mountedRef = useRef(true);
+  // 写操作代际:并发写时只让"最新发起"的响应落地,防旧响应覆盖新状态。
+  const writeGenRef = useRef(0);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -219,14 +227,19 @@ export default function MatterDetailView({
     }
   };
 
+  // 写后落地守护:仍挂载 && 本次是最新代际(旧响应不覆盖新状态)。
+  const applyIfLatest = (gen: number, m: MatterDetailFull) => {
+    if (!mountedRef.current || gen !== writeGenRef.current) return;
+    setMatter(m);
+    WKApp.mittBus.emit("wk:matter-updated", { matterId });
+    reloadActivities();
+  };
+
   const changeStatus = async (status: string) => {
+    const gen = ++writeGenRef.current;
     try {
       const m = await transitionMatter(matterId, status as MatterStatus);
-      if (mountedRef.current) {
-        setMatter(m as MatterDetailFull);
-        WKApp.mittBus.emit("wk:matter-updated", { matterId });
-        reloadActivities();
-      }
+      applyIfLatest(gen, m as MatterDetailFull);
     } catch {
       // 非法流转被后端拒绝(400/409):受控 select 自动回弹到 matter.status,补提示。
       if (mountedRef.current) Toast.error("状态流转被拒绝");
@@ -234,25 +247,20 @@ export default function MatterDetailView({
   };
 
   const changePriority = async (p: number) => {
+    const gen = ++writeGenRef.current;
     try {
       const m = await updateMatter(matterId, { priority: p as MatterPriority });
-      if (mountedRef.current) {
-        setMatter(m as MatterDetailFull);
-        WKApp.mittBus.emit("wk:matter-updated", { matterId });
-      }
+      applyIfLatest(gen, m as MatterDetailFull);
     } catch {
       if (mountedRef.current) Toast.error("优先级修改失败");
     }
   };
 
   const changeProject = async (pid: string) => {
+    const gen = ++writeGenRef.current;
     try {
       const m = await updateMatter(matterId, { project_id: pid || null });
-      if (mountedRef.current) {
-        setMatter(m as MatterDetailFull);
-        WKApp.mittBus.emit("wk:matter-updated", { matterId });
-        reloadActivities();
-      }
+      applyIfLatest(gen, m as MatterDetailFull);
     } catch {
       if (mountedRef.current) Toast.error("项目修改失败");
     }
@@ -292,8 +300,9 @@ export default function MatterDetailView({
           <span>{STATUS_LABEL[matter.status] || matter.status}</span>
         </div>
 
-        {/* 状态 banner:受阻(可解除)/ 待确认("轮到你了")—— 对齐 vanilla blocker/review banner */}
-        {matter.status === "blocked" && (
+        {/* 状态 banner:受阻(可解除)/ 待确认("轮到你了")—— 对齐 vanilla blocker/review banner。
+            status 字面量七态,MatterStatus 共享类型仍三态(兼容旧 UI),故 as string 比较。 */}
+        {(matter.status as string) === "blocked" && (
           <div className="mdv-banner is-block">
             <span className="mdv-banner-txt">当前卡点 · 需要处理</span>
             <button
@@ -305,7 +314,7 @@ export default function MatterDetailView({
             </button>
           </div>
         )}
-        {matter.status === "review" && (
+        {(matter.status as string) === "review" && (
           <div className="mdv-banner is-review">
             <span className="mdv-banner-txt">
               {matter.creator_id === myUid ? "轮到你了 · 有结果待确认" : "等待确认中"}
@@ -432,6 +441,10 @@ export default function MatterDetailView({
             value={matter.status}
             onChange={(e) => changeStatus(e.target.value)}
           >
+            {/* 兜底:matter.status 不在七态清单(如历史 archived)时,补一个当前项,避免 select 失配。 */}
+            {!(STATUS_ORDER as readonly string[]).includes(matter.status) && (
+              <option value={matter.status}>{STATUS_LABEL[matter.status] || matter.status}</option>
+            )}
             {STATUS_ORDER.map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s] || s}

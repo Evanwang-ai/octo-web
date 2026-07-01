@@ -4,16 +4,10 @@
 
 // ─── Status enums ───────────────────────────────────────
 
-// 真实后端七态(feat/loop 活 API 实测);archived 保留兼容旧数据/调用。
-export type MatterStatus =
-  | "backlog"
-  | "open"
-  | "in_progress"
-  | "review"
-  | "done"
-  | "cancelled"
-  | "blocked"
-  | "archived";
+// 兼容旧 todo UI 消费方(MatterDetailPanel/TodoFilterBar/… 仍按三态建 Record/筛选);
+// 真实后端七态由 native 层的 STATUS_ORDER(icons.ts)承载,写路径在边界 cast(string→MatterStatus)。
+// 绞杀式:不 widening 此共享类型以免破坏现存旧 UI。
+export type MatterStatus = "open" | "done" | "archived";
 export type MatterPriority = 0 | 1 | 2 | 3 | 4;
 export type MatterOrderBy =
   | "created_at"
