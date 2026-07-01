@@ -1,10 +1,10 @@
 /**
  * [INPUT]: 依赖 api/todoApi 的 getMatter/listTimeline/listOutputs/listActivities/addTimelineEntry/
- *          transitionMatter/updateMatter/listProjects/getIterations/getMatterTree/createSubMatter;
+ *          transitionMatter/updateMatter/listProjects/getIterations/getMatterTree/createSubMatter/addFeedback;
  *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./rowMenus 的 priorityMenu、
  *          ./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
- * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker·review banner/Brief/计划(mode)/
- *          子任务(children+派子任务)/迭代(iterations 轮次)/进度(activities)/动态(timeline)/产出/
+ * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker banner/review banner[通过=done·需要修改=feedback打回]/
+ *          Brief/计划(mode)/子任务(children+派子任务)/迭代(iterations 轮次)/进度(activities)/动态(timeline)/产出/
  *          发车 composer/Inspector[状态·优先级·项目 可编辑])。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
  *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
@@ -27,6 +27,7 @@ import {
   getIterations,
   getMatterTree,
   createSubMatter,
+  addFeedback,
 } from "../../api/todoApi";
 import type { MatterIterations, MatterTreeChild } from "../../api/todoApi";
 import type {
@@ -67,6 +68,7 @@ const OUTCOME_LABEL: Record<string, string> = {
   needs_revision: "需修改",
   rejected: "已否决",
   in_progress: "进行中",
+  sent_back: "已打回",
 };
 
 // activities 人话(对齐 vanilla actHuman);detail 形状随 action 变。
@@ -78,6 +80,8 @@ function actHuman(a: MatterActivity): string {
       return "创建了回路";
     case "child_created":
       return "派发子任务";
+    case "feedback_added":
+      return "圈了一笔";
     case "status_changed":
       return d.from || d.to ? `状态 ${st(d.from)} → ${st(d.to)}` : "更新了状态";
     case "priority_changed":
@@ -155,6 +159,10 @@ export default function MatterDetailView({
   const [subOpen, setSubOpen] = useState(false);
   const [subTitle, setSubTitle] = useState("");
   const [subBusy, setSubBusy] = useState(false);
+  // review 决策:需要修改(圈一笔=feedback,后端自动打回 review→in_progress)
+  const [reviseOpen, setReviseOpen] = useState(false);
+  const [reviseNote, setReviseNote] = useState("");
+  const [reviseBusy, setReviseBusy] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -306,6 +314,29 @@ export default function MatterDetailView({
     }
   };
 
+  // 需要修改(圈一笔):POST /feedback,后端在 review 态自动打回 review→in_progress + 门铃。
+  const sendRevision = async () => {
+    const content = reviseNote.trim();
+    if (!content || reviseBusy) return;
+    setReviseBusy(true);
+    try {
+      await addFeedback(matterId, { content });
+      if (!mountedRef.current) return;
+      setReviseNote("");
+      setReviseOpen(false);
+      const m = await getMatter(matterId); // 拉新状态(后端已自动打回)
+      if (mountedRef.current) {
+        setMatter(m as MatterDetailFull);
+        reloadActivities();
+        WKApp.mittBus.emit("wk:matter-updated", { matterId });
+      }
+    } catch {
+      if (mountedRef.current) Toast.error("打回失败");
+    } finally {
+      if (mountedRef.current) setReviseBusy(false);
+    }
+  };
+
   // 派子任务:标题 + parent_matter_id(+ 继承父项目);step 自动。树即权限由后端守卫。
   const createSub = async () => {
     const title = subTitle.trim();
@@ -371,21 +402,63 @@ export default function MatterDetailView({
             status 字面量七态,MatterStatus 共享类型仍三态(兼容旧 UI),故 as string 比较。 */}
         {(matter.status as string) === "blocked" && (
           <div className="mdv-banner is-block">
-            <span className="mdv-banner-txt">当前卡点 · 需要处理</span>
-            <button
-              type="button"
-              className="mdv-banner-btn"
-              onClick={() => changeStatus("in_progress")}
-            >
-              解除阻塞
-            </button>
+            <div className="mdv-banner-row">
+              <span className="mdv-banner-txt">当前卡点 · 需要处理</span>
+              <button
+                type="button"
+                className="mdv-banner-btn"
+                onClick={() => changeStatus("in_progress")}
+              >
+                解除阻塞
+              </button>
+            </div>
           </div>
         )}
         {(matter.status as string) === "review" && (
           <div className="mdv-banner is-review">
-            <span className="mdv-banner-txt">
-              {matter.creator_id === myUid ? "轮到你了 · 有结果待确认" : "等待确认中"}
-            </span>
+            <div className="mdv-banner-row">
+              <span className="mdv-banner-txt">
+                {matter.creator_id === myUid ? "轮到你了 · 有结果待确认" : "等待确认中"}
+              </span>
+              {matter.creator_id === myUid && (
+                <div className="mdv-banner-acts">
+                  <button
+                    type="button"
+                    className="mdv-banner-btn is-ghost"
+                    onClick={() => setReviseOpen((v) => !v)}
+                  >
+                    需要修改
+                  </button>
+                  <button
+                    type="button"
+                    className="mdv-banner-btn is-ok"
+                    onClick={() => changeStatus("done")}
+                  >
+                    通过
+                  </button>
+                </div>
+              )}
+            </div>
+            {reviseOpen && matter.creator_id === myUid && (
+              <div className="mdv-revise">
+                <textarea
+                  className="mdv-revise-input"
+                  rows={2}
+                  aria-label="修改意见"
+                  placeholder="要改哪里?发出去 = 打回给领队重做(会记一笔 feedback)"
+                  value={reviseNote}
+                  onChange={(e) => setReviseNote(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="mdv-revise-go"
+                  onClick={sendRevision}
+                  disabled={reviseBusy || !reviseNote.trim()}
+                >
+                  {reviseBusy ? "打回中…" : "打回"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
