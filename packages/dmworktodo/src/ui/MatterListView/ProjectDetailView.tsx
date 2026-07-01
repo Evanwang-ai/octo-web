@@ -23,6 +23,7 @@ import {
   listProjectBots,
   removeProjectBot,
   listProjectSources,
+  addProjectSource,
   removeProjectSource,
 } from "../../api/todoApi";
 import type { ProjectMember, ProjectBot, ProjectSource } from "../../api/todoApi";
@@ -53,6 +54,11 @@ export default function ProjectDetailView({
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [bots, setBots] = useState<ProjectBot[]>([]);
   const [sources, setSources] = useState<ProjectSource[]>([]);
+  const [srcOpen, setSrcOpen] = useState(false);
+  const [srcKind, setSrcKind] = useState("link");
+  const [srcTitle, setSrcTitle] = useState("");
+  const [srcRef, setSrcRef] = useState("");
+  const [srcBusy, setSrcBusy] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -135,6 +141,28 @@ export default function ProjectDetailView({
       reloadSources();
     } catch {
       if (mountedRef.current) Toast.error("移除来源失败");
+    }
+  };
+  // 加来源(文本:链接/笔记)。跨仓文件上传(octo-server /file/upload)为后续尾项。
+  const addSource = async () => {
+    const title = srcTitle.trim();
+    if (!title || srcBusy) return;
+    setSrcBusy(true);
+    try {
+      await addProjectSource(projectId, {
+        kind: srcKind,
+        title,
+        ...(srcRef.trim() ? { ref: srcRef.trim() } : {}),
+      });
+      if (!mountedRef.current) return;
+      setSrcTitle("");
+      setSrcRef("");
+      setSrcOpen(false);
+      reloadSources();
+    } catch {
+      if (mountedRef.current) Toast.error("加来源失败");
+    } finally {
+      if (mountedRef.current) setSrcBusy(false);
     }
   };
 
@@ -244,7 +272,51 @@ export default function ProjectDetailView({
           <div className="pdv-pane pdv-pane-pad">
             <div className="pdv-sec-h">
               上下文来源<span className="pdv-sec-c">{sources.length}</span>
+              <button
+                type="button"
+                className="pdv-add-src"
+                onClick={() => setSrcOpen((v) => !v)}
+              >
+                + 加来源
+              </button>
             </div>
+            {srcOpen && (
+              <div className="pdv-src-form">
+                <select
+                  className="pdv-src-kind-sel"
+                  aria-label="来源类型"
+                  value={srcKind}
+                  onChange={(e) => setSrcKind(e.target.value)}
+                >
+                  <option value="link">链接</option>
+                  <option value="note">笔记</option>
+                  <option value="doc">文档</option>
+                </select>
+                <input
+                  className="pdv-src-title-in"
+                  aria-label="来源标题"
+                  placeholder="标题"
+                  maxLength={200}
+                  value={srcTitle}
+                  onChange={(e) => setSrcTitle(e.target.value)}
+                />
+                <input
+                  className="pdv-src-ref-in"
+                  aria-label="来源链接"
+                  placeholder="链接/引用(可选)"
+                  value={srcRef}
+                  onChange={(e) => setSrcRef(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="pdv-src-go"
+                  onClick={addSource}
+                  disabled={srcBusy || !srcTitle.trim()}
+                >
+                  {srcBusy ? "添加中…" : "添加"}
+                </button>
+              </div>
+            )}
             <div className="pdv-list">
               {sources.length === 0 && <div className="pdv-empty">还没有共享上下文</div>}
               {sources.map((s) => (

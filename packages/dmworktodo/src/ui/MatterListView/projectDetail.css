@@ -207,3 +207,68 @@
   color: var(--wk-text-tertiary);
   margin-top: 4px;
 }
+
+/* 加来源表单 */
+.pdv-add-src {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--wk-color-info);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.pdv-add-src:hover {
+  background: var(--wk-brand-tint-06);
+}
+.pdv-src-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.pdv-src-kind-sel,
+.pdv-src-title-in,
+.pdv-src-ref-in {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  background: var(--wk-bg-surface);
+  outline: none;
+}
+.pdv-src-kind-sel {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.pdv-src-title-in {
+  flex: 1 1 40%;
+  min-width: 0;
+}
+.pdv-src-ref-in {
+  flex: 1 1 40%;
+  min-width: 0;
+}
+.pdv-src-title-in:focus,
+.pdv-src-ref-in:focus {
+  border-color: var(--wk-color-info);
+}
+.pdv-src-go {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--wk-r-md);
+  background: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pdv-src-go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
