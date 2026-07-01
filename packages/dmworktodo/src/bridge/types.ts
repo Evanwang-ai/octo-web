@@ -312,6 +312,49 @@ export interface ListActivitiesParams {
   cursor?: string;
 }
 
+// ─── Preference Cards (经验卡) ──────────────────────────
+
+/**
+ * PreferenceCard — 经验/偏好卡(回路完成后沉淀的可复用行为规则)。
+ * status: draft(草稿)/authorized(已生效)/hit(命中)/miss(未命中)/discarded(已弃用)。
+ * scope: global/space(普适) / project / bot / matter。
+ * 字段以 feat/loop 活 API 实测为准(evidence/avoid 可能缺省)。
+ */
+export interface PreferenceCard {
+  id: string;
+  space_id: string;
+  matter_id?: string;
+  project_id?: string;
+  agent_uid?: string;
+  creator_id: string;
+  status: string;
+  scope: string;
+  content: string;
+  evidence?: string;
+  avoid?: string;
+  keywords?: string[];
+  links?: string[];
+  source_cards?: string[];
+  layer?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdatePreferenceCardReq {
+  content?: string;
+  scope?: string;
+  status?: string;
+  evidence?: string;
+  avoid?: string;
+}
+
+export interface CreatePreferenceCardReq {
+  content: string;
+  scope: string;
+  evidence?: string;
+  avoid?: string;
+}
+
 // ─── API error ──────────────────────────────────────────
 
 export interface ApiError {

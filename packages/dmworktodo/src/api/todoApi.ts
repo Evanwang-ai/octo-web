@@ -19,6 +19,9 @@ import type {
   ListActivitiesParams,
   MatterOutput,
   ListOutputsParams,
+  PreferenceCard,
+  UpdatePreferenceCardReq,
+  CreatePreferenceCardReq,
 } from "../bridge/types";
 
 /**
@@ -347,4 +350,41 @@ export async function listOutputs(
     `/matters/${matterId}/outputs`,
     params as unknown as Record<string, unknown>,
   );
+}
+
+// ─── Preference Cards (经验卡) ──────────────────────────
+
+/** 兼容 {data:[]} 与裸数组两种响应形状。 */
+function unwrapList<T>(res: { data: T[] } | T[]): T[] {
+  return Array.isArray(res) ? res : (res.data ?? []);
+}
+
+export async function listPreferenceCards(limit = 100): Promise<PreferenceCard[]> {
+  return unwrapList(
+    await get<{ data: PreferenceCard[] } | PreferenceCard[]>("/preference-cards", { limit }),
+  );
+}
+
+/** 后端搜索;本地实例可能 500,调用方需 try/catch 降级到内存过滤。 */
+export async function searchPreferenceCards(q: string): Promise<PreferenceCard[]> {
+  return unwrapList(
+    await get<{ data: PreferenceCard[] } | PreferenceCard[]>("/preference-cards/search", { q }),
+  );
+}
+
+export async function updatePreferenceCard(
+  id: string,
+  req: UpdatePreferenceCardReq,
+): Promise<PreferenceCard> {
+  return put<PreferenceCard>(`/preference-cards/${id}`, req);
+}
+
+export async function createPreferenceCard(
+  req: CreatePreferenceCardReq,
+): Promise<PreferenceCard> {
+  return post<PreferenceCard>("/preference-cards", req);
+}
+
+export async function deletePreferenceCard(id: string): Promise<void> {
+  return del<void>(`/preference-cards/${id}`);
 }
