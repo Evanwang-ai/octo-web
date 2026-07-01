@@ -25,6 +25,7 @@ import {
   listProjectSources,
   addProjectSource,
   removeProjectSource,
+  uploadProjectFile,
 } from "../../api/todoApi";
 import type { ProjectMember, ProjectBot, ProjectSource } from "../../api/todoApi";
 import "./projectDetail.css";
@@ -59,6 +60,8 @@ export default function ProjectDetailView({
   const [srcTitle, setSrcTitle] = useState("");
   const [srcRef, setSrcRef] = useState("");
   const [srcBusy, setSrcBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -143,7 +146,24 @@ export default function ProjectDetailView({
       if (mountedRef.current) Toast.error("移除来源失败");
     }
   };
-  // 加来源(文本:链接/笔记)。跨仓文件上传(octo-server /file/upload)为后续尾项。
+  // 文件上传(跨仓 octo-server /file/upload)→ 写入 kind=file 来源。
+  const onFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 允许重复选同一文件
+    if (!file || uploading) return;
+    setUploading(true);
+    try {
+      const { url, name } = await uploadProjectFile(file, projectId);
+      await addProjectSource(projectId, { kind: "file", title: name, ref: url });
+      if (mountedRef.current) reloadSources();
+    } catch {
+      if (mountedRef.current) Toast.error("文件上传失败");
+    } finally {
+      if (mountedRef.current) setUploading(false);
+    }
+  };
+
+  // 加来源(文本:链接/笔记)。
   const addSource = async () => {
     const title = srcTitle.trim();
     if (!title || srcBusy) return;
@@ -272,13 +292,31 @@ export default function ProjectDetailView({
           <div className="pdv-pane pdv-pane-pad">
             <div className="pdv-sec-h">
               上下文来源<span className="pdv-sec-c">{sources.length}</span>
-              <button
-                type="button"
-                className="pdv-add-src"
-                onClick={() => setSrcOpen((v) => !v)}
-              >
-                + 加来源
-              </button>
+              <span style={{ marginLeft: "auto", display: "inline-flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="pdv-add-src"
+                  style={{ marginLeft: 0 }}
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? "上传中…" : "↥ 上传文件"}
+                </button>
+                <button
+                  type="button"
+                  className="pdv-add-src"
+                  style={{ marginLeft: 0 }}
+                  onClick={() => setSrcOpen((v) => !v)}
+                >
+                  + 加来源
+                </button>
+              </span>
+              <input
+                ref={fileRef}
+                type="file"
+                style={{ display: "none" }}
+                onChange={onFilePick}
+              />
             </div>
             {srcOpen && (
               <div className="pdv-src-form">

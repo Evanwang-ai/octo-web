@@ -414,6 +414,44 @@ export async function addProjectSource(
   return post<void>(`/projects/${projectId}/sources`, req);
 }
 
+/**
+ * 项目上下文文件上传 —— 跨仓打到 octo-server `/api/v1/file/upload`(非 matter BASE,
+ * 故单开 fetch,不走 matterAxios)。返回可引用 URL,调用方再 addProjectSource({kind:"file",ref:url})。
+ * 契约对齐 vanilla projectSourceUpload:FormData(file+contenttype)、token header、resp {path,name,size}。
+ */
+export async function uploadProjectFile(
+  file: File,
+  projectId: string,
+): Promise<{ url: string; name: string; size: number }> {
+  const safe = String(file.name || "file").replace(/[^\w.一-龥-]+/g, "_");
+  const path = `project/${projectId}/${Date.now()}_${safe}`;
+  const fd = new FormData();
+  fd.append("file", file);
+  if (file.type) fd.append("contenttype", file.type);
+  const token = WKApp.loginInfo.token;
+  const res = await fetch(`/api/v1/file/upload?type=common&path=${encodeURIComponent(path)}`, {
+    method: "POST",
+    headers: token ? { token } : undefined,
+    body: fd,
+  });
+  if (!res.ok) {
+    let msg = `上传失败 ${res.status}`;
+    try {
+      const j = (await res.json()) as { msg?: string };
+      if (j?.msg) msg = j.msg;
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(msg, undefined, res.status);
+  }
+  const j = (await res.json()) as { path?: string; name?: string; size?: number };
+  let url = j.path || "";
+  if (url && url.indexOf("http") !== 0) {
+    url = `${location.origin}/api/v1/${url.replace(/^\/+/, "")}`;
+  }
+  return { url, name: j.name || safe, size: j.size || file.size };
+}
+
 // ─── 项目详情:常驻成员 / 常驻 bot / 上下文来源(P2,端点 curl 实测 200)──────
 // 权限沿用 IM:加人免费、加自己的 bot(主人主权);creator 可踢人。真相源 Matter-项目级成员设计.md。
 
