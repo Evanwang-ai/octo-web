@@ -2,7 +2,7 @@
  * [INPUT]: 依赖 hooks/useTodoList 的 useMatterList、api/todoApi 的 listProjects/transitionMatter/deleteMatter;
  *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./useMatterActions、./rowMenus、./icons;utils/toast。
  * [OUTPUT]: 默认导出 MatterListView(原生回路列表:list/board 双布局、状态分组、Tab、领队 chip、项目 chip、
- *          新建/多选批量/优先级·状态快改/行右键菜单/实时刷新)。
+ *          新建/多选批量/优先级·状态快改/行右键菜单/实时刷新;看板卡拖拽换列 + 协作者"等 N 人")。
  * [POS]: dmworktodo/ui/MatterListView 的主视图,被 MatterRouteHost 以 view="matters" 挂载;
  *        兄弟:MatterDetailView(详情)、MatterSubNav(左导航)、icons/rowMenus/useMatterActions(原子层)。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -40,6 +40,7 @@ interface RowHandlers {
   priorityMenu: (e: React.MouseEvent, m: MatterRow) => void;
   statusMenu: (e: React.MouseEvent, m: MatterRow) => void;
   context: (e: React.MouseEvent, m: MatterRow) => void;
+  dragEnd: () => void; // 看板拖拽结束清高亮(列表不用)
 }
 
 function relTime(iso?: string): string {
@@ -143,12 +144,22 @@ function BoardCard({
   project?: string;
   on: RowHandlers;
 }) {
-  const leader = m.leader_uid;
+  // 看板显示人对齐 vanilla:领队优先,无则退 assignees[0];others>0 时缀"等 N 人"。
+  const displayed = m.leader_uid || m.assignees?.[0]?.user_id;
+  const others = displayed
+    ? (m.assignees || []).filter((a) => a.user_id !== displayed).length
+    : 0;
   return (
     <div
       className="mlv-card"
       role="button"
       tabIndex={0}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/matter-id", m.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragEnd={on.dragEnd}
       onClick={() => on.open(m.id)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -176,13 +187,14 @@ function BoardCard({
       <div className="mlv-card-foot">
         {project && <span className="mlv-card-proj">{project}</span>}
         <span className="mlv-flex" />
-        {leader && (
+        {displayed && (
           <span className="mlv-card-leader">
             <WKAvatar
-              channel={new Channel(leader, ChannelTypePerson)}
+              channel={new Channel(displayed, ChannelTypePerson)}
               style={{ width: 18, height: 18, borderRadius: "50%" }}
             />
-            {isBot(leader) && <span className="mlv-ai">AI</span>}
+            {isBot(displayed) && <span className="mlv-ai">AI</span>}
+            {others > 0 && <span className="mlv-card-more">等 {others + 1} 人</span>}
           </span>
         )}
       </div>
@@ -199,6 +211,7 @@ export default function MatterListView({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
   const [menuData, setMenuData] = useState<ContextMenusData[]>([]);
   const ctxRef = useRef<ContextMenusContext | null>(null);
   // 卸载哨兵:守护写操作异步回调里的 setState 触达(批量/单条),防 setState-after-unmount。
@@ -327,9 +340,20 @@ export default function MatterListView({
         );
         ctxRef.current?.show(e);
       },
+      dragEnd: () => setDragOverStatus(null),
     }),
     [actions, toggleSelect, onOpenDetail],
   );
+
+  // 看板拖放:卡片落到某列 → 若状态变了则流转(乐观移动 + 落库,非法 409 由 actions 回滚)。
+  const handleCardDrop = (targetStatus: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverStatus(null);
+    const id = e.dataTransfer.getData("text/matter-id");
+    if (!id) return;
+    const cur = (matters as MatterRow[]).find((x) => x.id === id);
+    if (cur && cur.status !== targetStatus) actions.setStatus(id, targetStatus);
+  };
 
   // ── 批量(无批量端点 → 并发单调,每项自兜底为 true/false,汇总计数) ──
   const batchStatus = (status: string) => {
@@ -507,7 +531,16 @@ export default function MatterListView({
       {!loading && layout === "board" && (
         <div className="mlv-board">
           {groups.map((g) => (
-            <div key={g.status} className="mlv-col">
+            <div
+              key={g.status}
+              className={`mlv-col${dragOverStatus === g.status ? " is-dragover" : ""}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (dragOverStatus !== g.status) setDragOverStatus(g.status);
+              }}
+              onDrop={(e) => handleCardDrop(g.status, e)}
+            >
               <div className="mlv-col-head">
                 <StatusIcon status={g.status} size={14} />
                 <span className="mlv-col-label">{g.label}</span>
