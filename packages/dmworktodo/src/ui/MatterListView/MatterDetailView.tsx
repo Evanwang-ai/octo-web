@@ -1,9 +1,11 @@
 /**
  * [INPUT]: 依赖 api/todoApi 的 getMatter/listTimeline/listOutputs/listActivities/addTimelineEntry/
- *          transitionMatter/updateMatter/listProjects/getIterations;@octo/base 的 WKApp/WKAvatar/ContextMenus;
- *          ./rowMenus 的 priorityMenu、./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
+ *          transitionMatter/updateMatter/listProjects/getIterations/getMatterTree/createSubMatter;
+ *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./rowMenus 的 priorityMenu、
+ *          ./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
  * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker·review banner/Brief/计划(mode)/
- *          迭代(iterations 轮次)/进度(activities)/动态(timeline)/产出/发车 composer/Inspector[状态·优先级·项目 可编辑])。
+ *          子任务(children+派子任务)/迭代(iterations 轮次)/进度(activities)/动态(timeline)/产出/
+ *          发车 composer/Inspector[状态·优先级·项目 可编辑])。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
  *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -23,8 +25,10 @@ import {
   updateMatter,
   listProjects,
   getIterations,
+  getMatterTree,
+  createSubMatter,
 } from "../../api/todoApi";
-import type { MatterIterations } from "../../api/todoApi";
+import type { MatterIterations, MatterTreeChild } from "../../api/todoApi";
 import type {
   MatterDetail,
   TimelineEntry,
@@ -72,6 +76,8 @@ function actHuman(a: MatterActivity): string {
   switch (a.action) {
     case "created":
       return "创建了回路";
+    case "child_created":
+      return "派发子任务";
     case "status_changed":
       return d.from || d.to ? `状态 ${st(d.from)} → ${st(d.to)}` : "更新了状态";
     case "priority_changed":
@@ -145,6 +151,10 @@ export default function MatterDetailView({
   const [outputs, setOutputs] = useState<MatterOutput[]>([]);
   const [activities, setActivities] = useState<MatterActivity[]>([]);
   const [iterations, setIterations] = useState<MatterIterations | null>(null);
+  const [children, setChildren] = useState<MatterTreeChild[]>([]);
+  const [subOpen, setSubOpen] = useState(false);
+  const [subTitle, setSubTitle] = useState("");
+  const [subBusy, setSubBusy] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -172,6 +182,13 @@ export default function MatterDetailView({
     listActivities(matterId, { limit: 20 })
       .then((ac) => {
         if (mountedRef.current) setActivities(ac.data || []);
+      })
+      .catch(() => {});
+  }, [matterId]);
+  const reloadTree = useCallback(() => {
+    getMatterTree(matterId)
+      .then((t) => {
+        if (mountedRef.current) setChildren(t.children || []);
       })
       .catch(() => {});
   }, [matterId]);
@@ -208,6 +225,12 @@ export default function MatterDetailView({
     getIterations(matterId)
       .then((it) => {
         if (alive) setIterations(it);
+      })
+      .catch(() => {});
+    // 子任务树:非关键,失败静默。
+    getMatterTree(matterId)
+      .then((t) => {
+        if (alive) setChildren(t.children || []);
       })
       .catch(() => {});
     return () => {
@@ -283,6 +306,33 @@ export default function MatterDetailView({
     }
   };
 
+  // 派子任务:标题 + parent_matter_id(+ 继承父项目);step 自动。树即权限由后端守卫。
+  const createSub = async () => {
+    const title = subTitle.trim();
+    if (!title || subBusy) return;
+    setSubBusy(true);
+    const n = children.length + 1;
+    try {
+      await createSubMatter({
+        title,
+        parent_matter_id: matterId,
+        step_id: `step-${n}`,
+        step_order: n,
+        ...(matter?.project_id ? { project_id: matter.project_id } : {}),
+      });
+      if (!mountedRef.current) return;
+      setSubTitle("");
+      setSubOpen(false);
+      reloadTree();
+      reloadActivities();
+      WKApp.mittBus.emit("wk:matter-updated", { matterId });
+    } catch {
+      if (mountedRef.current) Toast.error("派子任务失败");
+    } finally {
+      if (mountedRef.current) setSubBusy(false);
+    }
+  };
+
   if (loading && !matter) {
     return (
       <div className="mdv">
@@ -352,6 +402,72 @@ export default function MatterDetailView({
             <span className="mdv-plan-mode">{MODE_LABEL[matter.mode] || matter.mode}</span>
           </div>
         )}
+
+        {/* 子任务(派活):children 来自 /tree;派子任务=createSubMatter(parent_matter_id)。
+            树即权限由后端守卫(仅 leader/creator/人类协作者可派)。 */}
+        <div className="mdv-section">
+          <div className="mdv-section-head">
+            子任务<span className="mdv-section-count">{children.length}</span>
+            <button
+              type="button"
+              className="mdv-sub-add"
+              onClick={() => setSubOpen((v) => !v)}
+            >
+              + 派一个子任务
+            </button>
+          </div>
+          {subOpen && (
+            <div className="mdv-sub-form">
+              <input
+                className="mdv-sub-input"
+                autoFocus
+                maxLength={200}
+                aria-label="子任务名称"
+                placeholder="这个子任务要办成什么"
+                value={subTitle}
+                onChange={(e) => setSubTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    createSub();
+                  } else if (e.key === "Escape") {
+                    setSubOpen(false);
+                    setSubTitle("");
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="mdv-sub-go"
+                onClick={createSub}
+                disabled={subBusy || !subTitle.trim()}
+              >
+                {subBusy ? "派出中…" : "派出去"}
+              </button>
+            </div>
+          )}
+          {children.length > 0 ? (
+            <div className="mdv-subs" role="list">
+              {children.map((c) => {
+                const who = c.assignees?.[0]?.user_id;
+                return (
+                  <div key={c.id} className="mdv-sub" role="listitem">
+                    <StatusIcon status={c.status as MatterStatus} size={14} />
+                    <span className="mdv-sub-id">M-{c.seq_no}</span>
+                    <span className="mdv-sub-title">{c.title}</span>
+                    {who && (
+                      <span className="mdv-sub-leader">
+                        <UserName uid={who} />
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            !subOpen && <div className="mdv-empty">暂无子任务</div>
+          )}
+        </div>
 
         {/* 迭代轮次(/iterations):领队多轮提交/反馈周期。current_outcome=当前态。 */}
         {iterations && iterations.rounds.length > 0 && (

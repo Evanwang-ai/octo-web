@@ -301,7 +301,17 @@ export async function getIterations(matterId: string): Promise<MatterIterations>
   return get<MatterIterations>(`/matters/${matterId}/iterations`);
 }
 
-/** 回路树节点(递归):matter + 协作模式契约 + 子节点。plan/角色图与派子任务的数据源。 */
+/** /tree 子节点(curl 实测:扁平摘要,非递归、无 .matter 包装)。 */
+export interface MatterTreeChild {
+  id: string;
+  seq_no: number;
+  title: string;
+  status: string;
+  assignees?: Array<{ id?: string; user_id?: string }>;
+  step_id?: string;
+  step_order?: number;
+}
+/** 回路树:根含完整 matter + 协作模式契约 + 子节点(扁平)。plan/角色图与派子任务的数据源。 */
 export interface MatterTreeNode {
   matter: MatterDetail & {
     mode?: string;
@@ -310,13 +320,27 @@ export interface MatterTreeNode {
     has_children?: boolean;
   };
   mode?: string;
-  children: MatterTreeNode[];
+  children: MatterTreeChild[];
   barrier_state?: string; // none / waiting / ready …
   join_ready?: boolean;
   contract?: { inputs?: string; report_to?: string; visibility?: string };
 }
 export async function getMatterTree(matterId: string): Promise<MatterTreeNode> {
   return get<MatterTreeNode>(`/matters/${matterId}/tree`);
+}
+
+/** 派子任务:在 parent 下创建子回路(树即权限:leader/creator/人类协作者可派)。
+ *  专用类型,不动共享 CreateMatterReq(守铁律③)。字段对齐后端 createMatterReq。 */
+export interface CreateSubMatterReq {
+  title: string;
+  parent_matter_id: string;
+  step_id?: string;
+  step_order?: number;
+  leader_uid?: string;
+  project_id?: string;
+}
+export async function createSubMatter(req: CreateSubMatterReq): Promise<MatterDetail> {
+  return post<MatterDetail>("/matters", req);
 }
 
 /** "圈一笔"人类批注(feedback_handler.go feedbackReq 实测):content 必填,可锚到 timeline
