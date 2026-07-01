@@ -21,8 +21,16 @@ import MatterDetailView from "./MatterDetailView";
 import CardsView from "./CardsView";
 import AutomationView from "./AutomationView";
 import ProjectsView from "./ProjectsView";
+import ProjectDetailView from "./ProjectDetailView";
 
-type View = "matters" | "iframe" | "detail" | "cards" | "automation" | "projects";
+type View =
+  | "matters"
+  | "iframe"
+  | "detail"
+  | "cards"
+  | "automation"
+  | "projects"
+  | "projectDetail";
 
 const SUBNAV_HASH: Record<Exclude<SubNavKey, "matters">, string> = {
   projects: "#/projects",
@@ -40,6 +48,7 @@ export default function MatterRouteHost() {
   );
   const [section, setSection] = useState<SubNavKey>("matters");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [projectDetailId, setProjectDetailId] = useState<string | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   // refs 镜像,避免总线监听器(空依赖,只注册一次)读到 stale 闭包值。
   const iframeSrcRef = useRef<string | null>(null);
@@ -110,9 +119,12 @@ export default function MatterRouteHost() {
     setView("projects");
     setSection("projects");
   };
+  // 项目详情:原生化(替 iframe #/project/:id)。看板内嵌 MatterListView(project 过滤)。
   const openProjectDetail = (id: string) => {
+    setActive(true);
     setSection("projects");
-    navigateIframe(`#/project/${id}`); // 单数 route(对齐 vanilla)
+    setProjectDetailId(id);
+    setView("projectDetail");
   };
 
   // 子导航四项全部原生列表;项目详情/自动化编辑器走 iframe(绞杀式 partial)。
@@ -182,7 +194,8 @@ export default function MatterRouteHost() {
           view === "detail" ||
           view === "cards" ||
           view === "automation" ||
-          view === "projects") && (
+          view === "projects" ||
+          view === "projectDetail") && (
           <MatterSubNav current={section} onNavigate={onNavigate} />
         )}
         <div className="mlv-host-content">
@@ -198,6 +211,14 @@ export default function MatterRouteHost() {
           {view === "cards" && <CardsView />}
           {view === "automation" && <AutomationView onOpenEditor={openAutomationEditor} />}
           {view === "projects" && <ProjectsView onOpenDetail={openProjectDetail} />}
+          {view === "projectDetail" && projectDetailId && (
+            <ProjectDetailView
+              key={projectDetailId}
+              projectId={projectDetailId}
+              onBack={showProjects}
+              onOpenMatter={openDetail}
+            />
+          )}
           {iframeSrc && (
             <iframe
               title="回路"
