@@ -146,6 +146,10 @@
 .pdv-bot-opt:hover {
   background: var(--wk-brand-tint-06);
 }
+.pdv-bot-opt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .pdv-member-picker {
   margin-bottom: 14px;
 }

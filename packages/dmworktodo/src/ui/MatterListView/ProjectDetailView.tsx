@@ -165,7 +165,10 @@ export default function ProjectDetailView({
   const { members: spaceBots, loading: botsLoading } = useMemberList({ enabled: botPickerOpen });
   const addedBotUids = new Set(bots.map((b) => b.bot_uid));
   const botCandidates = spaceBots.filter((m) => m.isBot && !addedBotUids.has(m.uid));
+  const [addingBot, setAddingBot] = useState(false); // 加 Bot 在途,防连点并发(Codex#1.7)
   const addBot = async (uid: string) => {
+    if (addingBot) return;
+    setAddingBot(true);
     try {
       await addProjectBot(projectId, uid);
       if (!mountedRef.current) return;
@@ -174,6 +177,8 @@ export default function ProjectDetailView({
     } catch {
       // 后端只放行主人自己的 bot;加别人的 bot 会被拒。
       if (mountedRef.current) Toast.error("加 Bot 失败(只能加自己的 bot)");
+    } finally {
+      if (mountedRef.current) setAddingBot(false);
     }
   };
   const removeSource = async (sid: string) => {
@@ -323,6 +328,7 @@ export default function ProjectDetailView({
                     type="button"
                     className="pdv-bot-opt"
                     onClick={() => addBot(b.uid)}
+                    disabled={addingBot}
                   >
                     <WKAvatar
                       channel={new Channel(b.uid, ChannelTypePerson)}
