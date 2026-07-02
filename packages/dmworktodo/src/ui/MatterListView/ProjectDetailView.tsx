@@ -15,12 +15,14 @@ import MatterListView from "./index";
 import MemberPicker from "../MemberPicker";
 import UserName from "../UserName";
 import { Toast } from "../../utils/toast";
+import { useMemberList } from "../../hooks/useMemberList";
 import {
   listProjects,
   listProjectMembers,
   addProjectMember,
   removeProjectMember,
   listProjectBots,
+  addProjectBot,
   removeProjectBot,
   listProjectSources,
   addProjectSource,
@@ -73,6 +75,7 @@ export default function ProjectDetailView({
   const [tab, setTab] = useState<Tab>("board");
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [bots, setBots] = useState<ProjectBot[]>([]);
+  const [botPickerOpen, setBotPickerOpen] = useState(false); // 加 Bot 下拉
   const [sources, setSources] = useState<ProjectSource[]>([]);
   const [srcOpen, setSrcOpen] = useState(false);
   const [srcKind, setSrcKind] = useState("link");
@@ -155,6 +158,22 @@ export default function ProjectDetailView({
       reloadMembers();
     } catch {
       if (mountedRef.current) Toast.error("移除 bot 失败");
+    }
+  };
+
+  // 加 Bot 候选:空间 bot 排掉已加(仅在下拉打开时拉取)。主人主权由后端 addProjectBot 守卫。
+  const { members: spaceBots, loading: botsLoading } = useMemberList({ enabled: botPickerOpen });
+  const addedBotUids = new Set(bots.map((b) => b.bot_uid));
+  const botCandidates = spaceBots.filter((m) => m.isBot && !addedBotUids.has(m.uid));
+  const addBot = async (uid: string) => {
+    try {
+      await addProjectBot(projectId, uid);
+      if (!mountedRef.current) return;
+      setBotPickerOpen(false);
+      reloadMembers();
+    } catch {
+      // 后端只放行主人自己的 bot;加别人的 bot 会被拒。
+      if (mountedRef.current) Toast.error("加 Bot 失败(只能加自己的 bot)");
     }
   };
   const removeSource = async (sid: string) => {
@@ -284,7 +303,39 @@ export default function ProjectDetailView({
 
             <div className="pdv-sec-h">
               可调度 Bot<span className="pdv-sec-c">{bots.length}</span>
+              <button
+                type="button"
+                className="pdv-add-bot"
+                onClick={() => setBotPickerOpen((o) => !o)}
+              >
+                {botPickerOpen ? "收起" : "+ 加 Bot"}
+              </button>
             </div>
+            {botPickerOpen && (
+              <div className="pdv-bot-picker">
+                {botsLoading && <div className="pdv-empty">加载中…</div>}
+                {!botsLoading && botCandidates.length === 0 && (
+                  <div className="pdv-empty">没有可添加的 Bot(只能加自己的 bot)</div>
+                )}
+                {botCandidates.map((b) => (
+                  <button
+                    key={b.uid}
+                    type="button"
+                    className="pdv-bot-opt"
+                    onClick={() => addBot(b.uid)}
+                  >
+                    <WKAvatar
+                      channel={new Channel(b.uid, ChannelTypePerson)}
+                      style={{ width: 20, height: 20, borderRadius: "50%" }}
+                    />
+                    <span className="pdv-row-name">
+                      <UserName uid={b.uid} />
+                    </span>
+                    <span className="pdv-ai">AI</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="pdv-list">
               {bots.length === 0 && <div className="pdv-empty">还没有常驻 bot(主人在此加自己的 bot)</div>}
               {bots.map((b) => (

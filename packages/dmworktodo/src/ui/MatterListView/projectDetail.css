@@ -104,6 +104,48 @@
   color: var(--wk-text-disabled);
   font-weight: 500;
 }
+/* 加 Bot 按钮(section header 右) + 候选下拉 */
+.pdv-add-bot {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-bg-surface);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wk-color-info);
+  cursor: pointer;
+}
+.pdv-add-bot:hover {
+  background: var(--wk-brand-tint-06);
+  border-color: var(--wk-color-info);
+}
+.pdv-bot-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 6px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-bg-surface);
+}
+.pdv-bot-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: none;
+  border-radius: var(--wk-r-md);
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.pdv-bot-opt:hover {
+  background: var(--wk-brand-tint-06);
+}
 .pdv-member-picker {
   margin-bottom: 14px;
 }
