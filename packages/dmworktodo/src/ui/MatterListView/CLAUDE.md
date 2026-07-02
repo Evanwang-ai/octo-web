@@ -15,8 +15,10 @@ icons.tsx: 优先级(紧急琥珀方块/三柱)+ 状态(Linear 几何七态)SVG 
 rowMenus.ts: ContextMenus 菜单数据构建器(纯函数),priorityMenu/statusMenu/rowContextMenu;落库由调用方注入的 onPick/on* 闭包完成,无副作用。
 useMatterActions.ts: 单条回路写操作 hook,setPriority/setStatus/remove = 乐观更新 + updateMatter/transitionMatter/deleteMatter 落库 + emit wk:matter-updated 广播 + 失败 reload 回滚;列表快改·看板拖拽复用的单一真相。
 MatterSubNav.tsx: 左子导航(全部回路/项目/自动化/经验),内联 SVG 图标;SubNavKey 类型。
-CardsView.tsx: 原生经验页(替 iframe),listPreferenceCards + 按 scope 分组 + 状态 chip(draft/authorized/hit/miss/discarded,统一 --wk-*)+ 行展开(全文/依据/不适用)+ 动作(确认/弃用/恢复/删除,乐观+回滚)+ 搜索(后端 500 降级内存过滤)。真相源 vanilla renderCards/paintCards。
+CardsView.tsx: 原生经验页(替 iframe),listPreferenceCards + 按 scope 分组 + 状态 chip(draft/authorized/hit/miss/discarded,统一 --wk-*)+ 行展开(全文/依据/不适用)+ 动作(确认/弃用/恢复/**编辑**/删除,乐观+回滚)+ **"新建经验"按钮**+ 搜索(后端 500 降级内存过滤)。**新建/编辑走 CardEditorModal(editingCard 状态驱动),onSaved=loadCards 全量重载(清搜索框)**。真相源 vanilla renderCards/paintCards。
+CardEditorModal.tsx: 经验新建/编辑弹窗(替 vanilla openNewCardModal/openEditCardModal)—— 行为规则(必填)/依据/不适用/范围(matter/project/global)/状态(编辑态才有,authorized/discarded)→ createPreferenceCard(新建,evidence/avoid 空则不传)|updatePreferenceCard(编辑,恒传 + status);编辑态左下两击确认删除→deletePreferenceCard。字段对齐 vanilla cardFormHTML。
 cards.css: 经验页样式(状态 chip 语义色替 bespoke),全 --wk-*。
+cardEditor.css: 经验编辑弹窗样式(overlay/表单/footer),全 --wk-*(带 fallback)。
 AutomationView.tsx: 原生自动化列表(替 iframe),listSchedules + cronHuman(← automationCron)+ enabled 开关(乐观+回滚+pending)+ executor/target/runbook 展示;**新建/编辑走原生 ScheduleModal(内部 editing 状态),自动化编辑器 iframe 已杀**。真相源 vanilla renderAutomation。
 ScheduleModal.tsx: 自动化 create/edit 巨型表单(P3,替 iframe 编辑器)—— 名称/RUNBOOK textarea/执行方(useMemberList 过滤 isBot)/输出模式(track=创建issue|runonly=仅运行)/关联项目 or 目标群(listBotChannels)/cron+cronHuman 预览+预设/时区/启用 → createSchedule|updateSchedule。**编辑态左下"删除"两击确认(delArmed:首点武装→"再点一次确认删除",二点 deleteSchedule 落库+关闭;删除算 busy 禁关闭/防连点,失败解武装)——对齐 vanilla amDel。**字段对齐后端 scheduleReq struct。真相源 vanilla renderAutomation modal。
 automationCron.ts: cron 人话纯函数(cronHuman),AutomationView 列表 + ScheduleModal 预览共用。

@@ -26,6 +26,7 @@
 .cv-search {
   width: 240px;
   height: 32px;
+  margin-left: auto; /* 与"新建经验"成组推到右侧,h1 留左 */
   padding: 0 12px;
   border: 1px solid var(--wk-border-default);
   border-radius: var(--wk-r-md, 8px);
@@ -36,6 +37,30 @@
 }
 .cv-search:focus {
   border-color: var(--wk-color-info);
+}
+.cv-new {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.cv-new:hover {
+  filter: brightness(1.06);
+}
+.cv-new-plus {
+  font-size: 16px;
+  line-height: 1;
+  margin-top: -1px;
 }
 
 .cv-state {

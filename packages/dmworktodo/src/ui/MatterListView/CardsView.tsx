@@ -6,7 +6,7 @@
  *        真相源 vanilla feat/loop renderCards/paintCards;bespoke 绿/琥珀 chip 统一到 --wk-*。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WKApp } from "@octo/base";
 import {
   listPreferenceCards,
@@ -17,6 +17,7 @@ import {
 } from "../../api/todoApi";
 import type { PreferenceCard } from "../../bridge/types";
 import { Toast } from "../../utils/toast";
+import CardEditorModal from "./CardEditorModal";
 import "./cards.css";
 
 // 状态 chip:draft/authorized/hit/miss/discarded → --wk-* 语义色(替 vanilla bespoke 绿/琥珀)。
@@ -60,6 +61,7 @@ export default function CardsView() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<Set<string>>(new Set()); // 写操作在途的卡 id(禁按 + 防连点)
+  const [editingCard, setEditingCard] = useState<PreferenceCard | "new" | null>(null); // 新建/编辑 modal
   const fullRef = useRef<PreferenceCard[]>([]); // 全量缓存,搜索降级用
   const searchGenRef = useRef(0); // 搜索代际:只让最新 query 的响应落地
   const mountedRef = useRef(true);
@@ -70,18 +72,24 @@ export default function CardsView() {
     };
   }, []);
 
-  useEffect(() => {
+  // 全量重载(初次 + 新建/编辑/删除卡后刷新)。清空搜索框回到全量视图,避免旧 query 遮挡新卡。
+  const loadCards = useCallback(() => {
     setLoading(true);
     listPreferenceCards(100)
       .then((cs) => {
         if (!mountedRef.current) return;
         fullRef.current = cs;
         setCards(cs);
+        setQuery("");
       })
       .catch(() => {})
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
+  }, []);
+
+  useEffect(() => {
+    loadCards();
     listProjects()
       .then((ps) => {
         if (!mountedRef.current) return;
@@ -90,7 +98,7 @@ export default function CardsView() {
         setProjectMap(map);
       })
       .catch(() => {});
-  }, []);
+  }, [loadCards]);
 
   // 搜索:后端优先,500/失败降级到内存过滤(vanilla 空 query 也走内存)。
   useEffect(() => {
@@ -205,6 +213,9 @@ export default function CardsView() {
           onChange={(e) => setQuery(e.target.value)}
           aria-label="搜索经验"
         />
+        <button type="button" className="cv-new" onClick={() => setEditingCard("new")}>
+          <span className="cv-new-plus">+</span>新建经验
+        </button>
       </div>
 
       {loading && <div className="cv-state">加载中…</div>}
@@ -296,6 +307,14 @@ export default function CardsView() {
                               查看来源
                             </button>
                           )}
+                          <button
+                            type="button"
+                            className="cv-act"
+                            disabled={busy}
+                            onClick={() => setEditingCard(c)}
+                          >
+                            编辑
+                          </button>
                           <span className="cv-flex" />
                           <button
                             type="button"
@@ -314,6 +333,14 @@ export default function CardsView() {
             </div>
           ))}
         </div>
+      )}
+
+      {editingCard && (
+        <CardEditorModal
+          editing={editingCard}
+          onClose={() => setEditingCard(null)}
+          onSaved={loadCards}
+        />
       )}
     </div>
   );
