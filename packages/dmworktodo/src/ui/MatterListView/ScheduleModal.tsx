@@ -12,6 +12,7 @@ import { useMemberList } from "../../hooks/useMemberList";
 import {
   createSchedule,
   updateSchedule,
+  deleteSchedule,
   listProjects,
   listBotChannels,
 } from "../../api/todoApi";
@@ -58,6 +59,7 @@ export default function ScheduleModal({
   const [timezone, setTimezone] = useState(s?.timezone ?? "Asia/Shanghai");
   const [enabled, setEnabled] = useState(s ? s.enabled === 1 || s.enabled === true : true);
   const [busy, setBusy] = useState(false);
+  const [delArmed, setDelArmed] = useState(false); // 删除两击确认(对齐 vanilla amDel)
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [channels, setChannels] = useState<BotChannel[]>([]);
   const mountedRef = useRef(true);
@@ -141,6 +143,29 @@ export default function ScheduleModal({
   // Codex#4:保存中禁止关闭 —— 防写成功但组件卸载导致 onSaved 跳过、列表不刷新。
   const close = () => {
     if (!busy) onClose();
+  };
+
+  // 删除:两击确认(对齐 vanilla amDel)。首点武装,二点落库;删除中算 busy(禁关闭/防连点),失败解除武装。
+  const del = async () => {
+    if (busy || isNew || !s) return;
+    if (!delArmed) {
+      setDelArmed(true);
+      return;
+    }
+    setBusy(true);
+    try {
+      await deleteSchedule(s.id);
+      if (!mountedRef.current) return;
+      Toast.success("删掉了");
+      onSaved();
+      onClose();
+    } catch {
+      if (mountedRef.current) {
+        Toast.error("删除失败");
+        setDelArmed(false);
+        setBusy(false);
+      }
+    }
   };
 
   return (
@@ -301,7 +326,18 @@ export default function ScheduleModal({
         </div>
 
         <div className="sm-foot">
-          <span className="sm-foot-note">⚡ 保存后会自动运行,直到暂停</span>
+          {isNew ? (
+            <span className="sm-foot-note">⚡ 保存后会自动运行,直到暂停</span>
+          ) : (
+            <button
+              type="button"
+              className={`sm-del${delArmed ? " is-armed" : ""}`}
+              onClick={del}
+              disabled={busy}
+            >
+              {delArmed ? "再点一次确认删除" : "删除"}
+            </button>
+          )}
           <div className="sm-foot-btns">
             <button type="button" className="sm-cancel" onClick={close} disabled={busy}>
               取消

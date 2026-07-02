@@ -212,6 +212,31 @@
   display: flex;
   gap: 10px;
 }
+.sm-del {
+  height: 34px;
+  padding: 0 14px;
+  margin-right: auto; /* 推 sm-foot-btns 到右侧 */
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-bg-surface);
+  font-size: 13px;
+  color: var(--wk-color-error);
+  cursor: pointer;
+}
+.sm-del:hover {
+  background: var(--wk-brand-tint-06);
+  border-color: var(--wk-color-error);
+}
+.sm-del.is-armed {
+  background: var(--wk-color-error);
+  border-color: var(--wk-color-error);
+  color: var(--wk-text-on-brand);
+  font-weight: 600;
+}
+.sm-del:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .sm-cancel {
   height: 34px;
   padding: 0 16px;

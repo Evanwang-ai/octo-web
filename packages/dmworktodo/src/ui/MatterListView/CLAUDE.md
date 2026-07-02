@@ -18,7 +18,7 @@ MatterSubNav.tsx: 左子导航(全部回路/项目/自动化/经验),内联 SVG 
 CardsView.tsx: 原生经验页(替 iframe),listPreferenceCards + 按 scope 分组 + 状态 chip(draft/authorized/hit/miss/discarded,统一 --wk-*)+ 行展开(全文/依据/不适用)+ 动作(确认/弃用/恢复/删除,乐观+回滚)+ 搜索(后端 500 降级内存过滤)。真相源 vanilla renderCards/paintCards。
 cards.css: 经验页样式(状态 chip 语义色替 bespoke),全 --wk-*。
 AutomationView.tsx: 原生自动化列表(替 iframe),listSchedules + cronHuman(← automationCron)+ enabled 开关(乐观+回滚+pending)+ executor/target/runbook 展示;**新建/编辑走原生 ScheduleModal(内部 editing 状态),自动化编辑器 iframe 已杀**。真相源 vanilla renderAutomation。
-ScheduleModal.tsx: 自动化 create/edit 巨型表单(P3,替 iframe 编辑器)—— 名称/RUNBOOK textarea/执行方(useMemberList 过滤 isBot)/输出模式(track=创建issue|runonly=仅运行)/关联项目 or 目标群(listBotChannels)/cron+cronHuman 预览+预设/时区/启用 → createSchedule|updateSchedule。字段对齐后端 scheduleReq struct。真相源 vanilla renderAutomation modal。
+ScheduleModal.tsx: 自动化 create/edit 巨型表单(P3,替 iframe 编辑器)—— 名称/RUNBOOK textarea/执行方(useMemberList 过滤 isBot)/输出模式(track=创建issue|runonly=仅运行)/关联项目 or 目标群(listBotChannels)/cron+cronHuman 预览+预设/时区/启用 → createSchedule|updateSchedule。**编辑态左下"删除"两击确认(delArmed:首点武装→"再点一次确认删除",二点 deleteSchedule 落库+关闭;删除算 busy 禁关闭/防连点,失败解武装)——对齐 vanilla amDel。**字段对齐后端 scheduleReq struct。真相源 vanilla renderAutomation modal。
 automationCron.ts: cron 人话纯函数(cronHuman),AutomationView 列表 + ScheduleModal 预览共用。
 automation.css / schedModal.css: 自动化页 / modal 样式,全 --wk-*。todoApi 新增 listBotChannels(GET /bots/:uid/channels)。
 ProjectsView.tsx: 原生项目列表(替 iframe 列表),listProjects(富字段)+ 名称/领队/范围/创建 表格 + 新建项目 modal(name+scope→createProject)+ 归档切换(updateProject archived,乐观+pending)+ 显示已归档;项目详情(内嵌看板/成员/上下文,GET /projects/:id 404 靠列表缓存)暂走 iframe(onOpenDetail→#/project/:id 单数)。真相源 vanilla renderProjects。
