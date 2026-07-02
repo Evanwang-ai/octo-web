@@ -143,6 +143,8 @@ export interface MatterListParams {
   q?: string;
   /** 按项目过滤(后端已支持;前端类型补齐)。项目详情内嵌看板用。 */
   project_id?: string;
+  /** 只取顶层回路(parent_matter_id IS NULL),对齐 vanilla 主列表;后端判 == "1"。项目内嵌看板不传(显示全部含子任务)。 */
+  top_level?: number;
   order_by?: MatterOrderBy;
   order_dir?: MatterOrderDir;
   limit?: number;

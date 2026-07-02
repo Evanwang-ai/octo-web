@@ -122,7 +122,8 @@ function MatterRowItem({
   props: DisplayProps;
   on: RowHandlers;
 }) {
-  const leader = m.leader_uid;
+  // 显示人对齐 vanilla rowHTML:领队优先,空则退 assignees[0](领队为空时不再"没人接")。
+  const displayed = m.leader_uid || m.assignees?.[0]?.user_id;
   return (
     <div
       className={`mlv-row${selected ? " is-selected" : ""}`}
@@ -175,16 +176,16 @@ function MatterRowItem({
       )}
       {props.project !== false && project && <span className="mlv-proj">{project}</span>}
       {props.id !== false && <span className="mlv-id">M-{m.seq_no}</span>}
-      {props.assignee !== false && leader && (
+      {props.assignee !== false && displayed && (
         <span className="mlv-leader">
           <WKAvatar
-            channel={new Channel(leader, ChannelTypePerson)}
+            channel={new Channel(displayed, ChannelTypePerson)}
             style={{ width: 18, height: 18, borderRadius: "50%" }}
           />
           <span className="mlv-leader-name">
-            <UserName uid={leader} />
+            <UserName uid={displayed} />
           </span>
-          {isBot(leader) && <span className="mlv-ai">AI</span>}
+          {isBot(displayed) && <span className="mlv-ai">AI</span>}
         </span>
       )}
       {props.startDate !== false && (
@@ -348,6 +349,8 @@ export default function MatterListView({
   const initialFilters = useMemo(
     () => ({
       ...(baseFilters ?? {}),
+      // 主列表只取顶层回路(对齐 vanilla myMattersParams);项目内嵌看板不加,显示全部含子任务。
+      ...(embedded ? {} : { top_level: 1 }),
       ...(tab === "created"
         ? { creator_id: myUid }
         : tab === "assigned"
@@ -356,7 +359,7 @@ export default function MatterListView({
     }),
     // baseFiltersKey 稳定化对象引用,避免每次渲染重建过滤器
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tab, myUid, baseFiltersKey],
+    [tab, myUid, baseFiltersKey, embedded],
   );
 
   const { matters, loading, hasMore, loadMore, reload, optimisticUpdate, removeOptimistic } =

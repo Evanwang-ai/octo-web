@@ -244,6 +244,7 @@ export default function ProjectDetailView({
                 mode="controlled"
                 value={memberUids}
                 onChange={onMembersChange}
+                humansOnly
                 placeholder="加人(空间内任意人,免费)"
               />
             </div>

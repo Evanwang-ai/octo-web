@@ -17,6 +17,8 @@ interface MemberPickerControlledProps {
   channel?: { channelId: string; channelType: number };
   placeholder?: string;
   disabled?: boolean;
+  /** 只列人类(过滤 bot);项目成员/协作者选人用,bot 走独立 owned-bot 流(保主人主权)。 */
+  humansOnly?: boolean;
 }
 
 interface MemberPickerDirectProps {
@@ -27,6 +29,8 @@ interface MemberPickerDirectProps {
   channel?: { channelId: string; channelType: number };
   placeholder?: string;
   disabled?: boolean;
+  /** 只列人类(过滤 bot);项目成员/协作者选人用,bot 走独立 owned-bot 流(保主人主权)。 */
+  humansOnly?: boolean;
 }
 
 export type MemberPickerProps = MemberPickerControlledProps | MemberPickerDirectProps;
@@ -134,7 +138,7 @@ function MemberOption({
 
 export default function MemberPicker(props: MemberPickerProps) {
   const { t } = useI18n();
-  const { channel, placeholder = t("todo.member.searchPlaceholder"), disabled = false } = props;
+  const { channel, placeholder = t("todo.member.searchPlaceholder"), disabled = false, humansOnly = false } = props;
 
     // 受控模式 vs 直连模式，用两个独立变量避免条件表达式作依赖
   const controlledValue = props.mode === 'controlled' ? props.value : undefined;
@@ -163,7 +167,11 @@ export default function MemberPicker(props: MemberPickerProps) {
     enabled: showDropdown,
   });
 
-  // members 直接用 members，无需 useMemo 包装
+  // humansOnly:项目成员/协作者选人时过滤掉 bot(bot 走独立 owned-bot 流,保主人主权)。
+  const shownMembers = useMemo(
+    () => (humansOnly ? members.filter((m) => !m.isBot) : members),
+    [humansOnly, members],
+  );
 
   // 搜索防抖 300ms
   useEffect(() => {
@@ -319,12 +327,12 @@ export default function MemberPicker(props: MemberPickerProps) {
         <div ref={dropdownRef} className="wk-member-picker__dropdown">
           {loading ? (
             <div className="wk-member-picker__loading">{t("todo.state.loading")}</div>
-          ) : members.length === 0 ? (
+          ) : shownMembers.length === 0 ? (
             <div className="wk-member-picker__empty">
               {debouncedKeyword ? t("todo.member.noMatches") : t("todo.member.empty")}
             </div>
           ) : (
-            members.map((member) => (
+            shownMembers.map((member) => (
               <MemberOption
                 key={member.uid}
                 member={member}
