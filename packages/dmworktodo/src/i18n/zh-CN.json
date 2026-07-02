@@ -88,6 +88,8 @@
   },
   "create": {
     "aiExtracting": "AI 正在提取回路...",
+    "launch": "发车",
+    "saveDraft": "保存草稿",
     "sendAndCreate": "发送并创建回路",
     "smartTitle": "智能创建回路",
     "title": "新建回路"

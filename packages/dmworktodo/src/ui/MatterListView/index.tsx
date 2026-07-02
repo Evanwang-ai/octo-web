@@ -419,7 +419,12 @@ export default function MatterListView({
 
   // ── 交互:新建 / 多选 / 快改菜单 / 右键 ──
   const openCreate = () =>
-    WKApp.mittBus.emit("wk:open-create-matter-modal", { channelId: "", channelType: 0 });
+    WKApp.mittBus.emit("wk:open-create-matter-modal", {
+      channelId: "",
+      channelType: 0,
+      // 项目内嵌新建:带 project_id,新回路归属该项目(Wave 1.8)。
+      ...(embedded && baseFilters?.project_id ? { projectId: baseFilters.project_id } : {}),
+    });
 
   const toggleSelect = useCallback((id: string) => {
     setSelected((prev) => {

@@ -88,6 +88,8 @@
   },
   "create": {
     "aiExtracting": "AI is extracting the task...",
+    "launch": "Launch",
+    "saveDraft": "Save draft",
     "sendAndCreate": "Send and create task",
     "smartTitle": "Smart task creation",
     "title": "New task"

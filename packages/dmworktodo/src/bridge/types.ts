@@ -162,6 +162,10 @@ export interface CreateMatterReq {
   deadline?: string;
   remind_at?: string;
   source_msgs?: ExtractMessage[];
+  /** 创建态:backlog(草稿)/open(发车)。缺省走后端默认;后端 binding oneof=backlog,open。 */
+  status?: "backlog" | "open";
+  /** 归属项目(项目内新建时传);后端 project_id uuid。 */
+  project_id?: string;
 }
 
 export interface UpdateMatterReq {

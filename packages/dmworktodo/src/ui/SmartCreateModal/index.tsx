@@ -35,6 +35,14 @@ export interface SmartCreateModalProps {
   prefillAssigneeUids?: string[];
   /** 控制按钮文案：true 显示「发送并创建事项」，且标题只读 */
   sendOnConfirm?: boolean;
+  /** 项目内新建时预填的归属项目 id（写入 CreateMatterReq.project_id）。 */
+  prefillProjectId?: string;
+  /**
+   * 是否显示"保存草稿 / 发车"双按钮(仅普通新建回路入口开启)。默认 false = 单按钮,
+   * 保持智能创建/QuickAdd/旧 MatterList 等复用点原行为。与 sendOnConfirm 互斥:
+   * sendOnConfirm(发送并创建)优先,不显示双按钮。
+   */
+  allowDraft?: boolean;
 }
 
 // 本地日期格式化
@@ -79,8 +87,12 @@ export default function SmartCreateModal({
   prefillTitle = "",
   prefillAssigneeUids = [],
   sendOnConfirm = false,
+  prefillProjectId,
+  allowDraft = false,
 }: SmartCreateModalProps) {
   const { t } = useI18n();
+  // 双按钮仅在"允许草稿"且非"发送并创建"时出现(其余复用点单按钮,零回归)。
+  const showDraftLaunch = allowDraft && !sendOnConfirm;
   const [title, setTitle] = useState("");
   const [brief, setBrief] = useState("");
   const [assigneeUids, setAssigneeUids] = useState<string[]>([]);
@@ -149,7 +161,7 @@ export default function SmartCreateModal({
   const canCreate =
     title.trim() && brief.trim() && assigneeUids.length > 0 && deadline;
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = useCallback(async (status?: "backlog" | "open") => {
     if (!canCreate || submitting) return;
     setSubmitting(true);
     try {
@@ -162,6 +174,9 @@ export default function SmartCreateModal({
         source_channel_type: channel?.channelType,
         source_name: channel?.name,
         source_msgs: sourceMsgs,
+        // 项目内新建归属项目;草稿/发车显式 status(缺省走后端默认)。
+        ...(prefillProjectId ? { project_id: prefillProjectId } : {}),
+        ...(status ? { status } : {}),
       });
       (onConfirmSuccess ?? onClose)();
     } catch (err) {
@@ -173,7 +188,7 @@ export default function SmartCreateModal({
     }
   }, [
     canCreate, submitting, title, brief, assigneeUids,
-    deadline, channel, sourceMsgs, onConfirm, onConfirmSuccess, onClose, t,
+    deadline, channel, sourceMsgs, prefillProjectId, onConfirm, onConfirmSuccess, onClose, t,
   ]);
 
   // 键盘快捷键：Escape 关闭，Enter 确认
@@ -188,11 +203,12 @@ export default function SmartCreateModal({
         if (tag === "INPUT" && e.target !== titleInputRef.current) return;
         if (canCreate) {
           e.preventDefault();
-          handleConfirm();
+          // 主操作:双按钮态 Enter=发车(open);其余复用点保持存量(后端默认)。
+          handleConfirm(showDraftLaunch ? "open" : undefined);
         }
       }
     },
-    [handleConfirm, handleClose, canCreate],
+    [handleConfirm, handleClose, canCreate, showDraftLaunch],
   );
 
   return (
@@ -398,17 +414,30 @@ export default function SmartCreateModal({
               >
                 {t("todo.common.cancel")}
               </button>
+              {/* 新建回路态双按钮:保存草稿(backlog)/发车(open);其余复用点保持单按钮 */}
+              {showDraftLaunch && (
+                <button
+                  type="button"
+                  className="wk-smart-create-modal__btn wk-smart-create-modal__btn--cancel"
+                  onClick={() => handleConfirm("backlog")}
+                  disabled={!canCreate || submitting}
+                >
+                  {t("todo.create.saveDraft")}
+                </button>
+              )}
               <button
                 type="button"
                 className="wk-smart-create-modal__btn wk-smart-create-modal__btn--confirm"
-                onClick={handleConfirm}
+                onClick={() => handleConfirm(showDraftLaunch ? "open" : undefined)}
                 disabled={!canCreate || submitting}
               >
                 {submitting
                   ? t("todo.state.submitting")
                   : sendOnConfirm
                     ? t("todo.create.sendAndCreate")
-                    : t("todo.common.confirm")}
+                    : showDraftLaunch
+                      ? t("todo.create.launch")
+                      : t("todo.common.confirm")}
               </button>
             </div>
           </>

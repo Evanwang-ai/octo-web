@@ -43,6 +43,8 @@ export type OpenCreateTaskPayload = {
   prefillAssigneeUids?: string[];
   /** If true, clear the input box after creating the task */
   clearOnConfirm?: boolean;
+  /** 项目内新建时归属项目 id → SmartCreateModal.prefillProjectId → CreateMatterReq.project_id */
+  projectId?: string;
 };
 
 /** 解析 @[uid:name] 格式，返回纯文本 title 和 uid 列表 */
@@ -482,6 +484,8 @@ function GlobalMatterModal() {
       onConfirm={handleConfirm}
       prefillTitle={payload.prefillTitle}
       prefillAssigneeUids={payload.prefillAssigneeUids}
+      prefillProjectId={payload.projectId}
+      allowDraft
       sendOnConfirm={!!payload.clearOnConfirm && !!payload.prefillTitle}
       channel={
         payload.channelId
