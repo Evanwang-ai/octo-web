@@ -28,6 +28,7 @@ import {
   getMatterTree,
   createSubMatter,
   addFeedback,
+  sendBack,
 } from "../../api/todoApi";
 import type { MatterIterations, MatterTreeChild } from "../../api/todoApi";
 import type {
@@ -165,6 +166,7 @@ export default function MatterDetailView({
   const [reviseOpen, setReviseOpen] = useState(false);
   const [reviseNote, setReviseNote] = useState("");
   const [reviseBusy, setReviseBusy] = useState(false);
+  const [sendingBack, setSendingBack] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -313,6 +315,21 @@ export default function MatterDetailView({
       applyIfLatest(gen, m as MatterDetailFull);
     } catch {
       if (mountedRef.current) Toast.error("项目修改失败");
+    }
+  };
+
+  // 发回来源群(对齐 vanilla srcSendBtn):POST /send-back,把进展推回来源 IM 会话;请求中禁重入。
+  const doSendBack = async () => {
+    if (sendingBack) return;
+    setSendingBack(true);
+    try {
+      await sendBack(matterId);
+      if (mountedRef.current)
+        Toast.success(`发回去了 — ${matter?.source_name || "来源会话"}里马上能看到`);
+    } catch {
+      if (mountedRef.current) Toast.error("发回失败");
+    } finally {
+      if (mountedRef.current) setSendingBack(false);
     }
   };
 
@@ -724,6 +741,25 @@ export default function MatterDetailView({
               ))}
             </select>
           </div>
+          {/* 来源 + 发回来源群(对齐 vanilla srcSendBtn;仅当有来源会话时显示) */}
+          {matter.source_name && (
+            <div className="mdv-prop">
+              <span className="mdv-prop-label">来源</span>
+              <span className="mdv-prop-val mdv-src">
+                <span className="mdv-src-name" title={matter.source_name}>
+                  {matter.source_name}
+                </span>
+                <button
+                  type="button"
+                  className="mdv-src-send"
+                  onClick={doSendBack}
+                  disabled={sendingBack}
+                >
+                  {sendingBack ? "发回中…" : "发回来源群"}
+                </button>
+              </span>
+            </div>
+          )}
         </div>
       </aside>
 
