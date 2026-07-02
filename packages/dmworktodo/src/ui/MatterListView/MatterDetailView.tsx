@@ -55,7 +55,8 @@ type MatterDetailFull = MatterDetail & {
 };
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
-const PRIORITY_LABEL = ["无", "低", "中", "高", "紧急"];
+// 后端编码 0无/1紧急/2高/3中/4低(matter.go);index=priority 值。
+const PRIORITY_LABEL = ["无", "紧急", "高", "中", "低"];
 const MODE_LABEL: Record<string, string> = {
   critic: "评审",
   roundtable: "圆桌",

@@ -8,13 +8,13 @@
 import type { ContextMenusData } from "@octo/base";
 import { STATUS_ORDER, STATUS_LABEL } from "./icons";
 
-// ── 优先级选项(值→名),序同 vanilla:无/紧急/高/中/低 ──
+// ── 优先级选项(值→名),后端编码 0无/1紧急/2高/3中/4低(matter.go),序同 vanilla:无/紧急/高/中/低 ──
 export const PRIORITY_OPTIONS: { value: number; label: string }[] = [
   { value: 0, label: "无优先级" },
-  { value: 4, label: "紧急" },
-  { value: 3, label: "高" },
-  { value: 2, label: "中" },
-  { value: 1, label: "低" },
+  { value: 1, label: "紧急" },
+  { value: 2, label: "高" },
+  { value: 3, label: "中" },
+  { value: 4, label: "低" },
 ];
 
 // 优先级快改(点优先级图标):顶层即 5 选项,✓ 标当前。

@@ -155,7 +155,11 @@ export function filterMatters(matters: MatterRow[], f: MatterFilters): MatterRow
   });
 }
 
-const prio = (p?: number) => p ?? 0; // 0..4
+// 排序 rank(对齐 vanilla priorityRank):无(0)→5 排到最末,紧急(1)最前;1..4 按值。
+const prio = (p?: number) => {
+  const v = p ?? 0;
+  return v === 0 ? 5 : v;
+};
 const timeOf = (iso?: string) => (iso ? new Date(iso).getTime() || 0 : 0);
 
 export function sortMatters(matters: MatterRow[], orderBy: OrderBy, dir: OrderDir): MatterRow[] {
@@ -204,7 +208,7 @@ function groupKey(m: MatterRow, field: GroupBy): string {
 function groupOrder(field: GroupBy, keys: string[]): string[] {
   let fixed: string[] | null = null;
   if (field === "status") fixed = STATUS_ORDER as unknown as string[];
-  else if (field === "priority") fixed = ["4", "3", "2", "1", "0"]; // 紧急→无
+  else if (field === "priority") fixed = ["1", "2", "3", "4", "0"]; // 紧急→高→中→低→无
   if (!fixed) return keys;
   const known = fixed.filter((k) => keys.includes(k));
   const extra = keys.filter((k) => !fixed!.includes(k));

@@ -3,9 +3,9 @@
 // 端口自 feat/loop vanilla 的 priIconSVG / statusIconSVG(已验证设计),React 化。
 import React from "react";
 
-/** 优先级:4=紧急(琥珀方块+白叹号);0-3=三柱升序,前 level 根深、其余浅。 */
+/** 优先级(后端编码 0无/1紧急/2高/3中/4低):1=紧急(琥珀方块+白叹号);高/中/低/无=三柱,亮柱数 on=3/2/1/0(对齐 vanilla priIconSVG)。 */
 export function PriorityIcon({ level = 0, size = 16 }: { level?: number; size?: number }) {
-  if (level >= 4) {
+  if (level === 1) {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="紧急">
         <rect x="1" y="1" width="14" height="14" rx="3.5" style={{ fill: "var(--wk-color-warning)" }} />
@@ -14,6 +14,8 @@ export function PriorityIcon({ level = 0, size = 16 }: { level?: number; size?: 
       </svg>
     );
   }
+  // 亮柱数:高(2)→3 / 中(3)→2 / 低(4)→1 / 无(0)→0,前 on 根深、其余浅。
+  const on = level === 2 ? 3 : level === 3 ? 2 : level === 4 ? 1 : 0;
   const bars = [
     { x: 1.5, y: 9, h: 5 },
     { x: 6.5, y: 6, h: 8 },
@@ -29,7 +31,7 @@ export function PriorityIcon({ level = 0, size = 16 }: { level?: number; size?: 
           width="3"
           height={b.h}
           rx="1"
-          style={{ fill: i < level ? "var(--wk-text-primary)" : "var(--wk-text-disabled)" }}
+          style={{ fill: i < on ? "var(--wk-text-primary)" : "var(--wk-text-disabled)" }}
         />
       ))}
     </svg>
