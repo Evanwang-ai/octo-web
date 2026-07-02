@@ -32,6 +32,25 @@ import "./projectDetail.css";
 
 type Tab = "board" | "members" | "context";
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
+
+// 来源引用(对齐 vanilla ctxRefHTML):http(s)→新窗打开/下载;非 http→"引用 · ref" 只读。
+function SourceRef({ kind, refUrl }: { kind: string; refUrl?: string }) {
+  const ref = (refUrl || "").trim();
+  if (!ref) return null;
+  const label = kind === "file" ? "打开文件" : kind === "link" ? "打开链接" : "引用";
+  if (/^https?:\/\//i.test(ref)) {
+    return (
+      <a className="cr-ref" href={ref} target="_blank" rel="noopener noreferrer" title={ref}>
+        {label}
+      </a>
+    );
+  }
+  return (
+    <span className="cr-ref cr-ref-plain" title={ref}>
+      {label} · {ref}
+    </span>
+  );
+}
 const SCOPE_LABEL: Record<string, string> = {
   default: "系统收件箱",
   space: "空间共享",
@@ -363,6 +382,7 @@ export default function ProjectDetailView({
                   <div className="pdv-src-main">
                     <span className="pdv-src-kind">{s.kind}</span>
                     <span className="pdv-src-title">{s.title}</span>
+                    <SourceRef kind={s.kind} refUrl={s.ref} />
                   </div>
                   {s.snippet && <div className="pdv-src-snip">{s.snippet}</div>}
                   <button type="button" className="pdv-row-x" onClick={() => removeSource(s.id)}>
