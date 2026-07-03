@@ -539,12 +539,15 @@ export default function MatterListView({
 
   return (
     <div className={`mlv${embedded ? " is-embedded" : ""}`}>
-      <div className="mlv-head">
-        <h1 className="mlv-h1">全部回路</h1>
-        <button className="mlv-new" type="button" onClick={openCreate}>
-          <span className="mlv-new-plus">+</span>新建回路
-        </button>
-      </div>
+      {/* embedded(项目内嵌看板)不再自我宣布"全部回路"——宿主页已有 22px 标题,页中页是双头怪 */}
+      {!embedded && (
+        <div className="mlv-head">
+          <h1 className="mlv-h1">全部回路</h1>
+          <button className="mlv-new" type="button" onClick={openCreate}>
+            <span className="mlv-new-plus">+</span>新建回路
+          </button>
+        </div>
+      )}
 
       <div className="mlv-toolbar">
         <div className="mlv-tabs">
@@ -632,6 +635,12 @@ export default function MatterListView({
               />
             )}
           </span>
+          {/* embedded:建单入口(带 projectId 预填)收进工具条,替代被抑制的页头按钮 */}
+          {embedded && (
+            <button className="mlv-tbtn" type="button" onClick={openCreate}>
+              + 新建回路
+            </button>
+          )}
         </div>
       </div>
 
