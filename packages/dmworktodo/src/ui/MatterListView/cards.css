@@ -98,12 +98,17 @@
 
 /* 卡片 */
 .cv-card {
-  border: 1px solid var(--wk-border-default);
+  border: 1px solid transparent;
   border-radius: var(--wk-r-md, 8px);
+  margin: 0 16px 2px;
+  overflow: hidden;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.cv-card.is-open {
+  border-color: var(--wk-border-default);
   background: var(--wk-bg-surface);
   margin-bottom: 8px;
-  overflow: hidden;
-  transition: border-color 0.12s, box-shadow 0.12s;
 }
 .cv-card:hover {
   border-color: var(--wk-brand-tint-15);
@@ -115,8 +120,15 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: var(--wk-r-md, 8px);
   cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cv-card:not(.is-open) .cv-card-main:hover {
+  background: var(--wk-brand-tint-06);
 }
 .cv-card-text {
   flex: 1 1 auto;
