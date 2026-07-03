@@ -358,3 +358,13 @@ export interface MarketSkill {
   source_url: string;
   content_preview: string;
 }
+
+// ═══ 自动化 run 历史(S6 卡⑧)——形状对齐 multica AutopilotRun(契约 §1.10),mock 先行 ═══
+export interface AutopilotRunLite {
+  id: string;
+  autopilot_id: string; // = 我方 schedule id(接线时映射)
+  status: "success" | "failed" | "running";
+  started_at: string;
+  duration_sec: number;
+  summary: string; // 一句话结果(成功=产出;失败=原因)
+}

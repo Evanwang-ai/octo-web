@@ -412,3 +412,8 @@ export async function getMarketSkillDetail(slug: string): Promise<MarketSkill> {
 export async function installMarketSkill(slug: string): Promise<MarketInstalledSkill> {
   return simulated(() => mdb.installMarketSkill(slug));
 }
+
+// GET /api/autopilots/{id}/runs —— run 历史(契约 §1.10);mock 按 schedule 合成,接线换真端点。
+export async function listAutopilotRuns(scheduleId: string): Promise<import("./types").AutopilotRunLite[]> {
+  return simulated(() => mdb.runsOfSchedule(scheduleId));
+}

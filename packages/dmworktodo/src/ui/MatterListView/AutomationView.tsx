@@ -13,7 +13,9 @@ import type { Schedule } from "../../bridge/types";
 import { Toast } from "../../utils/toast";
 import UserName from "../UserName";
 import { cronHuman } from "./automationCron";
-import ScheduleModal from "./ScheduleModal";
+import AutomationWizard from "./AutomationWizard";
+import { listAutopilotRuns } from "../../api/multica/client";
+import type { AutopilotRunLite } from "../../api/multica/types";
 import "./automation.css";
 
 function relFuture(iso?: string): string {
@@ -30,7 +32,8 @@ function relFuture(iso?: string): string {
 }
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 
-export default function AutomationView() {
+export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: string) => void }) {
+  const [runsMap, setRunsMap] = useState<Record<string, AutopilotRunLite[]>>({});
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectMap, setProjectMap] = useState<Record<string, string>>({});
@@ -43,6 +46,20 @@ export default function AutomationView() {
       mountedRef.current = false;
     };
   }, []);
+
+  // 每卡状态点串(run 历史 mock;接线换 §1.10 真端点)。
+  useEffect(() => {
+    if (schedules.length === 0) return;
+    let alive = true;
+    Promise.all(schedules.map((s) => listAutopilotRuns(s.id).then((rs) => [s.id, rs] as const))).then(
+      (pairs) => {
+        if (alive) setRunsMap(Object.fromEntries(pairs));
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, [schedules]);
 
   const reloadSchedules = useCallback(() => {
     listSchedules()
@@ -143,11 +160,11 @@ export default function AutomationView() {
                   className="av-card-body"
                   role="button"
                   tabIndex={0}
-                  onClick={() => setEditing(s)}
+                  onClick={() => onOpenDetail(s.id)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      setEditing(s);
+                      onOpenDetail(s.id);
                     }
                   }}
                 >
@@ -168,6 +185,13 @@ export default function AutomationView() {
                     <span className="av-target">{target(s)}</span>
                   </div>
                   {s.runbook && <div className="av-runbook">{s.runbook.split("\n")[0]}</div>}
+                  {(runsMap[s.id]?.length ?? 0) > 0 && (
+                    <div className="av-dots" title="最近 8 次运行">
+                      {runsMap[s.id].slice(0, 8).reverse().map((r) => (
+                        <span key={r.id} className={`av-hdot ${r.status === "failed" ? "is-bad" : "is-ok"}`} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -176,7 +200,7 @@ export default function AutomationView() {
       )}
 
       {editing && (
-        <ScheduleModal
+        <AutomationWizard
           editing={editing}
           onClose={() => setEditing(null)}
           onSaved={reloadSchedules}

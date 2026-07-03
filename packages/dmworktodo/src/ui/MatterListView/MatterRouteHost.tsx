@@ -27,6 +27,7 @@ import SkillsView from "./SkillsView";
 import SkillDetailView from "./SkillDetailView";
 import MarketplaceView from "./MarketplaceView";
 import MarketDetailView from "./MarketDetailView";
+import AutomationDetailView from "./AutomationDetailView";
 import WorkerDetailView from "./WorkerDetailView";
 import CommandPalette from "./CommandPalette";
 
@@ -45,7 +46,8 @@ type View =
   | "skills"
   | "skillDetail"
   | "market"
-  | "marketDetail";
+  | "marketDetail"
+  | "automationDetail";
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -62,6 +64,7 @@ export default function MatterRouteHost() {
   const [squadId, setSquadId] = useState<string | null>(null);
   const [skillId, setSkillId] = useState<string | null>(null);
   const [marketTarget, setMarketTarget] = useState<{ kind: "template" | "skill"; slug: string } | null>(null);
+  const [automationId, setAutomationId] = useState<string | null>(null);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // ref 镜像:全局 keydown 监听(空依赖只注册一次)读它,避免 stale 闭包。
   const activeRef = useRef(active);
@@ -156,6 +159,13 @@ export default function MatterRouteHost() {
     setSection("skills");
     setSkillId(id);
     setView("skillDetail");
+  };
+  // 自动化详情(⑧)。
+  const openAutomationDetail = (id: string) => {
+    setActive(true);
+    setSection("automation");
+    setAutomationId(id);
+    setView("automationDetail");
   };
   // 市集(⑦):首页 + onboarding 详情。
   const showMarket = () => {
@@ -266,7 +276,7 @@ export default function MatterRouteHost() {
             <MatterDetailView key={detailId} matterId={detailId} onBack={showMatterList} />
           )}
           {view === "cards" && <CardsView />}
-          {view === "automation" && <AutomationView />}
+          {view === "automation" && <AutomationView onOpenDetail={openAutomationDetail} />}
           {view === "projects" && <ProjectsView onOpenDetail={openProjectDetail} />}
           {view === "projectDetail" && projectDetailId && (
             <ProjectDetailView
@@ -288,6 +298,9 @@ export default function MatterRouteHost() {
           {view === "skills" && <SkillsView onOpenDetail={openSkillDetail} />}
           {view === "skillDetail" && skillId && (
             <SkillDetailView key={skillId} skillId={skillId} onBack={showSkills} />
+          )}
+          {view === "automationDetail" && automationId && (
+            <AutomationDetailView key={automationId} scheduleId={automationId} onBack={showAutomation} />
           )}
           {view === "market" && <MarketplaceView onOpenDetail={openMarketDetail} />}
           {view === "marketDetail" && marketTarget && (

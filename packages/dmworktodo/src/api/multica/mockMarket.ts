@@ -129,3 +129,36 @@ export function installMarketSkill(slug: string) {
     config: { source: m.source_url },
   });
 }
+
+// ── 自动化 run 历史合成(卡⑧;按 schedule 节奏造最近 N 次,确定性)──
+import type { AutopilotRunLite } from "./types";
+
+const runCache = new Map<string, AutopilotRunLite[]>();
+
+export function runsOfSchedule(scheduleId: string): AutopilotRunLite[] {
+  const hit = runCache.get(scheduleId);
+  if (hit) return hit.map((r) => ({ ...r }));
+  let h = 0;
+  for (const ch of scheduleId) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  const prand = (j: number) => {
+    const x = Math.sin(h * 127.1 + j * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  const DAY = 86_400_000;
+  const out: AutopilotRunLite[] = [];
+  for (let i = 0; i < 8; i++) {
+    const failed = prand(i) > 0.85;
+    out.push({
+      id: `apr-${scheduleId}-${i}`,
+      autopilot_id: scheduleId,
+      status: failed ? "failed" : "success",
+      started_at: new Date(Date.now() - (i + 1) * DAY + prand(i + 20) * 3_600_000).toISOString(),
+      duration_sec: 40 + Math.floor(prand(i + 40) * 200),
+      summary: failed
+        ? "执行超时:目标数据源未在窗口内响应"
+        : ["已创建回路并派发执行", "产出已生成,无异常", "巡检通过,全部服务健康"][Math.floor(prand(i + 60) * 3)],
+    });
+  }
+  runCache.set(scheduleId, out);
+  return out.map((r) => ({ ...r }));
+}
