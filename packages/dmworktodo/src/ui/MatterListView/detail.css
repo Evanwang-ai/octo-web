@@ -417,6 +417,74 @@ button.mdv-att-card:hover {
   padding: 20px 20px 28px;
   background: var(--wk-bg-base);
   box-sizing: border-box;
+  transition:
+    width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+    flex 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+    padding 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+    border-width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+    opacity 0.2s;
+}
+/* 响应式(欠账 §9-⑨,vanilla .props L1584/L2446-2493):收起态宽度归零 */
+.mdv-insp.collapsed {
+  width: 0 !important;
+  flex: 0 0 0 !important;
+  min-width: 0;
+  padding: 0;
+  border-width: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+.mdv-insp-toggle {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--wk-text-tertiary);
+  font-size: 15px;
+  cursor: pointer;
+}
+.mdv-insp-toggle:hover {
+  background: var(--wk-brand-tint-06);
+  color: var(--wk-text-primary);
+}
+.mdv-insp-toggle.is-on {
+  color: var(--wk-color-info);
+}
+.mdv-insp-scrim {
+  display: none;
+}
+@media (max-width: 1180px) {
+  .mdv-insp {
+    flex-basis: 300px;
+    width: 300px;
+  }
+}
+@media (max-width: 860px) {
+  .mdv-insp {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 39;
+    width: 86vw;
+    max-width: 360px;
+    box-shadow: -8px 0 28px rgba(31, 35, 41, 0.18);
+  }
+  .mdv-insp.collapsed {
+    box-shadow: none;
+  }
+  .mdv-insp-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 38;
+    background: rgba(31, 35, 41, 0.24);
+  }
 }
 /* 状态进程卡(vanilla handoff-banner):左 3px 竖条随状态变色,纯展示 */
 .mdv-hb {

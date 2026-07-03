@@ -359,6 +359,10 @@ export default function MatterDetailView({
   const [reviseNote, setReviseNote] = useState("");
   const [reviseBusy, setReviseBusy] = useState(false);
   const [sendingBack, setSendingBack] = useState(false);
+  // 右栏响应式(欠账 §9-⑨,vanilla setInspectorOpen L3229-3255):≤1180 默认收起,≤860 变遮罩抽屉。
+  const [inspOpen, setInspOpen] = useState<boolean>(
+    () => !window.matchMedia("(max-width: 1180px)").matches,
+  );
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -443,6 +447,11 @@ export default function MatterDetailView({
     return () => {
       alive = false;
     };
+  }, [matterId]);
+
+  // 换单时按当前宽度重置右栏开合(vanilla showInspector 每次进详情 setInspectorOpen(!isMidWidth()))。
+  useEffect(() => {
+    setInspOpen(!window.matchMedia("(max-width: 1180px)").matches);
   }, [matterId]);
 
   // 经验总结行数据:仅终态拉取(summary 只在终态产生);ExperiencePanel 变更走 expGen 触发重拉。
@@ -642,6 +651,16 @@ export default function MatterDetailView({
           )}
           <span className="mdv-crumb-sep">›</span>
           <span className="mdv-crumb-id">M-{matter.seq_no}</span>
+          <button
+            type="button"
+            className={`mdv-insp-toggle${inspOpen ? " is-on" : ""}`}
+            title="详情面板"
+            aria-label="详情面板"
+            aria-expanded={inspOpen}
+            onClick={() => setInspOpen((v) => !v)}
+          >
+            ▥
+          </button>
         </div>
 
         <h1 className="mdv-title">{matter.title}</h1>
@@ -955,7 +974,9 @@ export default function MatterDetailView({
         </div>
       </div>
 
-      <aside className="mdv-insp">
+      {/* ≤860px 抽屉遮罩(CSS 门控显示),点击收起(vanilla insp-scrim) */}
+      {inspOpen && <div className="mdv-insp-scrim" onClick={() => setInspOpen(false)} />}
+      <aside className={`mdv-insp${inspOpen ? "" : " collapsed"}`}>
         {/* 状态进程卡(vanilla handoff-banner):eyebrow + 状态 chip + 主文案,左 3px 竖条随状态变色;纯展示不可点 */}
         {(() => {
           const hb = handoffInfo(matter, myUid);
