@@ -253,6 +253,7 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
                                 return (
                                     <li
                                         key={ci}
+                                        className={classNames(child.danger && "wk-ctx-danger")}
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             this.hide()
