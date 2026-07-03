@@ -716,10 +716,11 @@ export interface AgentStats {
   preferences?: AgentPrefRow[];
 }
 
-/** GET /agents/stats?uids= —— 单 uid 取回其战绩(vanilla cache.stats 同源)。 */
+/** GET /agents/stats?uids= —— 单 uid 取回其战绩。只认请求的 uid,缺了返空(不退位到
+ *  Object.values()[0],那会把别人的战绩挂错人头,codex)。 */
 export async function getAgentStats(uid: string): Promise<AgentStats> {
   const json = await get<{ stats?: Record<string, AgentStats> }>("/agents/stats", { uids: uid });
-  return json.stats?.[uid] || Object.values(json.stats || {})[0] || {};
+  return json.stats?.[uid] || {};
 }
 
 export interface AgentCardDeclared {

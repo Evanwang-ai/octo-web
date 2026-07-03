@@ -140,7 +140,7 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="agc-modal" role="dialog" aria-label="成员名片">
+      <div className="agc-modal" role="dialog" aria-modal="true" aria-label="成员名片">
         <div className="agc-head">
           <WKAvatar
             channel={new Channel(uid, ChannelTypePerson)}

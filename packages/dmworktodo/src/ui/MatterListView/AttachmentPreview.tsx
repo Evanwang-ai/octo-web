@@ -57,10 +57,16 @@ export default function AttachmentPreview({
     fetch(url)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
       .then((b) => {
-        obj = URL.createObjectURL(
+        const o = URL.createObjectURL(
           b.type === "application/pdf" ? b : new Blob([b], { type: "application/pdf" }),
         );
-        if (alive) setPdfUrl(obj);
+        // 关闭早于 fetch 完成:cleanup 时 obj 还是 null,迟到的 objectURL 无人回收——就地 revoke(codex)。
+        if (!alive) {
+          URL.revokeObjectURL(o);
+          return;
+        }
+        obj = o;
+        setPdfUrl(o);
       })
       .catch(() => {
         if (alive) setPdfErr(true);
@@ -141,7 +147,7 @@ export default function AttachmentPreview({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="mdv-ap-box" role="dialog" aria-label={`预览 ${name}`}>
+      <div className="mdv-ap-box" role="dialog" aria-modal="true" aria-label={`预览 ${name}`}>
         <div className="mdv-ap-head">
           <span className="mdv-ap-name" title={name}>
             {name}

@@ -97,7 +97,8 @@ export default function AnnotateLayer({
   };
 
   const submit = async () => {
-    if (!box) return;
+    // busy 前置:按钮有 disabled,但 textarea Enter 直调 submit,pending 中连发会双落 timeline(codex)。
+    if (!box || busy) return;
     const t = text.trim();
     if (!t) {
       Toast.error("写点什么再发");

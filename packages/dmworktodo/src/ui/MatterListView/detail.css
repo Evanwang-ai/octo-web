@@ -512,7 +512,8 @@ button.mdv-att-card:hover {
     border-width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
     opacity 0.2s;
 }
-/* 响应式(欠账 §9-⑨,vanilla .props L1584/L2446-2493):收起态宽度归零 */
+/* 响应式(欠账 §9-⑨,vanilla .props L1584/L2446-2493):收起态宽度归零;
+   visibility 断掉键盘可聚焦性(width:0+overflow:hidden 不阻止 tab 进入,codex a11y)。 */
 .mdv-insp.collapsed {
   width: 0 !important;
   flex: 0 0 0 !important;
@@ -521,6 +522,7 @@ button.mdv-att-card:hover {
   border-width: 0;
   overflow: hidden;
   opacity: 0;
+  visibility: hidden;
 }
 /* Inspector 头像行可点开战绩名片 */
 .mdv-prop-val.is-clickable {
