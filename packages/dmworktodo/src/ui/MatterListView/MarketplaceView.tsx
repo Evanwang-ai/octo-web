@@ -127,7 +127,10 @@ export default function MarketplaceView({
                       className="mkt-card"
                       onClick={() => onOpenDetail("skill", s.slug)}
                     >
-                      <div className="mkt-card-visual is-skill">
+                      <div
+                        className="mkt-card-visual is-skill"
+                        style={{ color: `hsl(${hueOf(s.name)} 30% 55%)`, background: `hsl(${hueOf(s.name)} 25% 96%)` }}
+                      >
                         <svg width="30" height="30" viewBox="0 0 16 16" fill="none" aria-hidden>
                           <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
                         </svg>

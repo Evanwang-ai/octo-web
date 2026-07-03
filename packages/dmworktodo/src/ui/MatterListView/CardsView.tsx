@@ -33,7 +33,7 @@ const CARD_STATUS: Record<string, { label: string; cls: string }> = {
 const SCOPE_GROUPS: { key: string; label: string; match: (s: string) => boolean }[] = [
   { key: "universal", label: "普适标准", match: (s) => s === "global" || s === "space" },
   { key: "project", label: "项目级", match: (s) => s === "project" },
-  { key: "bot", label: "Bot 级", match: (s) => s === "bot" },
+  { key: "bot", label: "worker 级", match: (s) => s === "bot" },
   { key: "matter", label: "回路级", match: (s) => s === "matter" },
 ];
 
