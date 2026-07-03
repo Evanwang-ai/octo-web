@@ -177,7 +177,7 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
                   <span className="skl-method-name">从市场安装</span>
                   <span className="skl-method-desc">粘贴 ClawHub / GitHub 链接导入</span>
                 </button>
-                <button type="button" className="skl-method" disabled title="随设备接入(D1)开放">
+                <button type="button" className="skl-method" disabled title="设备接入上线后开放">
                   <span className="skl-method-name">扫描本机</span>
                   <span className="skl-method-desc">从设备的技能目录批量导入 · 即将开放</span>
                 </button>
