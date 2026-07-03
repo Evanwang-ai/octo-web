@@ -15,30 +15,28 @@
   overflow-y: auto;
 }
 
+/* 列表页头(Listview 族,S8);详情面包屑另用 .mkt-crumbbar */
 .mkt-head {
-  height: 44px;
-  min-height: 44px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--wk-border-default);
-  position: sticky;
-  top: 0;
-  background: var(--wk-bg-base);
-  z-index: 2;
+  gap: 12px;
+  padding: 22px 28px 8px;
 }
 
 .mkt-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.2;
   color: var(--wk-text-primary);
 }
 
-.mkt-head-hint {
-  margin-left: 8px;
-  font-size: 12px;
-  color: var(--wk-text-tertiary);
+.mkt-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 24px 8px;
 }
 
 .mkt-back {
@@ -59,46 +57,43 @@
   font-size: 12px;
 }
 
-/* ── 首页:分类侧栏 + 卡网格(Notion 市集 1248 容器/3 列/gap 20)── */
-.mkt-body {
-  display: grid;
-  grid-template-columns: 168px minmax(0, 1fr);
-  gap: 24px;
+/* ── 首页:tab 分类(mlv-tab 族)+ Notion 市集卡网格(1248 容器)── */
+.mkt-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   width: 100%;
+}
+
+.mkt-main > .mkt-section,
+.mkt-main > .mkt-empty {
   max-width: 1248px;
   margin: 0 auto;
-  padding: 20px 24px 40px;
+  padding: 8px 28px 0;
   box-sizing: border-box;
 }
 
-.mkt-cats {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  position: sticky;
-  top: 56px;
-  align-self: start;
-}
-
 .mkt-cat {
+  height: 28px;
+  padding: 0 10px;
   border: none;
   background: transparent;
-  text-align: left;
-  padding: 6px 10px;
-  border-radius: 7px;
+  border-radius: var(--wk-r-md, 8px);
   font-size: 13px;
-  color: var(--wk-text-secondary);
+  font-weight: 550;
+  color: var(--wk-text-tertiary);
   cursor: pointer;
+  transition: background 0.12s, color 0.12s;
 }
 
 .mkt-cat:hover {
-  background: var(--wk-bg-hover);
+  background: var(--wk-brand-tint-06);
+  color: var(--wk-text-secondary);
 }
 
 .mkt-cat.is-active {
-  background: var(--wk-bg-selected);
   color: var(--wk-text-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .mkt-section {
@@ -106,52 +101,92 @@
 }
 
 .mkt-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--wk-text-primary);
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wk-text-tertiary);
+  margin-bottom: 14px;
 }
 
 .mkt-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  gap: 24px 24px;
+  margin-bottom: 36px;
 }
 
+/* 卡=Notion 市集配方:大视觉区是卡的主体,文字只是脚注 */
 .mkt-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid var(--wk-border-default);
-  border-radius: 12px;
-  background: var(--wk-bg-base);
+  gap: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
   text-align: left;
   cursor: pointer;
   font: inherit;
   color: inherit;
-  min-height: 132px;
 }
 
-.mkt-card:hover {
-  background: var(--wk-bg-hover);
-  border-color: color-mix(in srgb, var(--wk-border-default) 40%, var(--wk-text-tertiary));
-}
-
-.mkt-card-top {
+.mkt-card-visual {
+  height: 150px;
+  border-radius: 10px;
+  border: 1px solid var(--wk-border-default);
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  transition: box-shadow 0.15s;
+}
+
+.mkt-card-visual.is-skill {
+  background: var(--wk-brand-tint-03);
+  color: var(--wk-text-tertiary);
+}
+
+.mkt-card:hover .mkt-card-visual {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.mkt-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 0;
 }
 
 .mkt-card-name {
-  font-size: 14px;
+  flex: none;
+  font-size: 13px;
   font-weight: 600;
   color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mkt-card-author {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--wk-text-disabled);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mkt-card-installs {
+  flex: none;
+  font-size: 11px;
+  color: var(--wk-text-disabled);
+  font-variant-numeric: tabular-nums;
 }
 
 .mkt-installed {
-  margin-left: auto;
+  flex: none;
   font-size: 11px;
   padding: 1px 8px;
   border-radius: 999px;
@@ -160,17 +195,14 @@
 }
 
 .mkt-card-desc {
-  flex: 1;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--wk-text-secondary);
-}
-
-.mkt-card-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11.5px;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--wk-text-tertiary);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .mkt-skill-ic {

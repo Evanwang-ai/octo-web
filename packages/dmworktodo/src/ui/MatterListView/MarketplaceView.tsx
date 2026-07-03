@@ -43,88 +43,112 @@ export default function MarketplaceView({
     { key: "skills", label: "技能" },
   ];
 
+  // 模板 banner 色相:同 WorkerAvatar 的名字 hash(视觉血缘一致)。
+  const hueOf = (name: string) => {
+    let h = 0;
+    for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    return h;
+  };
+
   return (
     <div className="mkt-root">
       <div className="mkt-head">
         <span className="mkt-title">市集</span>
-        <span className="mkt-head-hint">给 worker 找模板与技能——装完即用</span>
       </div>
-      <div className="mkt-body">
-        <nav className="mkt-cats">
-          {CATS.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              className={`mkt-cat${cat === c.key ? " is-active" : ""}`}
-              onClick={() => setCat(c.key)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </nav>
-        <div className="mkt-main">
-          {templates === null ? (
-            <div className="mkt-empty">加载中…</div>
-          ) : (
-            <>
-              {(cat === "all" || cat === "templates") && (
-                <section className="mkt-section">
-                  <div className="mkt-section-title">worker 模板</div>
-                  <div className="mkt-grid">
-                    {templates.map((t) => (
-                      <button
-                        key={t.slug}
-                        type="button"
-                        className="mkt-card"
-                        onClick={() => onOpenDetail("template", t.slug)}
+      <div className="mkt-toolbar">
+        {CATS.map((c) => (
+          <button
+            key={c.key}
+            type="button"
+            className={`mkt-cat${cat === c.key ? " is-active" : ""}`}
+            onClick={() => setCat(c.key)}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <div className="mkt-main">
+        {templates === null ? (
+          <div className="mkt-empty">加载中…</div>
+        ) : (
+          <>
+            {(cat === "all" || cat === "templates") && (
+              <section className="mkt-section">
+                <div className="mkt-section-title">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                    <rect x="9" y="2.5" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                    <rect x="2.5" y="9" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                    <rect x="9" y="9" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                  </svg>
+                  worker 模板
+                </div>
+                <div className="mkt-grid">
+                  {/* 卡=Notion 市集配方:大视觉区为主体 + 底行(名/作者/右缘徽章) */}
+                  {templates.map((t) => (
+                    <button
+                      key={t.slug}
+                      type="button"
+                      className="mkt-card"
+                      onClick={() => onOpenDetail("template", t.slug)}
+                    >
+                      <div
+                        className="mkt-card-visual"
+                        style={{
+                          background: `linear-gradient(135deg, hsl(${hueOf(t.name)} 42% 92%), hsl(${(hueOf(t.name) + 40) % 360} 38% 86%))`,
+                        }}
                       >
-                        <div className="mkt-card-top">
-                          <WorkerAvatar name={t.name} size={36} />
-                          <span className="mkt-card-name">{t.name}</span>
-                        </div>
-                        <div className="mkt-card-desc">{t.description}</div>
-                        <div className="mkt-card-meta">
-                          <span>{t.author}</span>
-                          <span>{t.installs.toLocaleString()} 次安装</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
-              {(cat === "all" || cat === "skills") && (
-                <section className="mkt-section">
-                  <div className="mkt-section-title">技能</div>
-                  <div className="mkt-grid">
-                    {shelf.map((s) => (
-                      <button
-                        key={s.slug}
-                        type="button"
-                        className="mkt-card"
-                        onClick={() => onOpenDetail("skill", s.slug)}
-                      >
-                        <div className="mkt-card-top">
-                          <span className="mkt-skill-ic">
-                            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden>
-                              <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-                            </svg>
-                          </span>
-                          <span className="mkt-card-name">{s.name}</span>
-                          {installedNames.has(s.name) && <span className="mkt-installed">已安装</span>}
-                        </div>
-                        <div className="mkt-card-desc">{s.description}</div>
-                        <div className="mkt-card-meta">
-                          <span>{s.author}</span>
-                          <span>{s.installs.toLocaleString()} 次安装</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </>
-          )}
-        </div>
+                        <WorkerAvatar name={t.name} size={56} />
+                      </div>
+                      <div className="mkt-card-row">
+                        <span className="mkt-card-name">{t.name}</span>
+                        <span className="mkt-card-author">{t.author}</span>
+                        <span className="mkt-card-installs">{t.installs.toLocaleString()}</span>
+                      </div>
+                      <div className="mkt-card-desc">{t.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+            {(cat === "all" || cat === "skills") && (
+              <section className="mkt-section">
+                <div className="mkt-section-title">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                  </svg>
+                  技能
+                </div>
+                <div className="mkt-grid">
+                  {shelf.map((s) => (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      className="mkt-card"
+                      onClick={() => onOpenDetail("skill", s.slug)}
+                    >
+                      <div className="mkt-card-visual is-skill">
+                        <svg width="30" height="30" viewBox="0 0 16 16" fill="none" aria-hidden>
+                          <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <div className="mkt-card-row">
+                        <span className="mkt-card-name">{s.name}</span>
+                        <span className="mkt-card-author">{s.author}</span>
+                        {installedNames.has(s.name) ? (
+                          <span className="mkt-installed">已安装</span>
+                        ) : (
+                          <span className="mkt-card-installs">{s.installs.toLocaleString()}</span>
+                        )}
+                      </div>
+                      <div className="mkt-card-desc">{s.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
