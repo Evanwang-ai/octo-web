@@ -529,3 +529,124 @@
   gap: 6px;
   min-width: 0;
 }
+
+/* ═══ S6 卡③ 阵容板(FM 战术规划器:领队居中在上,成员卡环绕,虚卡添加)═══ */
+
+.sqd-view-toggle {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 2px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.sqd-vt {
+  border: none;
+  background: transparent;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.sqd-vt.is-active {
+  background: var(--wk-bg-selected);
+  color: var(--wk-text-primary);
+  font-weight: 500;
+}
+
+.sqd-board {
+  padding: 8px 0 4px;
+}
+
+.sqd-board-leader {
+  display: flex;
+  justify-content: center;
+}
+
+.sqd-board-line {
+  width: 2px;
+  height: 18px;
+  margin: 2px auto;
+  background: color-mix(in srgb, var(--wk-border-default) 70%, transparent);
+}
+
+.sqd-board-members {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.sqd-pcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 128px;
+  padding: 14px 10px 12px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  background: var(--wk-bg-base);
+  text-align: center;
+}
+
+.sqd-pcard.is-leader {
+  border-color: color-mix(in srgb, var(--wk-color-info) 45%, transparent);
+  background: color-mix(in srgb, var(--wk-color-info) 4%, var(--wk-bg-base));
+}
+
+.sqd-pcard.is-ghost {
+  border-style: dashed;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--wk-text-tertiary);
+  font: inherit;
+}
+
+.sqd-pcard.is-ghost:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.sqd-pcard-plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.sqd-pcard-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sqd-pcard-role {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--wk-border-default);
+  color: var(--wk-text-tertiary);
+}
+
+.sqd-pcard-role.is-leader {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wk-color-info) 12%, transparent);
+  color: var(--wk-color-info);
+}
+
+.sqd-pcard-sub {
+  font-size: 11px;
+  color: var(--wk-text-tertiary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-height: 14px;
+}

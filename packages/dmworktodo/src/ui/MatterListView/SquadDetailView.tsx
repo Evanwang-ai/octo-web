@@ -55,6 +55,8 @@ export default function SquadDetailView({
   const [statuses, setStatuses] = useState<SquadMemberStatus[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [tab, setTab] = useState<"members" | "instructions">("members");
+  // S6 卡③(FM 战术规划器):阵容板(默认)/分配表 双视图。
+  const [memberView, setMemberView] = useState<"board" | "table">("board");
   const [busy, setBusy] = useState(false);
   const [delArmed, setDelArmed] = useState(false);
   // Instructions 编辑
@@ -196,6 +198,22 @@ export default function SquadDetailView({
                   <span className="sqd-card-title">
                     成员 <span className="sqd-count">{rows.length}</span>
                   </span>
+                  <span className="sqd-view-toggle">
+                    <button
+                      type="button"
+                      className={`sqd-vt${memberView === "board" ? " is-active" : ""}`}
+                      onClick={() => setMemberView("board")}
+                    >
+                      阵容板
+                    </button>
+                    <button
+                      type="button"
+                      className={`sqd-vt${memberView === "table" ? " is-active" : ""}`}
+                      onClick={() => setMemberView("table")}
+                    >
+                      分配表
+                    </button>
+                  </span>
                   <button type="button" className="sqd-btn-ghost" onClick={() => setAddOpen((v) => !v)}>
                     + 添加成员
                   </button>
@@ -263,7 +281,78 @@ export default function SquadDetailView({
                     </button>
                   </div>
                 )}
-                {rows.map((r) => {
+                {memberView === "board" && (
+                  <div className="sqd-board">
+                    {(() => {
+                      const leader = rows[0];
+                      const lst = statusOf(leader.member_type, leader.member_id);
+                      const lconf = lst?.status ? STATUS_CONF[lst.status] : null;
+                      const lprimary = lst?.active_issues?.[0];
+                      return (
+                        <div className="sqd-board-leader">
+                          <div className="sqd-pcard is-leader">
+                            <WorkerHoverArea agentId={leader.member_id}>
+                              <WorkerAvatar
+                                name={agentName.get(leader.member_id) || "?"}
+                                size={44}
+                                dot={lconf?.cls}
+                              />
+                            </WorkerHoverArea>
+                            <div className="sqd-pcard-name">
+                              {agentName.get(leader.member_id) || leader.member_id.slice(0, 8)}
+                            </div>
+                            <div className="sqd-pcard-role is-leader">领队</div>
+                            <div className="sqd-pcard-sub">
+                              {lprimary ? `正在处理 ${lprimary.identifier}` : lconf?.label || ""}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    <div className="sqd-board-line" aria-hidden />
+                    <div className="sqd-board-members">
+                      {rows.slice(1).map((r) => {
+                        const st = r.member_type === "agent" ? statusOf(r.member_type, r.member_id) : null;
+                        const conf = st?.status ? STATUS_CONF[st.status] : null;
+                        const primary = st?.active_issues?.[0];
+                        return (
+                          <div key={`b-${r.member_type}-${r.member_id}`} className="sqd-pcard">
+                            {r.member_type === "agent" ? (
+                              <WorkerHoverArea agentId={r.member_id}>
+                                <WorkerAvatar
+                                  name={agentName.get(r.member_id) || "?"}
+                                  size={40}
+                                  dot={conf?.cls}
+                                />
+                              </WorkerHoverArea>
+                            ) : (
+                              <WKAvatar
+                                channel={new Channel(r.member_id, ChannelTypePerson)}
+                                style={{ width: 40, height: 40, borderRadius: "50%" }}
+                              />
+                            )}
+                            <div className="sqd-pcard-name">
+                              {r.member_type === "agent" ? (
+                                agentName.get(r.member_id) || r.member_id.slice(0, 8)
+                              ) : (
+                                <UserName uid={r.member_id} />
+                              )}
+                            </div>
+                            <div className="sqd-pcard-role">{r.role || (r.member_type === "member" ? "人类成员" : "成员")}</div>
+                            <div className="sqd-pcard-sub">
+                              {primary ? `正在处理 ${primary.identifier}` : conf?.label || (r.member_type === "member" ? "" : "")}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <button type="button" className="sqd-pcard is-ghost" onClick={() => setAddOpen(true)}>
+                        <span className="sqd-pcard-plus">+</span>
+                        <div className="sqd-pcard-role">添加成员</div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {memberView === "table" && rows.map((r) => {
                   const st = r.member_type === "agent" ? statusOf(r.member_type, r.member_id) : null;
                   const conf = st?.status ? STATUS_CONF[st.status] : null;
                   const primary = st?.active_issues?.[0];
