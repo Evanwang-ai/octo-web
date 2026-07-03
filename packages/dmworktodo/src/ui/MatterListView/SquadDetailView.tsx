@@ -74,7 +74,8 @@ export default function SquadDetailView({
     setSquad(s);
     setMembers(m);
     setStatuses(st.members);
-    setInsDraft(s.instructions);
+    // 未保存的 Instructions 草稿不被成员增删触发的 reload 覆盖(codex 双审 finding)。
+    setInsDraft((prev) => (insDirty ? prev : s.instructions));
   };
 
   useEffect(() => {

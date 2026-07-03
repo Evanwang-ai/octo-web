@@ -43,6 +43,14 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
   const agentName = useMemo(() => new Map(agents.map((a) => [a.id, a.name])), [agents]);
   const canSubmit = name.trim() && leaderId && !busy;
 
+  // 关闭即清表单(取消/遮罩关闭也不残留上次输入,codex 双审 finding)。
+  const closeCreate = () => {
+    setCreateOpen(false);
+    setName("");
+    setDesc("");
+    setLeaderId("");
+  };
+
   return (
     <div className="sqd-root">
       <div className="sqd-head">
@@ -110,7 +118,7 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
       </div>
 
       {createOpen && (
-        <div className="sqd-overlay" onMouseDown={() => setCreateOpen(false)}>
+        <div className="sqd-overlay" onMouseDown={closeCreate}>
           <div className="sqd-modal" role="dialog" aria-label="创建小队" onMouseDown={(e) => e.stopPropagation()}>
             <div className="sqd-modal-title">创建小队</div>
             <p className="sqd-modal-hint">领队 worker 接收分配给此小队的所有任务并协调团队。</p>
@@ -150,7 +158,7 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
             </label>
             <p className="sqd-modal-note">成员可在创建后进小队详情添加(worker 或组队成员)。</p>
             <div className="sqd-modal-foot">
-              <button type="button" className="sqd-btn-ghost" onClick={() => setCreateOpen(false)}>
+              <button type="button" className="sqd-btn-ghost" onClick={closeCreate}>
                 取消
               </button>
               <button
@@ -161,10 +169,7 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
                   setBusy(true);
                   try {
                     const s = await createSquad({ name: name.trim(), description: desc.trim(), leader_id: leaderId });
-                    setCreateOpen(false);
-                    setName("");
-                    setDesc("");
-                    setLeaderId("");
+                    closeCreate();
                     await reload();
                     onOpenDetail(s.id);
                   } finally {

@@ -46,7 +46,10 @@ export default function SkillDetailView({
       setSkill(s);
       setDrafts({
         [SKILL_MD]: s.content,
-        ...Object.fromEntries(s.files.map((f) => [f.path, f.content])),
+        // 防御:真实文件若恰好叫 SKILL.md(契约类型未禁),跳过——不吞主 content 草稿(codex 双审)。
+        ...Object.fromEntries(
+          s.files.filter((f) => f.path !== SKILL_MD).map((f) => [f.path, f.content]),
+        ),
       });
     });
     listAgents().then(setAgents);
