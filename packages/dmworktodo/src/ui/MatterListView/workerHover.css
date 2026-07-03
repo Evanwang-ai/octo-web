@@ -1,0 +1,100 @@
+/**
+ * [INPUT]: dmworkbase 设计系统 --wk-* 变量(状态点色类复用 workers.css)。
+ * [OUTPUT]: WorkerHoverCard 样式(.wkhc-*):Discord 配方亮色适配。
+ * [POS]: dmworktodo/ui/MatterListView 的 worker 悬停卡样式。实测值=素材解读.md Discord 节:
+ *        300 宽/r8/banner 105/头像 80 压 banner 44/内容 gap12 无分割线/双层阴影(亮色版)。
+ * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
+ */
+
+.wkhc {
+  position: fixed;
+  z-index: 1100;
+  width: 300px;
+  border-radius: 8px;
+  background: var(--wk-bg-base);
+  /* Discord 双层阴影的亮色适配:投影 + 1px 边环 */
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.14),
+    0 0 0 1px var(--wk-border-default);
+  overflow: hidden;
+  pointer-events: none;
+  animation: wkhc-in 120ms ease-out;
+}
+
+@keyframes wkhc-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wkhc-banner {
+  height: 105px;
+  border-radius: 8px 8px 0 0;
+}
+
+/* 头像压 banner 44px(Discord:包裹左距 16,头像中心≈banner 底边) */
+.wkhc-avatar {
+  position: absolute;
+  left: 16px;
+  top: 61px;
+}
+
+.wkhc-avatar .wkr-avatar-face {
+  border: 4px solid var(--wk-bg-base);
+  box-sizing: border-box;
+}
+
+.wkhc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 44px 16px 14px;
+}
+
+.wkhc-name {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  color: var(--wk-text-primary);
+}
+
+.wkhc-sub {
+  margin-top: -8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--wk-text-secondary);
+}
+
+.wkhc-block-k {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wk-text-tertiary);
+  margin-bottom: 3px;
+}
+
+.wkhc-block-v {
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wkhc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wkhc-chip {
+  padding: 1px 8px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--wk-text-secondary);
+}

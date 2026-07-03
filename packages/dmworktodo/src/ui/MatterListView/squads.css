@@ -522,3 +522,10 @@
 .wkr-dot.is-idle {
   background: var(--wk-text-tertiary);
 }
+
+.sqd-leader-hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}

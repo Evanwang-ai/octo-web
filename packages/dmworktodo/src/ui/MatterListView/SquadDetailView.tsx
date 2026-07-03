@@ -32,6 +32,7 @@ import type {
 } from "../../api/multica/types";
 import UserName from "../UserName";
 import { WorkerAvatar } from "./WorkersView";
+import WorkerHoverArea from "./WorkerHoverCard";
 import "./squads.css";
 
 const STATUS_CONF: Record<string, { label: string; cls: string }> = {
@@ -269,11 +270,13 @@ export default function SquadDetailView({
                   return (
                     <div key={`${r.member_type}-${r.member_id}`} className="sqd-member-row">
                       {r.member_type === "agent" ? (
-                        <WorkerAvatar
-                          name={agentName.get(r.member_id) || "?"}
-                          size={28}
-                          dot={conf?.cls}
-                        />
+                        <WorkerHoverArea agentId={r.member_id}>
+                          <WorkerAvatar
+                            name={agentName.get(r.member_id) || "?"}
+                            size={28}
+                            dot={conf?.cls}
+                          />
+                        </WorkerHoverArea>
                       ) : (
                         <WKAvatar
                           channel={new Channel(r.member_id, ChannelTypePerson)}

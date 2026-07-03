@@ -15,6 +15,7 @@ import { listSquads, createSquad, listAgents } from "../../api/multica/client";
 import type { Agent, Squad } from "../../api/multica/types";
 import UserName from "../UserName";
 import { WorkerAvatar } from "./WorkersView";
+import WorkerHoverArea from "./WorkerHoverCard";
 import "./squads.css";
 
 function fmtDays(iso: string): string {
@@ -84,8 +85,10 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
                 </span>
               </span>
               <span className="sqd-cell-leader">
-                <WorkerAvatar name={agentName.get(s.leader_id) || "?"} size={18} />
-                {agentName.get(s.leader_id) || s.leader_id.slice(0, 8)}
+                <WorkerHoverArea agentId={s.leader_id} className="sqd-leader-hover">
+                  <WorkerAvatar name={agentName.get(s.leader_id) || "?"} size={18} />
+                  {agentName.get(s.leader_id) || s.leader_id.slice(0, 8)}
+                </WorkerHoverArea>
               </span>
               <span className="sqd-cell-members">
                 {(s.member_preview || []).length === 0 && !s.member_count ? (

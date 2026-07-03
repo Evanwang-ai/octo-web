@@ -31,6 +31,7 @@ import type {
   RuntimeSummary,
 } from "../../api/multica/types";
 import UserName from "../UserName";
+import WorkerHoverArea from "./WorkerHoverCard";
 import "./workers.css";
 
 type Scope = "mine" | "all" | "archived";
@@ -225,7 +226,9 @@ export default function WorkersView({ onOpenDetail }: { onOpenDetail: (id: strin
                 onClick={() => onOpenDetail(r.agent.id)}
               >
                 <span className="wkr-cell-name">
-                  <WorkerAvatar name={r.agent.name} size={32} dot={conf.cls} />
+                  <WorkerHoverArea agentId={r.agent.id}>
+                    <WorkerAvatar name={r.agent.name} size={32} dot={conf.cls} />
+                  </WorkerHoverArea>
                   <span className="wkr-name-lines">
                     <span className="wkr-name-top">
                       <span className="wkr-name">{r.agent.name}</span>
