@@ -63,8 +63,12 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
     <div className="skl-root">
       <div className="skl-head">
         <span className="skl-title">技能</span>
-        {skills && <span className="skl-count">{skills.length}</span>}
-        <span className="skl-head-hint">给 worker 的可复用说明书,开跑时注入工作目录</span>
+        <span className="skl-head-spacer" />
+        <button type="button" className="skl-btn-primary" onClick={() => setOpen(true)}>
+          + 新建技能
+        </button>
+      </div>
+      <div className="skl-toolbar">
         <span className="skl-head-spacer" />
         <span className="skl-vt-group">
           <button
@@ -82,17 +86,7 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
             卡片
           </button>
         </span>
-        <button type="button" className="skl-btn-primary" onClick={() => setOpen(true)}>
-          + 新建技能
-        </button>
       </div>
-      {viewMode === "table" && (
-        <div className="skl-table-head">
-          <span>技能</span>
-          <span>挂载</span>
-          <span>更新</span>
-        </div>
-      )}
       <div className="skl-list">
         {skills === null ? (
           <div className="skl-empty">加载中…</div>
@@ -130,35 +124,32 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
             })}
           </div>
         ) : (
+          /* 行=Listview 语法:40px 单行、无列头,描述内联,挂载堆/时间右缘聚集。 */
           skills.map((s) => {
             const holders = usedBy.get(s.id) || [];
             return (
               <button key={s.id} type="button" className="skl-row" onClick={() => onOpenDetail(s.id)}>
-                <span className="skl-cell-name">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="skl-file-ic">
-                    <path d="M4 2.5h5L12.5 6v7.5A1 1 0 0 1 11.5 14h-7a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                    <path d="M9 2.5V6h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                  </svg>
-                  <span className="skl-name-lines">
-                    <span className="skl-name">{s.name}</span>
-                    {s.description && <span className="skl-desc">{s.description}</span>}
-                  </span>
-                </span>
-                <span className="skl-cell-used">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="skl-file-ic">
+                  <path d="M4 2.5h5L12.5 6v7.5A1 1 0 0 1 11.5 14h-7a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                  <path d="M9 2.5V6h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                </svg>
+                <span className="skl-name">{s.name}</span>
+                {s.description && <span className="skl-desc">{s.description}</span>}
+                <span className="skl-used">
                   {holders.length === 0 ? (
                     <span className="skl-none">未挂载</span>
                   ) : (
                     <>
                       <span className="skl-stack">
                         {holders.slice(0, 3).map((a) => (
-                          <WorkerAvatar key={a.id} name={a.name} size={20} />
+                          <WorkerAvatar key={a.id} name={a.name} size={18} />
                         ))}
                       </span>
                       {holders.length > 3 && <span className="skl-more-n">+{holders.length - 3}</span>}
                     </>
                   )}
                 </span>
-                <span className="skl-cell-updated">{fmtDays(s.updated_at)}</span>
+                <span className="skl-updated">{fmtDays(s.updated_at)}</span>
               </button>
             );
           })

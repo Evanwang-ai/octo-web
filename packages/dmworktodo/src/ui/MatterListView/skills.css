@@ -15,7 +15,23 @@
   background: var(--wk-bg-base);
 }
 
-.skl-head,
+/* 列表页头(Listview 族,S8) */
+.skl-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 28px 8px;
+}
+
+.skl-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 24px 8px;
+}
+
 .skl-crumb {
   height: 44px;
   min-height: 44px;
@@ -26,7 +42,13 @@
   border-bottom: 1px solid var(--wk-border-default);
 }
 
-.skl-title,
+.skl-title {
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--wk-text-primary);
+}
+
 .skl-crumb-name {
   font-size: 13px;
   font-weight: 600;
@@ -54,13 +76,23 @@
 }
 
 .skl-btn-primary {
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
   border: none;
-  border-radius: 8px;
-  background: var(--wk-brand-primary, #1b1b1b);
-  color: #fff;
-  font-size: 12px;
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-brand-primary);
+  color: var(--wk-text-on-brand);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.12s;
+}
+
+.skl-btn-primary:hover {
+  background: var(--wk-brand-primary-hover);
 }
 
 .skl-btn-primary:disabled {
@@ -116,50 +148,35 @@
   color: #fff;
 }
 
-/* ── 列表 ── */
-.skl-table-head,
-.skl-row {
-  display: grid;
-  grid-template-columns: minmax(280px, 2fr) 160px 100px;
-  align-items: center;
-  column-gap: 12px;
-  padding: 0 16px;
-}
-
-.skl-table-head {
-  height: 32px;
-  font-size: 11px;
-  color: var(--wk-text-tertiary);
-  border-bottom: 1px solid var(--wk-border-default);
-}
-
+/* ── 列表(Listview .mlv-row 公式:40px 单行/无列头,S8)── */
 .skl-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: 16px;
+  padding: 4px 0 16px;
 }
 
 .skl-row {
-  width: 100%;
-  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  height: 40px;
+  margin: 0 16px;
+  padding: 0 10px;
   border: none;
+  border-radius: var(--wk-r-md, 8px);
   background: transparent;
   text-align: left;
   cursor: pointer;
   font: inherit;
   color: inherit;
+  transition: background 0.1s;
+  box-sizing: border-box;
 }
 
 .skl-row:hover {
-  background: var(--wk-bg-hover);
-}
-
-.skl-cell-name {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+  background: var(--wk-brand-tint-06);
 }
 
 .skl-file-ic {
@@ -167,23 +184,17 @@
   flex-shrink: 0;
 }
 
-.skl-name-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
 .skl-name {
+  flex: none;
   font-size: 13px;
   font-weight: 500;
   color: var(--wk-text-primary);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .skl-desc {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 12px;
   color: var(--wk-text-tertiary);
   white-space: nowrap;
@@ -191,10 +202,22 @@
   text-overflow: ellipsis;
 }
 
-.skl-cell-used {
-  display: flex;
+.skl-used {
+  flex: none;
+  min-width: 90px;
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
+}
+
+.skl-updated {
+  flex: none;
+  min-width: 64px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--wk-text-disabled);
+  white-space: nowrap;
 }
 
 .skl-stack {
