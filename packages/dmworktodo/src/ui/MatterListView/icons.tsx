@@ -91,12 +91,13 @@ export function StatusIcon({ status, size = 16 }: { status: string; size?: numbe
 }
 
 export const STATUS_ORDER = ["backlog", "open", "in_progress", "review", "done", "cancelled", "blocked"] as const;
+// 词表对齐 vanilla ST(index.html L3059-3067):done=已完成、blocked=需要协助(2026-07-03 修词漂)。
 export const STATUS_LABEL: Record<string, string> = {
   backlog: "草稿",
   open: "待开始",
   in_progress: "进行中",
   review: "待确认",
-  done: "完成",
+  done: "已完成",
   cancelled: "已取消",
-  blocked: "受阻",
+  blocked: "需要协助",
 };

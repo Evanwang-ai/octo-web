@@ -308,10 +308,73 @@ a.mdv-att-card:hover {
   background: var(--wk-bg-base);
   box-sizing: border-box;
 }
+/* 状态进程卡(vanilla handoff-banner):左 3px 竖条随状态变色,纯展示 */
+.mdv-hb {
+  position: relative;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-bg-surface);
+  box-shadow: var(--wk-shadow-sm);
+  padding: 10px 12px 12px 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.mdv-hb::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--wk-color-info);
+}
+.mdv-hb.is-taste::before {
+  background: var(--wk-color-warning);
+}
+.mdv-hb.is-done::before {
+  background: var(--wk-color-success);
+}
+.mdv-hb.is-block::before {
+  background: var(--wk-color-error);
+}
+.mdv-hb.is-cancel::before {
+  background: var(--wk-text-disabled);
+}
+.mdv-hb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.mdv-hb-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--wk-text-tertiary);
+}
+.mdv-hb-state {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: var(--wk-brand-tint-06);
+  color: var(--wk-text-secondary);
+}
+.mdv-hb-main {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  line-height: 1.45;
+}
+
 .mdv-insp-status {
   margin-bottom: 18px;
 }
-.mdv-status-sel {
+/* 状态触发按钮:图标+词+caret,点开 ContextMenus statusMenu(与列表快改同交互) */
+.mdv-status-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   height: 36px;
   padding: 0 10px;
@@ -321,6 +384,19 @@ a.mdv-att-card:hover {
   font-size: 13px;
   color: var(--wk-text-primary);
   cursor: pointer;
+  transition: background 0.1s;
+}
+.mdv-status-btn:hover {
+  background: var(--wk-brand-tint-03);
+}
+.mdv-status-btn-label {
+  flex: 1 1 auto;
+  text-align: left;
+  font-weight: 500;
+}
+.mdv-status-caret {
+  flex: 0 0 auto;
+  color: var(--wk-text-tertiary);
 }
 .mdv-props {
   display: flex;
@@ -385,6 +461,30 @@ a.mdv-att-card:hover {
 .mdv-mono {
   font-family: var(--wk-font-mono, ui-monospace, Menlo, monospace);
   color: var(--wk-text-secondary);
+}
+/* 空态占位(领队"没定"/协作者"暂无"——字段不因空而消失) */
+.mdv-none {
+  color: var(--wk-text-disabled);
+}
+/* Inspector 属性分组线(vanilla props-divider) */
+.mdv-props-divider {
+  height: 1px;
+  background: var(--wk-border-default);
+  margin: 10px 0;
+}
+/* 子任务空态:等待领队配置(vanilla L7265-7268) */
+.mdv-await {
+  padding: 2px 0;
+}
+.mdv-await-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+.mdv-await-hint {
+  font-size: 12.5px;
+  color: var(--wk-text-tertiary);
+  margin-top: 2px;
 }
 .mdv-ai {
   display: inline-flex;

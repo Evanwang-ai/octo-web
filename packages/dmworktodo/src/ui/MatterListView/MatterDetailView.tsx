@@ -10,7 +10,13 @@
  *          Inspector[状态·优先级·项目 可编辑]。附件卡=TlAttachments 共用件:guarded URL 新开标签,
  *          原生详情无 wk:file-preview 监听不走预览事件,未过安全校验渲染死卡)。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
- *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
+ *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读(空态"没定"/"暂无"恒渲染)。
+ *        Inspector 2026-07-03 对齐 vanilla:状态进程卡 handoffInfo(=controlLine L7901-7914,backlog 分支为刻意修正)、
+ *        状态改走 ContextMenus statusMenu(替裸 select)、props 分组线、srcLabel(UUID→来源会话)、
+ *        MODE_LABEL=vanilla MODE_NAME、子任务空态"等待领队配置"。
+ *        欠账(vanilla 有此处无):经验 panel(done/cancelled 5 分支)、满意度弹层(review+发起人→done)、
+ *        状态项副文案、附件预览 overlay、agent 战绩名片、迭代经验总结行、role 拓扑图、右栏响应式收起/抽屉。
+ *        兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -53,8 +59,8 @@ import UserName from "../UserName";
 import { Toast } from "../../utils/toast";
 import { resolveAndGuardUrl } from "../../utils/fileUrl";
 import { StatusIcon, PriorityIcon } from "./icons";
-import { priorityMenu } from "./rowMenus";
-import { STATUS_ORDER, STATUS_LABEL } from "./icons";
+import { priorityMenu, statusMenu } from "./rowMenus";
+import { STATUS_LABEL } from "./icons";
 import PlanGraph from "./PlanGraph";
 import "./detail.css";
 
@@ -71,22 +77,76 @@ type MatterDetailFull = MatterDetail & {
   leader_uid?: string;
   project_id?: string;
   input_attachments?: InputAttachmentShape[];
+  block_reason_text?: string;
 };
+
+// 状态进程卡文案(vanilla controlLine,L7901-7914)。
+// backlog 分支为刻意修正:vanilla 落 default 显示"待开始/等待开始"与右上"草稿"chip 自相矛盾(L7913)。
+function handoffInfo(
+  m: MatterDetailFull,
+  myUid: string,
+): { cls: string; label: string; main: React.ReactNode } {
+  const doerUid = m.leader_uid || m.assignees?.[0]?.user_id || "";
+  const doer = doerUid ? <UserName uid={doerUid} /> : null;
+  switch (m.status as string) {
+    case "review": {
+      const mine = m.creator_id === myUid;
+      return {
+        cls: "is-taste",
+        label: mine ? "轮到你了" : "等待确认",
+        main: doer ? <>待确认 · {doer} 提交了结果</> : "等待确认",
+      };
+    }
+    case "done":
+      return { cls: "is-done", label: "已完成", main: "已完成" };
+    case "blocked":
+      return {
+        cls: "is-block",
+        label: "需要协助",
+        main: `需要协助:${m.block_reason_text || "没说原因"}`,
+      };
+    case "cancelled":
+      return { cls: "is-cancel", label: "已取消", main: "已取消" };
+    case "in_progress":
+      return {
+        cls: "",
+        label: "进行中",
+        main: doer ? <>已 @ {doer} · 进行中</> : "进行中",
+      };
+    case "backlog":
+      return { cls: "", label: "草稿", main: "等待发车 · 发车后开始执行" };
+    default:
+      return {
+        cls: "",
+        label: "待开始",
+        main: doer ? <>等待开始 · 在 {doer} 手里</> : "等待开始",
+      };
+  }
+}
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 // 后端编码 0无/1紧急/2高/3中/4低(matter.go);index=priority 值。
 const PRIORITY_LABEL = ["无", "紧急", "高", "中", "低"];
+// 对齐 vanilla MODE_NAME(index.html L3074),2026-07-03 修词漂(原 critic评审/swarm蜂群/single单兵 全错)。
 const MODE_LABEL: Record<string, string> = {
-  critic: "评审",
+  solo: "单干",
+  split: "分头干",
+  swarm: "撒网",
   roundtable: "圆桌",
-  swarm: "蜂群",
-  single: "单兵",
+  pipeline: "流水线",
+  critic: "生成-验证",
 };
+// 来源名:纯 UUID/32hex 显示"来源会话"(vanilla srcLabel,L2880-2885)。
+const srcLabel = (name: string) =>
+  /^[0-9a-f]{32}$|^[0-9a-f-]{36}$/i.test(name.trim()) ? "来源会话" : name;
 // 迭代轮次结果人话(/iterations outcome + current_outcome)。
+// confirmed/needs_help 为 vanilla 词表补充(index.html L8214),两代后端枚举并存,全收。
 const OUTCOME_LABEL: Record<string, string> = {
   pending_review: "待确认",
   accepted: "已通过",
+  confirmed: "确认完成",
   needs_revision: "需修改",
+  needs_help: "需要协助",
   rejected: "已否决",
   in_progress: "进行中",
   sent_back: "已打回",
@@ -627,7 +687,17 @@ export default function MatterDetailView({
               nodes={children}
             />
           ) : (
-            !subOpen && <div className="mdv-empty">暂无子任务</div>
+            !subOpen &&
+            /* 空态分支对齐 vanilla subsBlockHTML(L7265-7270):有 mode=等待领队配置(领队接单后自动分配角色),
+               无 mode=暂无子任务。角色拓扑图 roleNodesFromConfig(mode_config)未还原,记欠账。 */
+            (matter.mode ? (
+              <div className="mdv-await">
+                <div className="mdv-await-title">等待领队配置</div>
+                <div className="mdv-await-hint">领队接单后会自动分配角色</div>
+              </div>
+            ) : (
+              <div className="mdv-empty">暂无子任务</div>
+            ))
           )}
         </div>
 
@@ -771,23 +841,53 @@ export default function MatterDetailView({
       </div>
 
       <aside className="mdv-insp">
+        {/* 状态进程卡(vanilla handoff-banner):eyebrow + 状态 chip + 主文案,左 3px 竖条随状态变色;纯展示不可点 */}
+        {(() => {
+          const hb = handoffInfo(matter, myUid);
+          return (
+            <div className={`mdv-hb ${hb.cls}`}>
+              <div className="mdv-hb-top">
+                <span className="mdv-hb-label">{hb.label}</span>
+                <span className="mdv-hb-state">
+                  {STATUS_LABEL[matter.status] || matter.status}
+                </span>
+              </div>
+              <div className="mdv-hb-main">{hb.main}</div>
+            </div>
+          );
+        })()}
         <div className="mdv-insp-status">
-          <select
-            className="mdv-status-sel"
+          {/* 状态改走 ContextMenus statusMenu(与列表快改同一交互),替代裸 select */}
+          <button
+            type="button"
+            className="mdv-status-btn"
             aria-label="状态"
-            value={matter.status}
-            onChange={(e) => changeStatus(e.target.value)}
+            onClick={(e) => {
+              setMenuData(statusMenu(matter.status, changeStatus));
+              ctxRef.current?.show(e);
+            }}
           >
-            {/* 兜底:matter.status 不在七态清单(如历史 archived)时,补一个当前项,避免 select 失配。 */}
-            {!(STATUS_ORDER as readonly string[]).includes(matter.status) && (
-              <option value={matter.status}>{STATUS_LABEL[matter.status] || matter.status}</option>
-            )}
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s] || s}
-              </option>
-            ))}
-          </select>
+            <StatusIcon status={matter.status} size={14} />
+            <span className="mdv-status-btn-label">
+              {STATUS_LABEL[matter.status] || matter.status}
+            </span>
+            <svg
+              className="mdv-status-caret"
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 4.5 6 7.5 9 4.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </div>
         <div className="mdv-props">
           <div className="mdv-prop">
@@ -810,10 +910,26 @@ export default function MatterDetailView({
             </button>
           </div>
           <PropAvatar label="发起人" uid={matter.creator_id} />
-          {matter.leader_uid && <PropAvatar label="领队" uid={matter.leader_uid} />}
-          {(matter.assignees || []).map((a) => (
-            <PropAvatar key={a.id} label="协作者" uid={a.user_id} />
-          ))}
+          {/* 领队/协作者:恒渲染,空态"没定"/"暂无"(vanilla L8159/8179——字段不因空而消失) */}
+          {matter.leader_uid ? (
+            <PropAvatar label="领队" uid={matter.leader_uid} />
+          ) : (
+            <div className="mdv-prop">
+              <span className="mdv-prop-label">领队</span>
+              <span className="mdv-prop-val mdv-none">没定</span>
+            </div>
+          )}
+          {(matter.assignees || []).length > 0 ? (
+            (matter.assignees || []).map((a) => (
+              <PropAvatar key={a.id} label="协作者" uid={a.user_id} />
+            ))
+          ) : (
+            <div className="mdv-prop">
+              <span className="mdv-prop-label">协作者</span>
+              <span className="mdv-prop-val mdv-none">暂无</span>
+            </div>
+          )}
+          <div className="mdv-props-divider" aria-hidden="true" />
           {/* 项目:可编辑 select */}
           <div className="mdv-prop">
             <span className="mdv-prop-label">项目</span>
@@ -837,7 +953,7 @@ export default function MatterDetailView({
               <span className="mdv-prop-label">来源</span>
               <span className="mdv-prop-val mdv-src">
                 <span className="mdv-src-name" title={matter.source_name}>
-                  {matter.source_name}
+                  {srcLabel(matter.source_name)}
                 </span>
                 <button
                   type="button"
