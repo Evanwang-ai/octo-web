@@ -487,3 +487,79 @@
   list-style: disc;
   padding-left: 20px;
 }
+
+/* ═══ S6 卡④ 两视图:卡片模式(Notion 市集配方)+ 切换钮 ═══ */
+
+.skl-vt-group {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.skl-vt {
+  border: none;
+  background: transparent;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.skl-vt.is-active {
+  background: var(--wk-bg-selected);
+  color: var(--wk-text-primary);
+  font-weight: 500;
+}
+
+.skl-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.skl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  background: var(--wk-bg-base);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  min-height: 116px;
+}
+
+.skl-card:hover {
+  background: var(--wk-bg-hover);
+}
+
+.skl-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skl-card-desc {
+  flex: 1;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--wk-text-secondary);
+}
+
+.skl-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.skl-card-time {
+  font-size: 11.5px;
+  color: var(--wk-text-tertiary);
+}

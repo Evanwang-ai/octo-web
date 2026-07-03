@@ -292,3 +292,88 @@
 .pv-modal-save:hover:not(:disabled) {
   background: var(--wk-brand-primary-hover);
 }
+
+/* ═══ S6 卡⑨ 文件夹卡网格(进度环=done/total)═══ */
+
+.pv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 4px 16px 24px;
+}
+
+.pv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  background: var(--wk-bg-base);
+  cursor: pointer;
+}
+
+.pv-card:hover {
+  background: var(--wk-bg-hover);
+}
+
+.pv-card.is-archived {
+  opacity: 0.6;
+}
+
+.pv-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pv-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-card-arch {
+  margin-left: auto;
+  opacity: 0;
+}
+
+.pv-card:hover .pv-card-arch {
+  opacity: 1;
+}
+
+.pv-card-mid {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pv-ring {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.pv-ring-n {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--wk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-card-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: 12px;
+}

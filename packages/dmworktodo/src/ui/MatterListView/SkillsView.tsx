@@ -29,6 +29,8 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
   const [desc, setDesc] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
+  // S6 卡④:密表(ChatGPT 商店)↔ 卡片(Notion 市集)两视图。
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
   const reload = () => listSkills().then(setSkills);
   useEffect(() => {
@@ -64,20 +66,69 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
         {skills && <span className="skl-count">{skills.length}</span>}
         <span className="skl-head-hint">给 worker 的可复用说明书,开跑时注入工作目录</span>
         <span className="skl-head-spacer" />
+        <span className="skl-vt-group">
+          <button
+            type="button"
+            className={`skl-vt${viewMode === "table" ? " is-active" : ""}`}
+            onClick={() => setViewMode("table")}
+          >
+            密表
+          </button>
+          <button
+            type="button"
+            className={`skl-vt${viewMode === "cards" ? " is-active" : ""}`}
+            onClick={() => setViewMode("cards")}
+          >
+            卡片
+          </button>
+        </span>
         <button type="button" className="skl-btn-primary" onClick={() => setOpen(true)}>
           + 新建技能
         </button>
       </div>
-      <div className="skl-table-head">
-        <span>技能</span>
-        <span>挂载</span>
-        <span>更新</span>
-      </div>
+      {viewMode === "table" && (
+        <div className="skl-table-head">
+          <span>技能</span>
+          <span>挂载</span>
+          <span>更新</span>
+        </div>
+      )}
       <div className="skl-list">
         {skills === null ? (
           <div className="skl-empty">加载中…</div>
         ) : skills.length === 0 ? (
           <div className="skl-empty">还没有技能 —— 新建或从市场导入一个。</div>
+        ) : viewMode === "cards" ? (
+          <div className="skl-cards">
+            {skills.map((s) => {
+              const holders = usedBy.get(s.id) || [];
+              return (
+                <button key={s.id} type="button" className="skl-card" onClick={() => onOpenDetail(s.id)}>
+                  <div className="skl-card-top">
+                    <span className="skl-file-ic">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                        <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span className="skl-name">{s.name}</span>
+                  </div>
+                  <div className="skl-card-desc">{s.description || "(无描述)"}</div>
+                  <div className="skl-card-meta">
+                    {holders.length === 0 ? (
+                      <span className="skl-none">未挂载</span>
+                    ) : (
+                      <span className="skl-stack">
+                        {holders.slice(0, 3).map((a) => (
+                          <WorkerAvatar key={a.id} name={a.name} size={18} />
+                        ))}
+                      </span>
+                    )}
+                    <span className="skl-card-time">{fmtDays(s.updated_at)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         ) : (
           skills.map((s) => {
             const holders = usedBy.get(s.id) || [];
