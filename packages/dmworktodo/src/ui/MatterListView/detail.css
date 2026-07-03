@@ -711,9 +711,18 @@ a.mdv-att-card:hover {
   color: var(--wk-color-warning);
 }
 .mdv-iter-outcome[data-outcome="accepted"],
-.mdv-iter-badge[data-outcome="accepted"] {
+.mdv-iter-badge[data-outcome="accepted"],
+.mdv-iter-outcome[data-outcome="confirmed"],
+.mdv-iter-badge[data-outcome="confirmed"] {
   background: color-mix(in srgb, var(--wk-color-success) 14%, transparent);
   color: var(--wk-color-success);
+}
+/* 末轮"现在"标(vanilla .iter-now L2531:10px 700 accent) */
+.mdv-iter-now {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--wk-color-info);
+  flex: none;
 }
 .mdv-iter-outcome[data-outcome="needs_revision"],
 .mdv-iter-badge[data-outcome="needs_revision"],

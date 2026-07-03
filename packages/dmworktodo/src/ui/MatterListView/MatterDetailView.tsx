@@ -43,8 +43,9 @@ import {
   createSubMatter,
   addFeedback,
   sendBack,
+  getMatterSummary,
 } from "../../api/todoApi";
-import type { MatterIterations, MatterTreeChild } from "../../api/todoApi";
+import type { MatterIterations, MatterTreeChild, MatterSummary } from "../../api/todoApi";
 import type {
   MatterDetail,
   TimelineEntry,
@@ -204,12 +205,26 @@ function actHuman(a: MatterActivity): string {
       return "加了协作者";
     case "assignee_removed":
       return "移除了协作者";
+    case "reassigned":
+      return "改派了领队";
+    case "join_started":
+      return "开始汇总";
+    case "agent_task_queued":
+      return "派给 worker";
+    case "agent_task_completed":
+      return "worker 交回";
+    case "agent_task_failed":
+      return "worker 失败";
+    case "agent_progress":
+      return "worker 有进展";
     case "channel_linked":
       return "关联了频道";
     case "channel_unlinked":
       return "取消关联频道";
     default:
-      return a.action;
+      // vanilla actHuman 默认分支:summary 族动作归一为人话,其余兜底"更新了"(勿漏裸 action)。
+      if (String(a.action).includes("summary")) return "总结了这次的经验";
+      return "更新了";
   }
 }
 
@@ -320,6 +335,9 @@ export default function MatterDetailView({
   const [activities, setActivities] = useState<MatterActivity[]>([]);
   const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [iterations, setIterations] = useState<MatterIterations | null>(null);
+  // 迭代区经验总结行(vanilla summaryLine L8203-8210):轻量副本,面板改动经 onChanged 递增 expGen 同步。
+  const [expSummary, setExpSummary] = useState<MatterSummary | null>(null);
+  const [expGen, setExpGen] = useState(0);
   const [children, setChildren] = useState<MatterTreeChild[]>([]);
   const [subOpen, setSubOpen] = useState(false);
   const [subTitle, setSubTitle] = useState("");
@@ -418,6 +436,23 @@ export default function MatterDetailView({
       alive = false;
     };
   }, [matterId]);
+
+  // 经验总结行数据:仅终态拉取(summary 只在终态产生);ExperiencePanel 变更走 expGen 触发重拉。
+  const expTerminal =
+    (matter?.status as string) === "done" || (matter?.status as string) === "cancelled";
+  useEffect(() => {
+    let alive = true;
+    setExpSummary(null);
+    if (!expTerminal) return;
+    getMatterSummary(matterId)
+      .then((r) => {
+        if (alive) setExpSummary(r);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [matterId, expTerminal, expGen]);
 
   // 项目候选(Inspector 改项目 select)。一次拉取,失败静默。
   useEffect(() => {
@@ -776,12 +811,15 @@ export default function MatterDetailView({
               )}
             </div>
             <div className="mdv-iters" role="list">
-              {iterations.rounds.map((r) => (
+              {iterations.rounds.map((r, i) => (
                 <div key={r.round} className="mdv-iter" role="listitem">
                   <span className="mdv-iter-round">第 {r.round} 轮</span>
                   <span className="mdv-iter-badge" data-outcome={r.outcome || ""}>
                     {OUTCOME_LABEL[r.outcome || ""] || r.outcome || "—"}
                   </span>
+                  {i === iterations.rounds.length - 1 && (
+                    <span className="mdv-iter-now">现在</span>
+                  )}
                   {r.submitted_by && (
                     <span className="mdv-iter-by">
                       <UserName uid={r.submitted_by} />
@@ -792,6 +830,25 @@ export default function MatterDetailView({
                   </span>
                 </div>
               ))}
+              {/* 经验总结行(vanilla summaryLine L8203-8210):rounds 之后追加,status→人话+语义色 */}
+              {expSummary && (
+                <div className="mdv-iter" role="listitem">
+                  <span className="mdv-iter-round">经验总结</span>
+                  <span
+                    className="mdv-iter-badge"
+                    data-outcome={expSummary.status === "authorized" ? "confirmed" : "pending_review"}
+                  >
+                    {expSummary.status === "authorized"
+                      ? "已总结经验"
+                      : expSummary.status === "draft"
+                        ? "经验待确认"
+                        : "经验已弃用"}
+                  </span>
+                  {expSummary.updated_at && (
+                    <span className="mdv-iter-time">{relTime(expSummary.updated_at)}</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1028,6 +1085,7 @@ export default function MatterDetailView({
               ? activities.filter((a) => a.action === "feedback_added").length
               : null
           }
+          onChanged={() => setExpGen((g) => g + 1)}
         />
       </aside>
 

@@ -36,6 +36,7 @@ export default function ExperiencePanel({
   leaderUid,
   myUid,
   feedbackCount,
+  onChanged,
 }: {
   matterId: string;
   status: string;
@@ -43,6 +44,7 @@ export default function ExperiencePanel({
   leaderUid?: string;
   myUid: string;
   feedbackCount: number | null; // null=activities 未载,先不渲染无记录分支(时序守护)
+  onChanged?: () => void; // 变更成功后通知宿主(迭代区经验总结行同步重拉)
 }) {
   const isTerminal = status === "done" || status === "cancelled";
   const isCreator = creatorId === myUid;
@@ -102,6 +104,7 @@ export default function ExperiencePanel({
       });
       Toast.success(scopeType ? `范围已更新为「${SCOPE_LABEL[scopeType] || scopeType}」` : "已生效");
       await reload();
+      onChanged?.();
     } catch {
       Toast.error("操作失败");
     } finally {
@@ -116,6 +119,7 @@ export default function ExperiencePanel({
       await updateMatterSummary(matterId, row.id, { action: "discard" });
       Toast.success("已弃用");
       await reload();
+      onChanged?.();
     } catch {
       Toast.error("操作失败");
     } finally {
@@ -135,6 +139,7 @@ export default function ExperiencePanel({
       Toast.success("已通知总结,稍后回来看");
       setDistillOpen(false);
       await reload();
+      onChanged?.();
     } catch {
       Toast.error("操作失败");
     } finally {
@@ -245,6 +250,7 @@ export default function ExperiencePanel({
                 Toast.success("点评已记录");
                 setReview("");
                 await reload();
+                onChanged?.();
               } catch {
                 Toast.error("提交失败");
               } finally {

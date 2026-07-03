@@ -64,6 +64,8 @@ export function statusMenu(
       title,
       checked: current === s,
       ...(hint && hint !== title ? { subtitle: hint } : {}),
+      // vanilla status-opt.danger:已取消是危险项(红字),对齐 L8149。
+      ...(s === "cancelled" ? { danger: true } : {}),
       onClick: () => onPick(s),
     };
   });

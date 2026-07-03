@@ -682,6 +682,7 @@ export interface MatterSummary {
   scope_type?: string; // matter | project | global | space
   target_bot_uid?: string;
   task_type?: string;
+  updated_at?: string;
 }
 
 /** GET /matters/:id/summary —— 无记录时 404,容错返 null。 */
