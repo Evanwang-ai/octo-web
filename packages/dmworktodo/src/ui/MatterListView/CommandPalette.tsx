@@ -142,7 +142,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
               <button type="button" className="cmdk-item" disabled={busy} onClick={() => quickCreate(null)}>
                 <StatusIcon status="backlog" size={14} />
                 <span className="cmdk-item-title">先存草稿,不派 Run</span>
-                <span className="cmdk-item-meta">backlog</span>
+                <span className="cmdk-item-meta">草稿 · 发车后开始执行</span>
               </button>
               {agents
                 .filter((a) => !a.archived_at)
