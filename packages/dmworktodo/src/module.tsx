@@ -58,11 +58,18 @@ let _initialized = false;
 
 // 收件箱未读数缓存:mailbox 菜单工厂读它挂 NavRail badge;wk:inbox-changed / 启动时刷新。
 let _inboxUnread = 0;
+// badge 刷新监听句柄:HMR dispose 时 off,防重复注册(codex 双审 finding)。
+let _inboxBadgeHandler: (() => void) | null = null;
 
 // Reset on HMR: tear down old listeners, reset init guard.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     _initialized = false;
+    if (_inboxBadgeHandler) {
+      WKApp.mittBus.off("wk:inbox-changed", _inboxBadgeHandler);
+      WKApp.mittBus.off("space-changed", _inboxBadgeHandler);
+      _inboxBadgeHandler = null;
+    }
     // Properly unmount React root before removing DOM node
     _globalTodoModalRoot?.unmount();
     _globalTodoModalRoot = null;
@@ -225,6 +232,7 @@ export default class MatterModule implements IModule {
         })
         .catch(() => {});
     };
+    _inboxBadgeHandler = refreshInboxBadge;
     WKApp.mittBus.on("wk:inbox-changed", refreshInboxBadge);
     WKApp.mittBus.on("space-changed", refreshInboxBadge);
     // 首拉延后:module init 时 token/space 常未就绪,直拉必吃降级数据。

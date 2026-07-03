@@ -1,10 +1,10 @@
 # MatterListView/
 > L2 | 父级: packages/dmworktodo (包级 L2 待补) | 原生 React 回路工作台(替 iframe)
 
-回路(Loop/Matter)的原生 React 表面。绞杀式迁移:已建表面走原生,未建暂留 iframe;真相源 = octo-matter `feat/loop` 分支 API + vanilla SPA 交互。一切色取 dmworkbase `--wk-*`,组件复用设计系统(ContextMenus/WKAvatar/SmartCreateModal),后端不动。
+回路(Loop/Matter)的原生 React 表面。**绞杀式迁移已完成(2026-07-03,iframe 机器整体拆除)**;真相源 = octo-matter `feat/loop` 分支 API + vanilla SPA 交互;**方向A 新表面(收件箱起)真相源 = multica 契约(契约对照表)+ Linear 视觉,数据走 api/multica mock 换源层(UI 先行拍板)**。一切色取 dmworkbase `--wk-*`,组件复用设计系统(ContextMenus/WKAvatar/SmartCreateModal),后端不动。
 
 成员清单
-MatterRouteHost.tsx: 绞杀式复合宿主,portal 到 body 覆盖 NavRail 右侧全区;view=matters 原生列表 / detail 原生详情 / cards / automation / projects / **projectDetail 原生项目详情** / iframe 未迁表面(**仅剩收件箱 mailbox**);监听 wk:nav-menu-activated·open-matter-workspace·open-matter-detail。openProjectDetail 已从 iframe 翻为原生 ProjectDetailView。
+MatterRouteHost.tsx: 原生复合宿主,portal 到 body 覆盖 NavRail 右侧全区;view=matters 列表 / detail 详情 / cards / automation / projects / projectDetail / **inbox 收件箱(2026-07-03 替掉最后一个 iframe,iframe 机器/navigateIframe/SUBNAV_HASH 全拆)**;监听 wk:nav-menu-activated·open-matter-workspace·open-matter-detail;收件箱不进子导航(S4 定稿:NavRail 并列入口),view=inbox 时隐藏 MatterSubNav;syncMatterAuth 保留(matter 域 localStorage 鉴权断言)。
 index.tsx: 列表主视图,**ViewSpec 驱动** list/board(分组/排序/筛选/显示属性)+ Tab;**全交互**:新建(emit wk:open-create-matter-modal;**embedded 时带 projectId=baseFilters.project_id→SmartCreateModal.prefillProjectId→CreateMatterReq.project_id,新回路归属项目**)、多选 checkbox+批量条(状态/删除,Promise.all 并发)、优先级·状态点击快改、行右键上下文菜单、实时刷新(监听 wk:matter-updated/deleted/created→reload);**看板**卡拖拽换列(HTML5 DnD,按 groupBy 分派 status→改状态/priority→改优先级,列高亮 + 空列补齐/隐藏 + 密度)+ 协作者"等 N 人"(去重,displayed=leader||assignees[0])。工具条"筛选/显示"开合 FilterMenu/DisplayPanel。字段:优先级·状态·标题·子任务·来源·项目·M-id·领队·日期(按 displayProps 显隐;列表 assignee=领队优先退 assignees[0],对齐 vanilla rowHTML)。**主列表注入 top_level:1 只取顶层(对齐 vanilla myMattersParams);embedded 项目内嵌看板不注入,显示全部含子任务。**优先级编码=后端 matter.go `0无/1紧急/2高/3中/4低`(icons/rowMenus/viewSpec 统一,勿反)。
 viewSpec.ts: 视图规格单一真相 —— ViewSpec 类型 + VIEW_SPEC_DEFAULTS + 字段注册表(GROUPABLE/ORDERABLE/DISPLAY_PROPS,剔 deadline/labels 幻影)+ load/save(key=mlv.viewspec)+ 纯变换 filterMatters/sortMatters/groupMatters + MatterRow 增广类型。全 client-side,无 React/DOM。
 DisplayPanel.tsx: Display 面板 popover(Linear 招牌)—— 布局/分组/排序+方向/看板密度·隐藏空列/显示属性 chips/重置为默认。受控,改动走 onChange(Partial<ViewSpec>)。
@@ -32,6 +32,9 @@ MatterDetailView.tsx: 原生详情,getMatter/listTimeline/listOutputs/listActivi
 PlanGraph.tsx: 计划图(几何即语义,P1 子件④)—— 领队 root → 子任务节点列 → 汇总 join,SVG 贝塞尔连线(useLayoutEffect 测量节点位置),mode-aware 线性(critic/pipeline 链)/扇形(split/swarm/roundtable)布局;节点=状态环点+role tag+title+assignee+state 徽章。真相源 vanilla planGraphHTML/drawPlanEdges。
 planGraph.css → 并入 detail.css(.plan-graph/.pg-* 全 --wk-*)。
 detail.css: 详情 + Inspector 样式,全 `--wk-*`。markdown 场景矫正(.wk-markdown 字号继承/首末 margin 清零/**ul list-style 还原 disc**——全局 reset 清成 none,scoped 不动共享 markdown.css)+ 附件卡 .mdv-att-*。
+InboxView.tsx: **原生收件箱(2026-07-03,方向A Wave A-1,替掉全站最后一个 iframe)**——split-pane:380px 列表列(头部 44px「收件箱+未读数+⋯批量菜单」/行=头像+未读点+标题+hover归档+状态图标+摘要行+紧凑相对时间)+ 阅读窗(issue_id→内嵌 MatterDetailView backLabel="收件箱";纯系统信→轻量卡 MarkdownContent;未选→空态)。结构镜像 multica views/inbox(18型摘要 switch=inbox-detail-label、去重=deduplicateInboxItems、选中即读、批量四件);视觉=Linear INBOX 截图+Linear-2 figma 实测(行内缩8px圆角8px/gap 1px/13·12px 字阶);文案过词表(issue→回路/agent→worker/task→执行)。数据走 api/multica/client(mock 换源点);变更 emit wk:inbox-changed→NavRail badge 刷新(module.tsx 注册,首拉延后4s+space-changed 监听)。欢迎系统信=契约表§2.3-⑫ 前端本地注入。
+inbox.css: 收件箱样式(.ibx-*):列表列/行/批量头/阅读窗轻量卡/空态/骨架屏,全 --wk-*,实测值来自 Linear-2 figma node 4:521。
+MatterDetailView.tsx 补:**backLabel prop**(默认"全部回路";收件箱内嵌传"收件箱",修面包屑词漂)。
 
 法则: 成员完整·一行一文件·复用设计系统件·真相源 vanilla feat/loop·不碰 Go 后端
 

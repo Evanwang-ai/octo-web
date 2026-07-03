@@ -99,9 +99,12 @@ function displayTitle(item: InboxItem): string {
 }
 
 // 摘要行(镜像 multica InboxDetailLabel 的 18 型 switch,文案过词表)。
+// 未知 type 的中文兜底:词表铁律禁止外显 multica 原词(issue/task/agent…),不透传 raw type。
+const typeLabelOf = (type: string) => TYPE_LABEL[type] ?? "回路动态";
+
 function SummaryLine({ item }: { item: InboxItem }) {
   const details = item.details ?? {};
-  const fallback = <span>{TYPE_LABEL[item.type] ?? item.type}</span>;
+  const fallback = <span>{typeLabelOf(item.type)}</span>;
   switch (item.type) {
     case "status_changed": {
       if (!details.to) return fallback;
@@ -218,6 +221,16 @@ export default function InboxView() {
   useEffect(() => {
     // 首载后广播一次:module 启动时 badge 可能在 space 就绪前拉到兜底数据,此处校正。
     reload().then(() => WKApp.mittBus.emit("wk:inbox-changed"));
+    // 切 Space:清选中、回骨架屏、按新组队重拉(mock 层会按新 spaceId 重新水合)。
+    const onSpaceChanged = () => {
+      setSelectedKey(null);
+      setRaw(null);
+      reload().then(() => WKApp.mittBus.emit("wk:inbox-changed"));
+    };
+    WKApp.mittBus.on("space-changed", onSpaceChanged);
+    return () => {
+      WKApp.mittBus.off("space-changed", onSpaceChanged);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -346,7 +359,7 @@ export default function InboxView() {
           <ActorAvatar item={selected} size={40} />
           <h2 className="ibx-card-title">{displayTitle(selected)}</h2>
           <div className="ibx-card-meta">
-            {TYPE_LABEL[selected.type] ?? selected.type} · {timeAgo(selected.created_at)}
+            {typeLabelOf(selected.type)} · {timeAgo(selected.created_at)}
           </div>
           {selected.body && (
             <div className="ibx-card-body">
