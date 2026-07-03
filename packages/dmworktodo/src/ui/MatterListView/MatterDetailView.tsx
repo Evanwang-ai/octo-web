@@ -62,6 +62,7 @@ import { StatusIcon, PriorityIcon, STATUS_LABEL } from "./icons";
 import { priorityMenu, statusMenu } from "./rowMenus";
 import PlanGraph from "./PlanGraph";
 import MatterComposer from "./MatterComposer";
+import ExperiencePanel from "./ExperiencePanel";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
@@ -984,6 +985,14 @@ export default function MatterDetailView({
             </div>
           )}
         </div>
+        <ExperiencePanel
+          matterId={matterId}
+          status={matter.status as string}
+          creatorId={matter.creator_id}
+          leaderUid={matter.leader_uid}
+          myUid={myUid}
+          feedbackCount={activities.filter((a) => a.action === "feedback_added").length}
+        />
       </aside>
 
       {/* 优先级快改菜单(单实例,数据驱动) */}

@@ -668,3 +668,43 @@ export async function uploadMatterAttachment(
     mime_type: file.type || null,
   };
 }
+
+// ─── 经验总结(欠账 §9 经验 panel;后端已就绪 curl 实测 2026-07-03,旧"未就绪"判断作废)───
+
+export interface MatterSummary {
+  id: string;
+  matter_id: string;
+  status: string; // authorized | draft | discarded
+  content: string;
+  scope_type?: string; // matter | project | global | space
+  target_bot_uid?: string;
+  task_type?: string;
+}
+
+/** GET /matters/:id/summary —— 无记录时 404,容错返 null。 */
+export async function getMatterSummary(matterId: string): Promise<MatterSummary | null> {
+  try {
+    return await get<MatterSummary>(`/matters/${matterId}/summary`);
+  } catch {
+    return null;
+  }
+}
+
+/** PUT /matters/:id/summary/:sid —— action=authorize(带 scope_type/target_bot_uid)| discard。 */
+export async function updateMatterSummary(
+  matterId: string,
+  summaryId: string,
+  body: { action: "authorize" | "discard"; scope_type?: string; target_bot_uid?: string },
+): Promise<void> {
+  return put<void>(`/matters/${matterId}/summary/${summaryId}`, body);
+}
+
+/** POST /matters/:id/post-review —— 终态无反馈时的事后点评。 */
+export async function postReview(matterId: string, content: string): Promise<void> {
+  return post<void>(`/matters/${matterId}/post-review`, { content });
+}
+
+/** POST /matters/:id/distill-request —— 请 bot 总结经验。 */
+export async function distillRequest(matterId: string, botUid: string): Promise<void> {
+  return post<void>(`/matters/${matterId}/distill-request`, { bot_uid: botUid });
+}
