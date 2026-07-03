@@ -23,6 +23,8 @@ import InboxView from "./InboxView";
 import WorkersView from "./WorkersView";
 import SquadsView from "./SquadsView";
 import SquadDetailView from "./SquadDetailView";
+import SkillsView from "./SkillsView";
+import SkillDetailView from "./SkillDetailView";
 import WorkerDetailView from "./WorkerDetailView";
 import CommandPalette from "./CommandPalette";
 
@@ -37,7 +39,9 @@ type View =
   | "workers"
   | "workerDetail"
   | "squads"
-  | "squadDetail";
+  | "squadDetail"
+  | "skills"
+  | "skillDetail";
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -52,6 +56,7 @@ export default function MatterRouteHost() {
   const [projectDetailId, setProjectDetailId] = useState<string | null>(null);
   const [workerId, setWorkerId] = useState<string | null>(null);
   const [squadId, setSquadId] = useState<string | null>(null);
+  const [skillId, setSkillId] = useState<string | null>(null);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // ref 镜像:全局 keydown 监听(空依赖只注册一次)读它,避免 stale 闭包。
   const activeRef = useRef(active);
@@ -135,6 +140,18 @@ export default function MatterRouteHost() {
     setSquadId(id);
     setView("squadDetail");
   };
+  // 技能域(⭐A-5 part2):列表 + 详情。
+  const showSkills = () => {
+    setActive(true);
+    setView("skills");
+    setSection("skills");
+  };
+  const openSkillDetail = (id: string) => {
+    setActive(true);
+    setSection("skills");
+    setSkillId(id);
+    setView("skillDetail");
+  };
 
   // 子导航五项全部原生视图。
   const onNavigate = (key: SubNavKey) => {
@@ -150,6 +167,8 @@ export default function MatterRouteHost() {
       showWorkers();
     } else if (key === "squads") {
       showSquads();
+    } else if (key === "skills") {
+      showSkills();
     }
   };
 
@@ -246,6 +265,10 @@ export default function MatterRouteHost() {
           {view === "squads" && <SquadsView onOpenDetail={openSquadDetail} />}
           {view === "squadDetail" && squadId && (
             <SquadDetailView key={squadId} squadId={squadId} onBack={showSquads} />
+          )}
+          {view === "skills" && <SkillsView onOpenDetail={openSkillDetail} />}
+          {view === "skillDetail" && skillId && (
+            <SkillDetailView key={skillId} skillId={skillId} onBack={showSkills} />
           )}
           <CommandPalette
             open={cmdkOpen}

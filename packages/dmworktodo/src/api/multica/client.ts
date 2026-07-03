@@ -341,3 +341,37 @@ export async function getSquadMemberStatus(
 ): Promise<{ members: SquadMemberStatus[] }> {
   return simulated(() => ({ members: sdb.memberStatusOf(squadId) }));
 }
+
+// ═══ 技能 Skills —— 契约对照表 §1.8,函数名对齐 multica client.ts L1632-1681 ═══
+import type { CreateSkillRequest, Skill, SkillSummary, UpdateSkillRequest } from "./types";
+import * as kdb from "./mockSkills";
+
+// GET /api/skills —— SkillSummary[](无 content,列表轻量)。
+export async function listSkills(): Promise<SkillSummary[]> {
+  return simulated(() => kdb.allSkills().map(({ content, files, ...summary }) => summary));
+}
+
+// GET /api/skills/{id} —— 全量(content + files 文件树)。
+export async function getSkill(id: string): Promise<Skill> {
+  return simulated(() => kdb.getSkillById(id));
+}
+
+// POST /api/skills
+export async function createSkill(req: CreateSkillRequest): Promise<Skill> {
+  return simulated(() => kdb.createSkillIn(req));
+}
+
+// PUT /api/skills/{id} —— 契约坑:files 传即整树替换。
+export async function updateSkill(id: string, req: UpdateSkillRequest): Promise<Skill> {
+  return simulated(() => kdb.updateSkillIn(id, req));
+}
+
+// DELETE /api/skills/{id} —— 删除前提示已挂载 agent 数(消费方职责)。
+export async function deleteSkill(id: string): Promise<void> {
+  return simulated(() => kdb.deleteSkillIn(id));
+}
+
+// POST /api/skills/import —— URL 导入(ClawHub/GitHub,"从市场安装"入口;Hub 后台⛔但入口保留)。
+export async function importSkill(req: { url: string }): Promise<Skill> {
+  return simulated(() => kdb.importSkillIn(req.url));
+}

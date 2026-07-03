@@ -2,7 +2,7 @@
 // 五项全部原生视图;worker 域收在 loop 板块内(2026-07 会2拍板,不进全局导航)。
 import React from "react";
 
-export type SubNavKey = "matters" | "projects" | "automation" | "workers" | "squads" | "cards";
+export type SubNavKey = "matters" | "projects" | "automation" | "workers" | "squads" | "skills" | "cards";
 
 function ListIcon() {
   return (
@@ -61,12 +61,21 @@ function SquadIcon() {
   );
 }
 
+function SkillIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const ITEMS: Array<{ key: SubNavKey; label: string; icon: React.ReactNode }> = [
   { key: "matters", label: "全部回路", icon: <ListIcon /> },
   { key: "projects", label: "项目", icon: <FolderIcon /> },
   { key: "automation", label: "自动化", icon: <ClockIcon /> },
   { key: "workers", label: "worker", icon: <BotIcon /> },
   { key: "squads", label: "小队", icon: <SquadIcon /> },
+  { key: "skills", label: "技能", icon: <SkillIcon /> },
   { key: "cards", label: "经验", icon: <DocIcon /> },
 ];
 

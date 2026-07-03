@@ -276,3 +276,49 @@ export interface SquadMemberStatus {
   active_issues: SquadActiveIssueBrief[];
   last_active_at: string | null;
 }
+
+// ═══ 技能 Skills —— 契约对照表 §1.8,照抄 multica core/types/agent.ts L472-525 ═══
+
+// 列表用摘要:故意不含 content(正文 50-200KB 会拖垮列表,multica #2174)。
+export interface SkillSummary {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string;
+  config: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// 无 is_directory:目录树由 path 按 "/" split 前端派生。
+export interface SkillFile {
+  id: string;
+  skill_id: string;
+  path: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Skill extends SkillSummary {
+  content: string; // SKILL.md 正文
+  files: SkillFile[];
+}
+
+export interface CreateSkillRequest {
+  name: string;
+  description?: string;
+  content?: string;
+  config?: Record<string, unknown>;
+  files?: Array<{ path: string; content: string }>;
+}
+
+// files 传即整树替换(轻量 {path,content}[] 无 id)——契约坑。
+export interface UpdateSkillRequest {
+  name?: string;
+  description?: string;
+  content?: string;
+  config?: Record<string, unknown>;
+  files?: Array<{ path: string; content: string }>;
+}
