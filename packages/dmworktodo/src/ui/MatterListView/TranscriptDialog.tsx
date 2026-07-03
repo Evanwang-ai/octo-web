@@ -11,6 +11,7 @@
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
 import React, { useEffect, useMemo, useState } from "react";
+import MarkdownContent from "@octo/base/src/Messages/Text/MarkdownContent";
 import { listTaskMessages, buildTimeline } from "../../api/multica/client";
 import type { TimelineItem } from "../../api/multica/client";
 import type { AgentTask } from "../../api/multica/types";
@@ -82,6 +83,65 @@ function DetailPre({ it }: { it: TimelineItem }) {
   return <pre className={`tsc-pre${it.type === "error" ? " is-error" : ""}`}>{text}</pre>;
 }
 
+// 右栏详情(Langfuse 配方:meta chips + Input/Output 卡;text 类带 markdown 预览切换)。
+function DetailPane({
+  node,
+  focusSeq,
+}: {
+  node: { item: TimelineItem; child?: TimelineItem; durSec: number | null };
+  focusSeq: number | null;
+}) {
+  const [md, setMd] = useState(false);
+  const it = node.child && focusSeq === node.child.seq ? node.child : node.item;
+  const conf = TYPE_CONF[it.type];
+  const isTextual = it.type === "text" || it.type === "thinking";
+  useEffect(() => setMd(false), [focusSeq]);
+  return (
+    <div className="tsc-dp">
+      <div className="tsc-dp-chips">
+        <span className={`tsc-badge ${conf.cls}`}>
+          {it.tool || conf.label}
+        </span>
+        <span className="tsc-chip">#{it.seq}</span>
+        {it.created_at && <span className="tsc-chip">{clock(it.created_at)}</span>}
+        {node.durSec !== null && it === node.item && <span className="tsc-chip">耗时 {node.durSec}s</span>}
+        {isTextual && (
+          <button type="button" className="tsc-md-toggle" onClick={() => setMd((v) => !v)}>
+            {md ? "原文" : "预览"}
+          </button>
+        )}
+      </div>
+      {it.type === "tool_use" && (
+        <>
+          <div className="tsc-dp-k">入参</div>
+          <DetailPre it={it} />
+          {node.child && (
+            <>
+              <div className="tsc-dp-k">结果</div>
+              <DetailPre it={node.child} />
+            </>
+          )}
+        </>
+      )}
+      {it.type === "tool_result" && (
+        <>
+          <div className="tsc-dp-k">结果</div>
+          <DetailPre it={it} />
+        </>
+      )}
+      {isTextual &&
+        (md ? (
+          <div className="tsc-dp-md">
+            <MarkdownContent content={it.content || ""} />
+          </div>
+        ) : (
+          <DetailPre it={it} />
+        ))}
+      {it.type === "error" && <DetailPre it={it} />}
+    </div>
+  );
+}
+
 export default function TranscriptDialog({
   task,
   agentName,
@@ -93,14 +153,29 @@ export default function TranscriptDialog({
 }) {
   const [items, setItems] = useState<TimelineItem[] | null>(null);
   const [openSeqs, setOpenSeqs] = useState<Set<number>>(new Set());
+  // S6 卡⑤:双栏 trace(Langfuse 配方);D2=窄屏(<720)降级为原单栏。
+  const [narrow, setNarrow] = useState(() => window.innerWidth < 720);
+  const [selectedSeq, setSelectedSeq] = useState<number | null>(null);
+
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 720);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     let alive = true;
     // 换 Run 时回加载态并清空展开集(防御:当前入口每次重开 Dialog,但同实例切换也要正确)。
     setItems(null);
     setOpenSeqs(new Set());
+    setSelectedSeq(null);
     listTaskMessages(task.id).then((msgs) => {
-      if (alive) setItems(buildTimeline(msgs));
+      if (!alive) return;
+      const tl = buildTimeline(msgs);
+      setItems(tl);
+      // 结论优先(Notion 速记印证):终态默认选中最后一条 text;否则首条。
+      const lastText = [...tl].reverse().find((m) => m.type === "text");
+      setSelectedSeq(lastText?.seq ?? tl[0]?.seq ?? null);
     });
     return () => {
       alive = false;
@@ -116,6 +191,41 @@ export default function TranscriptDialog({
   }, [onClose]);
 
   const toolCalls = useMemo(() => (items || []).filter((i) => i.type === "tool_use").length, [items]);
+
+  // 渲染层配对:tool_use + 紧邻同名 tool_result 折成父子节点(数据仍平铺,契约无 tool_use_id)。
+  interface TreeNode {
+    item: TimelineItem;
+    child?: TimelineItem;
+    durSec: number | null;
+  }
+  const tree: TreeNode[] = useMemo(() => {
+    const list = items || [];
+    const out: TreeNode[] = [];
+    const at = (m?: TimelineItem) => (m?.created_at ? new Date(m.created_at).getTime() : null);
+    for (let i = 0; i < list.length; i++) {
+      const cur = list[i];
+      const next = list[i + 1];
+      const paired =
+        cur.type === "tool_use" && next?.type === "tool_result" && next.tool === cur.tool;
+      const end = paired ? list[i + 2] : next;
+      const t0 = at(cur);
+      const t1 = end ? at(end) : task.completed_at ? new Date(task.completed_at).getTime() : null;
+      out.push({
+        item: cur,
+        child: paired ? next : undefined,
+        durSec: t0 !== null && t1 !== null ? Math.max(0, Math.round((t1 - t0) / 1000)) : null,
+      });
+      if (paired) i++;
+    }
+    return out;
+  }, [items, task.completed_at]);
+  const selected = useMemo(() => {
+    for (const n of tree) {
+      if (n.item.seq === selectedSeq) return n;
+      if (n.child?.seq === selectedSeq) return n;
+    }
+    return null;
+  }, [tree, selectedSeq]);
   const live = task.status === "running";
   const dur = durationOf(task);
 
@@ -139,7 +249,9 @@ export default function TranscriptDialog({
           <span className="tsc-chip">{toolCalls} 次工具调用</span>
           <span className="tsc-chip">{items?.length ?? "…"} 个事件</span>
         </div>
-        <div className="tsc-list">
+        {narrow ? (
+          <div className="tsc-list">
+
           {items === null ? (
             <div className="tsc-empty">加载中…</div>
           ) : items.length === 0 ? (
@@ -175,7 +287,57 @@ export default function TranscriptDialog({
               );
             })
           )}
-        </div>
+          </div>
+        ) : (
+          <div className="tsc-split">
+            <div className="tsc-tree">
+              {items === null ? (
+                <div className="tsc-empty">加载中…</div>
+              ) : tree.length === 0 ? (
+                <div className="tsc-empty">{live ? "等待事件流…" : "此 Run 没有留下事件。"}</div>
+              ) : (
+                tree.map((n) => {
+                  const conf = TYPE_CONF[n.item.type];
+                  const isSel = selectedSeq === n.item.seq || selectedSeq === n.child?.seq;
+                  return (
+                    <div key={n.item.seq} className="tsc-tree-group">
+                      <button
+                        type="button"
+                        className={`tsc-tree-row${isSel ? " is-active" : ""}`}
+                        onClick={() => setSelectedSeq(n.item.seq)}
+                      >
+                        <span className={`tsc-badge ${conf.cls}`}>
+                          {n.item.type === "tool_use" ? n.item.tool || conf.label : conf.label}
+                        </span>
+                        <span className="tsc-tree-summary">{summaryOf(n.item)}</span>
+                        <span className="tsc-tree-dur">
+                          {n.durSec !== null ? (n.durSec < 60 ? `${n.durSec}s` : `${Math.floor(n.durSec / 60)}m`) : ""}
+                        </span>
+                      </button>
+                      {n.child && (
+                        <button
+                          type="button"
+                          className={`tsc-tree-row is-child${selectedSeq === n.child.seq ? " is-active" : ""}`}
+                          onClick={() => setSelectedSeq(n.child!.seq)}
+                        >
+                          <span className="tsc-tree-branch">└</span>
+                          <span className="tsc-tree-summary">{summaryOf(n.child)}</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="tsc-detail">
+              {selected === null ? (
+                <div className="tsc-empty">选中左侧事件查看详情</div>
+              ) : (
+                <DetailPane node={selected} focusSeq={selectedSeq} />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
