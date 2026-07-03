@@ -325,6 +325,10 @@ export default function MatterDetailView({
   const [subBusy, setSubBusy] = useState(false);
   // review 决策:需要修改(圈一笔=feedback,后端自动打回 review→in_progress)
   const [reviseOpen, setReviseOpen] = useState(false);
+  // 满意度弹层(vanilla showSatisfactionModal L8437):review 通过前问一句"有什么做得好的想记住吗"。
+  const [satOpen, setSatOpen] = useState(false);
+  const [satText, setSatText] = useState("");
+  const [satBusy, setSatBusy] = useState(false);
   const [reviseNote, setReviseNote] = useState("");
   const [reviseBusy, setReviseBusy] = useState(false);
   const [sendingBack, setSendingBack] = useState(false);
@@ -456,6 +460,29 @@ export default function MatterDetailView({
     } catch {
       // 非法流转被后端拒绝(400/409):受控 select 自动回弹到 matter.status,补提示。
       if (mountedRef.current) Toast.error("状态流转被拒绝");
+    }
+  };
+
+  // 满意度提交链(vanilla 顺序关键):timeline → done → feedback(done 后发,review 态 feedback 会翻状态)。
+  const submitSatisfaction = async (text: string) => {
+    setSatBusy(true);
+    try {
+      if (text) {
+        await addTimelineEntry(matterId, { content: `满意反馈: ${text}` } as TimelineReq);
+      }
+      await changeStatus("done");
+      if (text) {
+        await addFeedback(matterId, { content: `满意反馈: ${text}` }).catch(() => {});
+      }
+      if (!mountedRef.current) return;
+      setSatOpen(false);
+      Toast.success("已完成");
+      reloadTimeline();
+      reloadActivities();
+    } catch {
+      if (mountedRef.current) Toast.error("操作失败");
+    } finally {
+      if (mountedRef.current) setSatBusy(false);
     }
   };
 
@@ -610,7 +637,10 @@ export default function MatterDetailView({
                   <button
                     type="button"
                     className="mdv-banner-btn is-ok"
-                    onClick={() => changeStatus("done")}
+                    onClick={() => {
+                      setSatText("");
+                      setSatOpen(true);
+                    }}
                   >
                     通过
                   </button>
@@ -996,6 +1026,40 @@ export default function MatterDetailView({
       </aside>
 
       {/* 优先级快改菜单(单实例,数据驱动) */}
+      {satOpen && (
+        <div className="mdv-sat-overlay" onMouseDown={() => !satBusy && setSatOpen(false)}>
+          <div className="mdv-sat" role="dialog" aria-label="确认完成" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="mdv-sat-title">确认完成</div>
+            <div className="mdv-sat-hint">有什么做得好的想记住吗?(选填)</div>
+            <textarea
+              className="mdv-sat-input"
+              rows={3}
+              placeholder="比如:数据分析很全面,格式规范,响应及时"
+              value={satText}
+              autoFocus
+              onChange={(e) => setSatText(e.target.value)}
+            />
+            <div className="mdv-sat-foot">
+              <button
+                type="button"
+                className="mdv-sat-skip"
+                disabled={satBusy}
+                onClick={() => submitSatisfaction("")}
+              >
+                跳过,直接完成
+              </button>
+              <button
+                type="button"
+                className="mdv-sat-go"
+                disabled={satBusy}
+                onClick={() => submitSatisfaction(satText.trim())}
+              >
+                {satBusy ? "记录中…" : satText.trim() ? "记下并完成" : "完成"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ContextMenus onContext={(c) => { ctxRef.current = c; }} menus={menuData} />
     </div>
   );

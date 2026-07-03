@@ -1074,3 +1074,87 @@ a.mdv-att-card:hover {
   border: 1px solid var(--wk-border-default);
   border-radius: 10px;
 }
+
+/* 满意度弹层(vanilla showSatisfactionModal 直译) */
+.mdv-sat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 18vh;
+}
+
+.mdv-sat {
+  width: 440px;
+  max-width: calc(100vw - 48px);
+  background: var(--wk-bg-base);
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  box-shadow: var(--wk-shadow-modal, 0 12px 48px rgba(0, 0, 0, 0.18));
+  padding: 20px;
+}
+
+.mdv-sat-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.mdv-sat-hint {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  color: var(--wk-text-secondary);
+}
+
+.mdv-sat-input {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  background: var(--wk-bg-base);
+  box-sizing: border-box;
+}
+
+.mdv-sat-input:focus {
+  outline: none;
+  border-color: var(--wk-color-info);
+}
+
+.mdv-sat-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mdv-sat-skip {
+  padding: 5px 14px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.mdv-sat-go {
+  padding: 5px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--wk-color-success);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mdv-sat-skip:disabled,
+.mdv-sat-go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
