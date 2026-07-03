@@ -185,8 +185,7 @@
 }
 
 .skl-name {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
   max-width: 40%;
   font-size: 13px;
   font-weight: 500;

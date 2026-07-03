@@ -133,8 +133,7 @@
 }
 
 .wkr-name {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
   max-width: 40%;
   font-size: 13px;
   font-weight: 500;
@@ -296,4 +295,11 @@
   border-radius: 4px;
   background: var(--wk-bg-hover);
   animation: ibx-pulse 1.4s ease-in-out infinite;
+}
+
+
+@media (max-width: 960px) {
+  .wkr-meta {
+    display: none;
+  }
 }

@@ -168,8 +168,7 @@
 }
 
 .sqd-name {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
   max-width: 40%;
   font-size: 13px;
   font-weight: 500;
@@ -678,4 +677,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-height: 14px;
+}
+
+
+@media (max-width: 960px) {
+  .sqd-leader {
+    display: none;
+  }
 }

@@ -221,3 +221,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
+@media (max-width: 960px) {
+  .av-cron,
+  .av-exec,
+  .av-target {
+    display: none;
+  }
+}
