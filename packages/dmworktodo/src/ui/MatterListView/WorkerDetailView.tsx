@@ -508,7 +508,6 @@ export default function WorkerDetailView({
                     保存
                   </button>
                 </div>
-                <p className="wkd-hint">worker 的系统提示词:它是谁、怎么干活、边界在哪。markdown 直接生效。</p>
                 <textarea
                   className="wkd-textarea"
                   rows={16}
