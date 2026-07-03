@@ -28,6 +28,7 @@ import {
   listProjects,
   addProjectSource,
 } from "./api/todoApi";
+import { getUnreadInboxCount } from "./api/multica/client";
 import { Toast } from "./utils/toast";
 import { parseMentions } from "./utils/mention";
 
@@ -54,6 +55,9 @@ function parseMentionText(raw: string): { title: string; uids: string[] } {
 
 /** Guard against double-init (HMR in dev or future module lifecycle changes). */
 let _initialized = false;
+
+// 收件箱未读数缓存:mailbox 菜单工厂读它挂 NavRail badge;wk:inbox-changed / 启动时刷新。
+let _inboxUnread = 0;
 
 // Reset on HMR: tear down old listeners, reset init guard.
 if (import.meta.hot) {
@@ -165,8 +169,8 @@ export default class MatterModule implements IModule {
     });
 
     // Register route
-    // matter-react 绞杀式迁移:回路列表走原生 React(MatterListView),其余表面(详情/收件箱/项目…)
-    // 暂留 iframe(MatterPage)。增量1 仅列表;待补模块壳 + 子路由后再分流。
+    // matter-react 绞杀式迁移完成(2026-07-03):列表/详情/项目/自动化/经验/收件箱全部原生,
+    // iframe 机器已从 MatterRouteHost 拆除。
     WKApp.route.register("/matter", () => <MatterRouteHost />);
 
     // Register NavRail menu item (sort=4001, after contacts=4000)
@@ -204,10 +208,27 @@ export default class MatterModule implements IModule {
           storeMatterWorkspaceRoute("mailbox");
           WKApp.mittBus.emit("wk:open-matter-workspace", { route: "mailbox" });
         };
+        m.badge = _inboxUnread;
         return m;
       },
       4002,
     );
+
+    // 收件箱未读 badge:启动拉一次,之后 InboxView 每次读/归档变更 emit wk:inbox-changed 再拉。
+    const refreshInboxBadge = () => {
+      getUnreadInboxCount()
+        .then(({ count }) => {
+          if (count !== _inboxUnread) {
+            _inboxUnread = count;
+            WKApp.menus.refresh();
+          }
+        })
+        .catch(() => {});
+    };
+    WKApp.mittBus.on("wk:inbox-changed", refreshInboxBadge);
+    WKApp.mittBus.on("space-changed", refreshInboxBadge);
+    // 首拉延后:module init 时 token/space 常未就绪,直拉必吃降级数据。
+    window.setTimeout(refreshInboxBadge, 4000);
 
     // Action Card deep link: open Matter detail inside the host shell.
     WKApp.openMatterDetail = (matterId?: string) => {

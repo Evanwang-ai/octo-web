@@ -1,20 +1,17 @@
-// L3 | MatterRouteHost — Matter 路由的绞杀式复合宿主。
-// 回路列表走原生 React(view="matters");收件箱/详情/项目等未迁表面暂走 iframe(view="iframe")。
-// iframe 懒挂载后常驻(display 切换不重载、保 SPA 状态)。
-// 首次导航把目标 hash 拼进 iframe src(加载即到位,零 postMessage 竞态);后续已加载才用 postMessage。
+// L3 | MatterRouteHost — Matter 路由的原生复合宿主。
+// 绞杀式迁移完成(2026-07-03):最后一个 iframe 表面(收件箱)已换 InboxView,iframe 机器整体拆除。
+// view 状态机:matters 列表 / detail 详情 / cards 经验 / automation 自动化 / projects·projectDetail 项目 / inbox 收件箱。
 // portal 到 document.body 覆盖 56px NavRail 右侧全区(复刻 MatterWorkspace:contentLeft 祖先 transform 困住 fixed)。
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { WKApp } from "@octo/base";
 import {
   MATTER_MENU_ID,
   MATTER_MAILBOX_MENU_ID,
-  MATTER_EMBED_SRC,
   syncMatterAuth,
   takePendingMatterDetailId,
   storeMatterWorkspaceRoute,
 } from "../../pages/MatterWorkspace";
-import { postNavigateToIframe, hashForRoute } from "../../pages/matterWorkspaceBridge";
 import MatterListView from "./index";
 import MatterSubNav, { SubNavKey } from "./MatterSubNav";
 import MatterDetailView from "./MatterDetailView";
@@ -22,21 +19,16 @@ import CardsView from "./CardsView";
 import AutomationView from "./AutomationView";
 import ProjectsView from "./ProjectsView";
 import ProjectDetailView from "./ProjectDetailView";
+import InboxView from "./InboxView";
 
 type View =
   | "matters"
-  | "iframe"
+  | "inbox"
   | "detail"
   | "cards"
   | "automation"
   | "projects"
   | "projectDetail";
-
-const SUBNAV_HASH: Record<Exclude<SubNavKey, "matters">, string> = {
-  projects: "#/projects",
-  automation: "#/automation",
-  cards: "#/cards",
-};
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -44,18 +36,13 @@ export default function MatterRouteHost() {
     menuId === MATTER_MENU_ID || menuId === MATTER_MAILBOX_MENU_ID,
   );
   const [view, setView] = useState<View>(
-    menuId === MATTER_MAILBOX_MENU_ID ? "iframe" : "matters",
+    menuId === MATTER_MAILBOX_MENU_ID ? "inbox" : "matters",
   );
   const [section, setSection] = useState<SubNavKey>("matters");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [projectDetailId, setProjectDetailId] = useState<string | null>(null);
-  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
-  // refs 镜像,避免总线监听器(空依赖,只注册一次)读到 stale 闭包值。
-  const iframeSrcRef = useRef<string | null>(null);
-  const iframeLoadedRef = useRef(false);
-  const pendingHashRef = useRef<string | null>(null);
 
-  // iframe 鉴权:随 token/space 变化重新断言到 localStorage(iframe 同源读取)。
+  // matter 鉴权断言:随 token/space 变化同步 localStorage(matter 域 SPA 同源读取,如直开 /matter/ui/)。
   const token = WKApp.loginInfo.token || "";
   const uid = WKApp.loginInfo.uid || "";
   const name = WKApp.loginInfo.name || "";
@@ -63,24 +50,6 @@ export default function MatterRouteHost() {
   useEffect(() => {
     syncMatterAuth({ token, uid, name, spaceId });
   }, [token, uid, name, spaceId]);
-
-  // 切到 iframe 表面并导航到 hash。
-  const navigateIframe = (hash: string) => {
-    setActive(true);
-    setView("iframe");
-    if (iframeSrcRef.current === null) {
-      // 首次:src 直接带 hash,加载即到目标,无竞态。
-      const src = MATTER_EMBED_SRC + hash;
-      iframeSrcRef.current = src;
-      setIframeSrc(src);
-    } else if (iframeLoadedRef.current) {
-      // 已加载:postMessage 切换,不重载。
-      postNavigateToIframe(hash);
-    } else {
-      // 已 mount 未 load 完:onLoad 时补发。
-      pendingHashRef.current = hash;
-    }
-  };
 
   // 行/卡片点击 → 原生详情(MatterDetailView)。
   const openDetail = (matterId: string) => {
@@ -97,33 +66,38 @@ export default function MatterRouteHost() {
     setSection("matters");
   };
 
-  // 显示原生经验页(替 iframe)。
+  // 显示原生经验页。
   const showCards = () => {
     setActive(true);
     setView("cards");
     setSection("cards");
   };
-  // 显示原生自动化页(替 iframe 列表;巨型 create/edit modal 仍走 iframe 编辑器)。
+  // 显示原生自动化页。
   const showAutomation = () => {
     setActive(true);
     setView("automation");
     setSection("automation");
   };
-  // 显示原生项目列表(替 iframe 列表);项目详情原生化(见 openProjectDetail)。
+  // 显示原生项目列表。
   const showProjects = () => {
     setActive(true);
     setView("projects");
     setSection("projects");
   };
-  // 项目详情:原生化(替 iframe #/project/:id)。看板内嵌 MatterListView(project 过滤)。
+  // 项目详情:看板内嵌 MatterListView(project 过滤)。
   const openProjectDetail = (id: string) => {
     setActive(true);
     setSection("projects");
     setProjectDetailId(id);
     setView("projectDetail");
   };
+  // 显示原生收件箱(NavRail 顶级入口,与回路并列;不进子导航)。
+  const showInbox = () => {
+    setActive(true);
+    setView("inbox");
+  };
 
-  // 子导航四项全部原生列表;项目详情/自动化编辑器走 iframe(绞杀式 partial)。
+  // 子导航四项全部原生视图。
   const onNavigate = (key: SubNavKey) => {
     if (key === "matters") {
       showMatterList();
@@ -133,9 +107,6 @@ export default function MatterRouteHost() {
       showAutomation();
     } else if (key === "projects") {
       showProjects();
-    } else {
-      setSection(key);
-      navigateIframe(SUBNAV_HASH[key]);
     }
   };
 
@@ -146,7 +117,7 @@ export default function MatterRouteHost() {
         showMatterList();
       } else if (id === MATTER_MAILBOX_MENU_ID) {
         storeMatterWorkspaceRoute("mailbox");
-        navigateIframe(hashForRoute("mailbox"));
+        showInbox();
       } else {
         setActive(false);
       }
@@ -157,7 +128,7 @@ export default function MatterRouteHost() {
         "matters";
       if (route === "mailbox") {
         storeMatterWorkspaceRoute("mailbox");
-        navigateIframe(hashForRoute("mailbox"));
+        showInbox();
       } else {
         showMatterList();
       }
@@ -167,7 +138,7 @@ export default function MatterRouteHost() {
       if (matterId) openDetail(matterId);
     };
 
-    // mount 时若有待打开的详情,直接进 iframe 详情。
+    // mount 时若有待打开的详情,直接进原生详情。
     const pending = takePendingMatterDetailId();
     if (pending) openDetail(pending);
 
@@ -185,13 +156,8 @@ export default function MatterRouteHost() {
   return createPortal(
     <div className="mlv-host" style={{ display: active ? "block" : "none" }}>
       <div className="mlv-host-row">
-        {/* 子导航:列表/详情/经验(原生态)显示原生导航;iframe 表面让 SPA 自带导航接管(避免双栏)。 */}
-        {(view === "matters" ||
-          view === "detail" ||
-          view === "cards" ||
-          view === "automation" ||
-          view === "projects" ||
-          view === "projectDetail") && (
+        {/* 子导航:回路域表面显示;收件箱是 NavRail 并列入口,不带子导航(S4 定稿口径)。 */}
+        {view !== "inbox" && (
           <MatterSubNav current={section} onNavigate={onNavigate} />
         )}
         <div className="mlv-host-content">
@@ -215,21 +181,7 @@ export default function MatterRouteHost() {
               onOpenMatter={openDetail}
             />
           )}
-          {iframeSrc && (
-            <iframe
-              title="回路"
-              className="mlv-host-iframe"
-              src={iframeSrc}
-              style={{ display: view === "iframe" ? "block" : "none" }}
-              onLoad={() => {
-                iframeLoadedRef.current = true;
-                if (pendingHashRef.current) {
-                  postNavigateToIframe(pendingHashRef.current);
-                  pendingHashRef.current = null;
-                }
-              }}
-            />
-          )}
+          {view === "inbox" && <InboxView />}
         </div>
       </div>
     </div>,

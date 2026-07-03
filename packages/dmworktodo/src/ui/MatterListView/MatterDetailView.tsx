@@ -303,10 +303,13 @@ function PropAvatar({ label, uid }: { label: string; uid: string }) {
 export default function MatterDetailView({
   matterId,
   onBack,
+  backLabel = "全部回路",
 }: {
   matterId: string;
   projectName?: string;
   onBack?: () => void;
+  /** 面包屑返回文案:默认列表语境"全部回路";收件箱等宿主内嵌时传宿主名 */
+  backLabel?: string;
 }) {
   const myUid = WKApp.loginInfo.uid ?? "";
   const [matter, setMatter] = useState<MatterDetailFull | null>(null);
@@ -558,7 +561,7 @@ export default function MatterDetailView({
         <div className="mdv-crumb">
           {onBack && (
             <button className="mdv-back" type="button" onClick={onBack}>
-              全部回路
+              {backLabel}
             </button>
           )}
           <span className="mdv-crumb-sep">›</span>

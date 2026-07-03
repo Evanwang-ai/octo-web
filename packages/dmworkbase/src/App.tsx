@@ -85,6 +85,8 @@ export type MittEvents = {
   'wk:matter-updated': { matterId: string };
   /** Matter 被删除后广播, 接收方据此从列表移除 */
   'wk:matter-deleted': { matterId: string };
+  /** 收件箱读/归档等变更后广播, NavRail mailbox badge 据此重拉未读数 */
+  'wk:inbox-changed': undefined;
   "summary-space-changed": undefined;
   /**
    * Chat VM 完成 requestConversationList()（切 Space / 重连后会触发）后广播。
