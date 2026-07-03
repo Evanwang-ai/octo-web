@@ -1,11 +1,14 @@
 /**
  * [INPUT]: 依赖 api/todoApi 的 getMatter/listTimeline/listOutputs/listActivities/addTimelineEntry/
  *          transitionMatter/updateMatter/listProjects/getIterations/getMatterTree/createSubMatter/addFeedback;
- *          @octo/base 的 WKApp/WKAvatar/ContextMenus;./rowMenus 的 priorityMenu、
- *          ./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast。
+ *          @octo/base 的 WKApp/WKAvatar/ContextMenus/MarkdownContent/AttachmentNode(getFileIcon·formatFileSize);
+ *          ./rowMenus 的 priorityMenu、./icons 的 StatusIcon/PriorityIcon/STATUS_*;utils/toast·utils/fileUrl(resolveAndGuardUrl)。
  * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker banner/review banner[通过=done·需要修改=feedback打回]/
- *          Brief/计划(mode)/子任务(计划图 PlanGraph[有子任务时]+派子任务)/迭代(iterations 轮次)/
- *          进度(activities)/动态(timeline)/产出/发车 composer/Inspector[状态·优先级·项目 可编辑])。
+ *          Brief[markdown 渲染 + input_attachments 附件卡(migration 017 真字段,bridge/types stale 本地增广)]/
+ *          计划(mode)/子任务(计划图 PlanGraph[有子任务时]+派子任务)/迭代(iterations 轮次)/
+ *          进度(activities)/动态(timeline,content markdown 渲染 + 附件卡)/产出/发车 composer/
+ *          Inspector[状态·优先级·项目 可编辑]。附件卡=TlAttachments 共用件:guarded URL 新开标签,
+ *          原生详情无 wk:file-preview 监听不走预览事件,未过安全校验渲染死卡)。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
  *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读。兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -14,6 +17,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { WKApp, ContextMenus } from "@octo/base";
 import type { ContextMenusContext, ContextMenusData } from "@octo/base";
 import WKAvatar from "@octo/base/src/Components/WKAvatar";
+import MarkdownContent from "@octo/base/src/Messages/Text/MarkdownContent";
+import {
+  getFileIcon,
+  formatFileSize,
+} from "@octo/base/src/Components/MessageInput/AttachmentNode";
 import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import {
   getMatter,
@@ -34,6 +42,7 @@ import type { MatterIterations, MatterTreeChild } from "../../api/todoApi";
 import type {
   MatterDetail,
   TimelineEntry,
+  TimelineAttachment,
   MatterOutput,
   MatterActivity,
   MatterStatus,
@@ -42,6 +51,7 @@ import type {
 } from "../../bridge/types";
 import UserName from "../UserName";
 import { Toast } from "../../utils/toast";
+import { resolveAndGuardUrl } from "../../utils/fileUrl";
 import { StatusIcon, PriorityIcon } from "./icons";
 import { priorityMenu } from "./rowMenus";
 import { STATUS_ORDER, STATUS_LABEL } from "./icons";
@@ -49,10 +59,18 @@ import PlanGraph from "./PlanGraph";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
+// input_attachments = Brief 级附件(migration 017,create/update 均可写,curl 实测 2026-07-03)。
+type InputAttachmentShape = {
+  file_url: string;
+  file_name?: string;
+  file_size?: number;
+  mime_type?: string;
+};
 type MatterDetailFull = MatterDetail & {
   mode?: string;
   leader_uid?: string;
   project_id?: string;
+  input_attachments?: InputAttachmentShape[];
 };
 
 const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
@@ -124,6 +142,63 @@ function relTime(iso?: string): string {
   if (diff < 7 * day) return `${Math.floor(diff / day)} 天前`;
   const d = new Date(ts);
   return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// 附件卡(时间线附件 + Brief input_attachments 共用):复用 IM 的文件图标/大小格式化;
+// URL 过 resolveAndGuardUrl,通过→新开标签(原生详情无 wk:file-preview 监听,不走预览事件),
+// 不通过→死卡不可点。
+function TlAttachments({
+  atts,
+}: {
+  atts: Array<TimelineAttachment | InputAttachmentShape>;
+}) {
+  return (
+    <div className="mdv-tl-atts" role="list" aria-label="附件">
+      {atts.map((att, i) => {
+        const name = att.file_name || "未命名文件";
+        const url = resolveAndGuardUrl(att.file_url);
+        const key = "id" in att && att.id ? att.id : `${i}-${att.file_url}`;
+        const body = (
+          <>
+            <img
+              src={getFileIcon(name, att.mime_type || "")}
+              alt=""
+              className="mdv-att-icon"
+              aria-hidden="true"
+            />
+            <span className="mdv-att-meta">
+              <span className="mdv-att-name">{name}</span>
+              {att.file_size != null && (
+                <span className="mdv-att-size">{formatFileSize(att.file_size)}</span>
+              )}
+            </span>
+          </>
+        );
+        return url ? (
+          <a
+            key={key}
+            className="mdv-att-card"
+            role="listitem"
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={name}
+          >
+            {body}
+          </a>
+        ) : (
+          <span
+            key={key}
+            className="mdv-att-card is-dead"
+            role="listitem"
+            title={name}
+          >
+            {body}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 function PropAvatar({ label, uid }: { label: string; uid: string }) {
@@ -479,10 +554,18 @@ export default function MatterDetailView({
           </div>
         )}
 
-        {matter.description && (
+        {(matter.description ||
+          (matter.input_attachments && matter.input_attachments.length > 0)) && (
           <div className="mdv-brief">
             <div className="mdv-brief-label">Brief</div>
-            <div className="mdv-brief-body">{matter.description}</div>
+            {matter.description && (
+              <div className="mdv-brief-body">
+                <MarkdownContent content={matter.description} />
+              </div>
+            )}
+            {matter.input_attachments && matter.input_attachments.length > 0 && (
+              <TlAttachments atts={matter.input_attachments} />
+            )}
           </div>
         )}
 
@@ -627,7 +710,14 @@ export default function MatterDetailView({
                     {isBot(e.user_id) && <span className="mdv-ai">AI</span>}
                     <span className="mdv-tl-time">{relTime(e.created_at)}</span>
                   </div>
-                  {e.content && <div className="mdv-tl-content">{e.content}</div>}
+                  {e.content && (
+                    <div className="mdv-tl-content">
+                      <MarkdownContent content={e.content} />
+                    </div>
+                  )}
+                  {Array.isArray(e.attachments) && e.attachments.length > 0 && (
+                    <TlAttachments atts={e.attachments} />
+                  )}
                 </div>
               </div>
             ))}

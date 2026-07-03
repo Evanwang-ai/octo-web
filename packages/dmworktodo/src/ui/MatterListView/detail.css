@@ -83,7 +83,27 @@
   font-size: 14px;
   line-height: 1.6;
   color: var(--wk-text-primary);
-  white-space: pre-wrap;
+}
+/* Brief/动态走 MarkdownContent(remark-breaks 接管换行,不再 pre-wrap);
+   .wk-markdown 是 IM 气泡样式,文档场景矫正字号继承与首末元素间距 */
+.mdv-brief-body .wk-markdown,
+.mdv-tl-content .wk-markdown {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+.mdv-brief-body .wk-markdown > *:first-child,
+.mdv-tl-content .wk-markdown > *:first-child {
+  margin-top: 0;
+}
+.mdv-brief-body .wk-markdown > *:last-child,
+.mdv-tl-content .wk-markdown > *:last-child {
+  margin-bottom: 0;
+}
+/* 全局 reset 把 ul 的 list-style 清成 none(IM 导航用),markdown 场景内还原圆点 */
+.mdv-brief-body .wk-markdown ul,
+.mdv-tl-content .wk-markdown ul {
+  list-style: disc;
 }
 
 .mdv-plan {
@@ -163,7 +183,53 @@
   font-size: 13.5px;
   line-height: 1.6;
   color: var(--wk-text-primary);
-  white-space: pre-wrap;
+}
+
+/* 时间线附件卡(guarded URL 新开标签;is-dead=URL 未过安全校验,不可点) */
+.mdv-tl-atts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.mdv-att-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  padding: 6px 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-brand-tint-03);
+  text-decoration: none;
+  color: var(--wk-text-primary);
+}
+a.mdv-att-card:hover {
+  background: var(--wk-brand-tint-06);
+}
+.mdv-att-card.is-dead {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mdv-att-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+.mdv-att-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mdv-att-name {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mdv-att-size {
+  font-size: 11px;
+  color: var(--wk-text-tertiary);
 }
 
 /* outputs */
