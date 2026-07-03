@@ -36,16 +36,16 @@ import TranscriptDialog from "./TranscriptDialog";
 import "./workers.css";
 import "./workerDetail.css";
 
-type Tab = "activity" | "runs" | "instructions" | "skills" | "env" | "args" | "mcp";
+// S6 卡①(D1a 拍板):两页签 档案(战绩+履历主轴)/ 配置(Attio 左组导航式表单区)。
+type Page = "profile" | "config";
+type CfgSection = "instructions" | "env" | "args" | "mcp" | "skills";
 
-const TABS: Array<{ key: Tab; label: string }> = [
-  { key: "activity", label: "动态" },
-  { key: "runs", label: "Runs" },
+const CFG_SECTIONS: Array<{ key: CfgSection; label: string }> = [
   { key: "instructions", label: "Instructions" },
-  { key: "skills", label: "技能" },
   { key: "env", label: "环境变量" },
   { key: "args", label: "自定义参数" },
   { key: "mcp", label: "MCP" },
+  { key: "skills", label: "技能" },
 ];
 
 const RUN_STATUS: Record<string, { label: string; cls: string }> = {
@@ -82,40 +82,45 @@ const fmtDur = (t: AgentTask) => {
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
 };
 
-// 30 天堆叠柱 sparkline(成功=brand 底、失败=error 顶,per-component 缩放,镜像 multica sparkline)。
-function Sparkline({ days, width, height }: { days: ActivityDay[]; width: number; height: number }) {
-  const max = Math.max(1, ...days.map((d) => d.total));
-  const bw = width / days.length;
+// 30 天热力格(S6 卡①,GitHub 配方:格 10×10 r2、行列 gap 3、绿 5 阶;列=周 7 行,尾格=今天)。
+function Heatmap30({ days }: { days: ActivityDay[] }) {
+  const cells: Array<ActivityDay | null> = [...days];
+  const pad = (7 - (cells.length % 7)) % 7;
+  for (let i = 0; i < pad; i++) cells.unshift(null);
+  const weeks: Array<Array<ActivityDay | null>> = [];
+  for (let w = 0; w < cells.length / 7; w++) weeks.push(cells.slice(w * 7, w * 7 + 7));
+  const level = (d: ActivityDay | null) => {
+    if (d === null) return -1;
+    if (d.total === 0) return 0;
+    if (d.total === 1) return 1;
+    if (d.total <= 2) return 2;
+    if (d.total <= 3) return 3;
+    return 4;
+  };
+  const dayLabel = (wi: number, di: number) => {
+    const idx = wi * 7 + di - pad;
+    const daysAgo = days.length - 1 - idx;
+    const dt = new Date(Date.now() - daysAgo * 86_400_000);
+    return `${dt.getMonth() + 1}月${dt.getDate()}日`;
+  };
   return (
-    <svg width={width} height={height} className="wkd-spark" aria-hidden>
-      {days.map((d, i) => {
-        if (d.total === 0) return null;
-        const h = Math.max(2, (d.total / max) * height);
-        const fh = d.failed > 0 ? Math.max(2, (d.failed / d.total) * h) : 0;
-        return (
-          <g key={i}>
-            <rect
-              x={i * bw + bw * 0.2}
-              y={height - h}
-              width={bw * 0.6}
-              height={h - fh}
-              rx="1"
-              style={{ fill: "var(--wk-color-info)" }}
+    <div className="wkd-hm" aria-label="近 30 天执行热力">
+      {weeks.map((week, wi) => (
+        <div key={wi} className="wkd-hm-col">
+          {week.map((d, di) => (
+            <span
+              key={di}
+              className={`wkd-hm-cell lv${level(d)}`}
+              title={
+                d === null
+                  ? undefined
+                  : `${dayLabel(wi, di)}:${d.total} 次运行${d.failed ? ` · ${d.failed} 次失败` : ""}`
+              }
             />
-            {fh > 0 && (
-              <rect
-                x={i * bw + bw * 0.2}
-                y={height - fh}
-                width={bw * 0.6}
-                height={fh}
-                rx="1"
-                style={{ fill: "var(--wk-color-error)" }}
-              />
-            )}
-          </g>
-        );
-      })}
-    </svg>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -168,7 +173,8 @@ export default function WorkerDetailView({
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [days, setDays] = useState<ActivityDay[]>([]);
   const [runtimes, setRuntimes] = useState<RuntimeSummary[]>([]);
-  const [tab, setTab] = useState<Tab>("activity");
+  const [page, setPage] = useState<Page>("profile");
+  const [cfgSection, setCfgSection] = useState<CfgSection>("instructions");
   const [recentShown, setRecentShown] = useState(5);
   const [busy, setBusy] = useState(false);
   const [transcriptTask, setTranscriptTask] = useState<AgentTask | null>(null);
@@ -391,14 +397,19 @@ export default function WorkerDetailView({
         {/* ── 右 tabs ── */}
         <main className="wkd-main">
           <div className="wkd-tabs" role="tablist">
-            {TABS.map((t) => (
+            {(
+              [
+                { key: "profile", label: "档案" },
+                { key: "config", label: "配置" },
+              ] as const
+            ).map((t) => (
               <button
                 key={t.key}
                 type="button"
                 role="tab"
-                aria-selected={tab === t.key}
-                className={`wkd-tab${tab === t.key ? " is-active" : ""}`}
-                onClick={() => setTab(t.key)}
+                aria-selected={page === t.key}
+                className={`wkd-tab${page === t.key ? " is-active" : ""}`}
+                onClick={() => setPage(t.key)}
               >
                 {t.label}
               </button>
@@ -406,22 +417,13 @@ export default function WorkerDetailView({
           </div>
 
           <div className="wkd-tab-body">
-            {tab === "activity" && (
+            {page === "profile" && (
               <>
                 <section className="wkd-card">
-                  <div className="wkd-card-title">当前</div>
-                  {active.length === 0 ? (
-                    <div className="wkd-none">无进行中的工作 —— 这个 worker 当前没有在跑任何 Run。</div>
-                  ) : (
-                    active.map((t) => <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />)
-                  )}
-                </section>
-                <section className="wkd-card">
-                  <div className="wkd-card-title">近 30 天表现</div>
-                  <div className="wkd-30d">
+                  <div className="wkd-hero">
                     <div className="wkd-30d-nums">
                       <span className="wkd-30d-big">{sum30.total}</span>
-                      <span className="wkd-30d-unit">次运行</span>
+                      <span className="wkd-30d-unit">次运行 · 近 30 天</span>
                       <div className="wkd-30d-sub">
                         {sum30.successRate !== null
                           ? `${Math.round(sum30.successRate * 100)}% 成功`
@@ -429,45 +431,67 @@ export default function WorkerDetailView({
                         {avgDur && ` · 平均 ${avgDur}`}
                       </div>
                     </div>
-                    <Sparkline days={days} width={220} height={44} />
+                    <Heatmap30 days={days} />
                   </div>
                 </section>
-                <section className="wkd-card">
+                {active.length > 0 && (
+                  <section className="wkd-card">
+                    <div className="wkd-card-title">当前</div>
+                    {active.map((t) => (
+                      <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />
+                    ))}
+                  </section>
+                )}
+                <section className="wkd-tl-wrap">
                   <div className="wkd-card-title">
-                    最近工作 <span className="wkd-group-n">{Math.min(recentShown, terminal.length)} / {terminal.length}</span>
+                    履历 <span className="wkd-group-n">{terminal.length} 次执行</span>
                   </div>
                   {terminal.length === 0 ? (
                     <div className="wkd-none">还没有完成过 Run。</div>
                   ) : (
-                    <>
-                      {terminal.slice(0, recentShown).map((t) => (
-                        <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />
-                      ))}
+                    <div className="wkd-tl">
+                      {terminal.slice(0, recentShown).map((t) => {
+                        const st = RUN_STATUS[t.status] || { label: t.status, cls: "is-muted" };
+                        return (
+                          <div key={t.id} className="wkd-tl-item">
+                            <span className="wkd-tl-node">
+                              <span className={`wkd-run-dot ${st.cls}`} />
+                            </span>
+                            <RunRow t={t} onTranscript={setTranscriptTask} />
+                          </div>
+                        );
+                      })}
                       {terminal.length > recentShown && (
-                        <button type="button" className="wkd-more" onClick={() => setRecentShown((n) => n + 20)}>
+                        <button
+                          type="button"
+                          className="wkd-more"
+                          onClick={() => setRecentShown((n) => n + 20)}
+                        >
                           查看更多 →
                         </button>
                       )}
-                    </>
+                    </div>
                   )}
                 </section>
               </>
             )}
 
-            {tab === "runs" && (
-              <section className="wkd-card">
-                <div className="wkd-card-title">
-                  全部 Run <span className="wkd-group-n">{tasks.length}</span>
-                </div>
-                {tasks.length === 0 ? (
-                  <div className="wkd-none">暂无 Run。</div>
-                ) : (
-                  tasks.map((t) => <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />)
-                )}
-              </section>
-            )}
-
-            {tab === "instructions" && (
+            {page === "config" && (
+              <div className="wkd-cfg">
+                <nav className="wkd-cfg-nav">
+                  {CFG_SECTIONS.map((sec) => (
+                    <button
+                      key={sec.key}
+                      type="button"
+                      className={`wkd-cfg-item${cfgSection === sec.key ? " is-active" : ""}`}
+                      onClick={() => setCfgSection(sec.key)}
+                    >
+                      {sec.label}
+                    </button>
+                  ))}
+                </nav>
+                <div className="wkd-cfg-body">
+            {cfgSection === "instructions" && (
               <section className="wkd-card">
                 <div className="wkd-card-title-row">
                   <span className="wkd-card-title">Instructions</span>
@@ -497,7 +521,7 @@ export default function WorkerDetailView({
               </section>
             )}
 
-            {tab === "skills" && (
+            {cfgSection === "skills" && (
               <section className="wkd-card">
                 <div className="wkd-card-title">
                   已挂载技能 <span className="wkd-group-n">{agent.skills.length}</span>
@@ -515,7 +539,7 @@ export default function WorkerDetailView({
               </section>
             )}
 
-            {tab === "env" && (
+            {cfgSection === "env" && (
               <section className="wkd-card">
                 <div className="wkd-card-title-row">
                   <span className="wkd-card-title">环境变量</span>
@@ -632,7 +656,7 @@ export default function WorkerDetailView({
               </section>
             )}
 
-            {tab === "args" && (
+            {cfgSection === "args" && (
               <section className="wkd-card">
                 <div className="wkd-card-title-row">
                   <span className="wkd-card-title">自定义参数</span>
@@ -688,7 +712,7 @@ export default function WorkerDetailView({
               </section>
             )}
 
-            {tab === "mcp" && (
+            {cfgSection === "mcp" && (
               <section className="wkd-card">
                 <div className="wkd-card-title-row">
                   <span className="wkd-card-title">MCP 配置</span>
@@ -743,6 +767,9 @@ export default function WorkerDetailView({
                   </>
                 )}
               </section>
+            )}
+                </div>
+              </div>
             )}
           </div>
         </main>

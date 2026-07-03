@@ -95,7 +95,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 296px minmax(0, 1fr);
 }
 
 .wkd-inspector {
@@ -113,7 +113,7 @@
 }
 
 .wkd-id-name {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--wk-text-primary);
 }
@@ -511,4 +511,164 @@
 .wkd-transcript-btn:hover {
   background: var(--wk-bg-hover);
   color: var(--wk-text-primary);
+}
+
+/* ═══ S6 卡① 档案页(GitHub 骨架实测值:格10 gap3 绿5阶 / 时间线 2px 竖线+节点骑线)═══ */
+
+.wkd-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* 热力格:列=周(7 格),GitHub 配方 10×10 r2 gap3 */
+.wkd-hm {
+  display: flex;
+  gap: 3px;
+}
+
+.wkd-hm-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wkd-hm-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 40, 0.05);
+}
+
+.wkd-hm-cell.lv-1 {
+  visibility: hidden;
+}
+
+.wkd-hm-cell.lv0 {
+  background: var(--wk-bg-hover);
+}
+
+.wkd-hm-cell.lv1 {
+  background: color-mix(in srgb, var(--wk-color-success) 28%, var(--wk-bg-base));
+}
+
+.wkd-hm-cell.lv2 {
+  background: color-mix(in srgb, var(--wk-color-success) 52%, var(--wk-bg-base));
+}
+
+.wkd-hm-cell.lv3 {
+  background: color-mix(in srgb, var(--wk-color-success) 76%, var(--wk-bg-base));
+}
+
+.wkd-hm-cell.lv4 {
+  background: var(--wk-color-success);
+}
+
+/* 履历时间线(GitHub:2px 竖线 + 节点骑线 + 行内容) */
+.wkd-tl-wrap {
+  padding: 2px 2px 8px;
+}
+
+.wkd-tl-wrap .wkd-card-title {
+  margin: 8px 0 10px;
+}
+
+.wkd-tl {
+  position: relative;
+  padding-left: 22px;
+}
+
+.wkd-tl::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: color-mix(in srgb, var(--wk-border-default) 70%, transparent);
+}
+
+.wkd-tl-item {
+  position: relative;
+}
+
+.wkd-tl-node {
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--wk-bg-hover);
+  border: 2px solid var(--wk-bg-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wkd-tl-node .wkd-run-dot {
+  width: 6px;
+  height: 6px;
+  margin: 0;
+}
+
+/* 时间线内的 Run 行:去卡片边框,行态呈现 */
+.wkd-tl .wkd-run {
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  padding: 8px 10px;
+}
+
+.wkd-tl .wkd-run:hover {
+  background: var(--wk-bg-hover);
+}
+
+/* 配置页:Attio 左组导航骨架 */
+.wkd-cfg {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.wkd-cfg-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+}
+
+.wkd-cfg-item {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.wkd-cfg-item:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.wkd-cfg-item.is-active {
+  background: var(--wk-bg-selected);
+  color: var(--wk-text-primary);
+  font-weight: 500;
+}
+
+.wkd-cfg-body {
+  min-width: 0;
+}
+
+/* 时间线行内的状态点由节点承担,行内自带点隐藏(免重复) */
+.wkd-tl .wkd-run > .wkd-run-dot {
+  display: none;
 }
