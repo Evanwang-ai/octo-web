@@ -29,17 +29,44 @@ export function priorityMenu(
   }));
 }
 
-// 状态快改(点状态图标):顶层即七态,✓ 标当前。
+// 状态项副文案(vanilla statusOptionHint L8239-8256):from→to 转移专属说明,退默认状态描述。
+function statusHint(from: string, k: string): string {
+  if (from === "blocked" && k === "in_progress") return "解除协助,继续推进";
+  if (from === "review" && k === "in_progress") return "退回修改";
+  if (from === "in_progress" && k === "review") return "提交确认";
+  if (from === "review" && k === "done") return "确认完成";
+  if (from === "open" && k === "backlog") return "退回草稿,暂不执行";
+  if (from === "backlog" && k === "open") return "启动,开始执行";
+  return (
+    {
+      backlog: "草稿",
+      open: "等待开始",
+      in_progress: "正在做,可以继续补充信息",
+      review: "已提交,等待确认",
+      done: "已完成",
+      blocked: "需要协助",
+      cancelled: "停止这单,保留记录",
+    } as Record<string, string>
+  )[k] || "";
+}
+
+// 状态快改(点状态图标):顶层即七态,✓ 标当前,副文案=流转说明(vanilla statusOptionHint)。
+// vanilla 默认描述有三态与标签同词(草稿/需要协助/已完成),双行渲染下成复读——同词时不出副行。
 // current 不在七态(历史 archived 等)时置顶补一个当前项(选中态,点了不落库),对齐旧 select 兜底。
 export function statusMenu(
   current: string,
   onPick: (s: string) => void,
 ): ContextMenusData[] {
-  const items: ContextMenusData[] = STATUS_ORDER.map((s) => ({
-    title: STATUS_LABEL[s] || s,
-    checked: current === s,
-    onClick: () => onPick(s),
-  }));
+  const items: ContextMenusData[] = STATUS_ORDER.map((s) => {
+    const title = STATUS_LABEL[s] || s;
+    const hint = statusHint(current, s);
+    return {
+      title,
+      checked: current === s,
+      ...(hint && hint !== title ? { subtitle: hint } : {}),
+      onClick: () => onPick(s),
+    };
+  });
   if (!(STATUS_ORDER as readonly string[]).includes(current)) {
     items.unshift({
       title: STATUS_LABEL[current] || current,

@@ -35,6 +35,8 @@ export class ContextMenusData {
     children?: ContextMenusData[]
     /** 选中态（子菜单项右侧显示主题色 ✓） */
     checked?: boolean
+    /** 副文案（第二行小字，如状态流转说明）；可选，不影响既有消费者 */
+    subtitle?: string
 }
 
 // ── 内部：渲染单个图标 ──
@@ -217,7 +219,20 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
                 }}
             >
                 {m.icon && <CtxIcon path={m.icon} />}
-                <span style={{ flex: 1 }}>{m.title}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block' }}>{m.title}</span>
+                    {m.subtitle && (
+                        <span style={{
+                            display: 'block',
+                            fontSize: 11,
+                            color: 'var(--wk-text-tertiary)',
+                            lineHeight: '14px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                        }}>{m.subtitle}</span>
+                    )}
+                </span>
                 {m.checked && !hasChildren && (
                     <span style={{
                         color: 'var(--wk-brand-primary, #1C1C23)',
@@ -245,7 +260,20 @@ export default class ContextMenus extends Component<ContextMenusProps, ContextMe
                                         }}
                                     >
                                         {child.icon && <CtxIcon path={child.icon} />}
-                                        <span style={{ flex: 1 }}>{child.title}</span>
+                                        <span style={{ flex: 1, minWidth: 0 }}>
+                                            <span style={{ display: 'block' }}>{child.title}</span>
+                                            {child.subtitle && (
+                                                <span style={{
+                                                    display: 'block',
+                                                    fontSize: 11,
+                                                    color: 'var(--wk-text-tertiary)',
+                                                    lineHeight: '14px',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                }}>{child.subtitle}</span>
+                                            )}
+                                        </span>
                                         {child.checked && (
                                             <span style={{
                                                 color: 'var(--wk-brand-primary, #1C1C23)',
