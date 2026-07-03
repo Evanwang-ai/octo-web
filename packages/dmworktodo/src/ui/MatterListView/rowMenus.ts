@@ -30,15 +30,24 @@ export function priorityMenu(
 }
 
 // 状态快改(点状态图标):顶层即七态,✓ 标当前。
+// current 不在七态(历史 archived 等)时置顶补一个当前项(选中态,点了不落库),对齐旧 select 兜底。
 export function statusMenu(
   current: string,
   onPick: (s: string) => void,
 ): ContextMenusData[] {
-  return STATUS_ORDER.map((s) => ({
+  const items: ContextMenusData[] = STATUS_ORDER.map((s) => ({
     title: STATUS_LABEL[s] || s,
     checked: current === s,
     onClick: () => onPick(s),
   }));
+  if (!(STATUS_ORDER as readonly string[]).includes(current)) {
+    items.unshift({
+      title: STATUS_LABEL[current] || current,
+      checked: true,
+      onClick: () => {},
+    });
+  }
+  return items;
 }
 
 // 行右键上下文菜单:打开 / 优先级› / 状态› / — / 删除。绑定由调用方注入。

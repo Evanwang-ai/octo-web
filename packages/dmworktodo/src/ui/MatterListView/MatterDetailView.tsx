@@ -58,9 +58,8 @@ import type {
 import UserName from "../UserName";
 import { Toast } from "../../utils/toast";
 import { resolveAndGuardUrl } from "../../utils/fileUrl";
-import { StatusIcon, PriorityIcon } from "./icons";
+import { StatusIcon, PriorityIcon, STATUS_LABEL } from "./icons";
 import { priorityMenu, statusMenu } from "./rowMenus";
-import { STATUS_LABEL } from "./icons";
 import PlanGraph from "./PlanGraph";
 import "./detail.css";
 
@@ -86,15 +85,37 @@ function handoffInfo(
   m: MatterDetailFull,
   myUid: string,
 ): { cls: string; label: string; main: React.ReactNode } {
-  const doerUid = m.leader_uid || m.assignees?.[0]?.user_id || "";
-  const doer = doerUid ? <UserName uid={doerUid} /> : null;
+  // doer:领队优先;无领队时列出全部协作者(vanilla L7902 join "、"),不是只取第一个。
+  const doer = m.leader_uid ? (
+    <UserName uid={m.leader_uid} />
+  ) : m.assignees?.length ? (
+    m.assignees.map((a, i) => (
+      <React.Fragment key={a.id}>
+        {i > 0 && "、"}
+        <UserName uid={a.user_id} />
+      </React.Fragment>
+    ))
+  ) : null;
   switch (m.status as string) {
     case "review": {
+      // vanilla L7905-7908:发起人视角=轮到你了(提交者只认领队);他人视角=等发起人确认。
       const mine = m.creator_id === myUid;
+      const leader = m.leader_uid ? <UserName uid={m.leader_uid} /> : null;
+      if (mine) {
+        return {
+          cls: "is-taste",
+          label: "轮到你了",
+          main: leader ? <>待确认 · {leader} 提交了结果</> : "等待确认",
+        };
+      }
       return {
         cls: "is-taste",
-        label: mine ? "轮到你了" : "等待确认",
-        main: doer ? <>待确认 · {doer} 提交了结果</> : "等待确认",
+        label: "等待确认",
+        main: (
+          <>
+            等 <UserName uid={m.creator_id} /> 确认
+          </>
+        ),
       };
     }
     case "done":

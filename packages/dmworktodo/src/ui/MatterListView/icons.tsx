@@ -65,7 +65,7 @@ export function StatusIcon({ status, size = 16 }: { status: string; size?: numbe
       );
     case "done": // 完成:绿实心 + 白勾
       return (
-        <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="完成">
+        <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="已完成">
           <circle cx="8" cy="8" r="7" style={{ fill: "var(--wk-color-success)" }} />
           <path d="M5 8.2l2 2 4-4.4" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -79,7 +79,7 @@ export function StatusIcon({ status, size = 16 }: { status: string; size?: numbe
       );
     case "blocked": // 受阻:红实心 + 白叹号
       return (
-        <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="受阻">
+        <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="需要协助">
           <circle cx="8" cy="8" r="7" style={{ fill: "var(--wk-color-error)" }} />
           <rect x="7" y="4" width="2" height="5" rx="1" fill="#fff" />
           <rect x="7" y="10.5" width="2" height="2" rx="1" fill="#fff" />
