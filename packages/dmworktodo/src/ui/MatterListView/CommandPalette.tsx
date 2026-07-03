@@ -9,10 +9,14 @@
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { listMatters, listProjects } from "../../api/todoApi";
+import { WKApp } from "@octo/base";
+import { listMatters, listProjects, createMatter } from "../../api/todoApi";
 import type { ProjectItem } from "../../api/todoApi";
 import type { Matter } from "../../bridge/types";
+import { listAgents } from "../../api/multica/client";
+import type { Agent } from "../../api/multica/types";
 import { StatusIcon } from "./icons";
+import { WorkerAvatar } from "./WorkersView";
 import "./cmdk.css";
 
 interface Props {
@@ -30,7 +34,11 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
   const [query, setQuery] = useState("");
   const [matters, setMatters] = useState<Matter[]>([]);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [cursor, setCursor] = useState(0);
+  // 快速建单第二段:选执行 worker(契约 §1.4 quick-create=建单即派 Run;三件套之 preview-trigger 在此预告)。
+  const [dispatching, setDispatching] = useState(false);
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 打开时拉一次数据源(mock 期:一页回路+全部项目,前端过滤;接线后换 search 端点)。
@@ -38,11 +46,13 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
     if (!open) return;
     setQuery("");
     setCursor(0);
+    setDispatching(false);
     let alive = true;
-    Promise.all([listMatters(), listProjects()]).then(([m, p]) => {
+    Promise.all([listMatters(), listProjects(), listAgents()]).then(([m, p, a]) => {
       if (!alive) return;
       setMatters(m.data || []);
       setProjects(p || []);
+      setAgents(a);
     });
     // 弹开即聚焦
     window.setTimeout(() => inputRef.current?.focus(), 30);
@@ -74,8 +84,25 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
     else onOpenProject(it.project.id);
   };
 
+  // 快速建单:worker=null 先存草稿(backlog);选 worker 则发车(open)+ 派单预告(mock 期指派接线后生效)。
+  const quickCreate = async (worker: Agent | null) => {
+    const title = query.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    try {
+      const detail = await createMatter({ title, status: worker ? "open" : "backlog" });
+      // 列表实时刷新走既有 wk:matter-updated 通道(列表 onChange 监听的就是它)。
+      WKApp.mittBus.emit("wk:matter-updated", { matterId: detail.id });
+      onClose();
+      onOpenMatter(detail.id);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!open) return null;
 
+  const canQuick = !!query.trim();
   const firstProjectIdx = items.findIndex((it) => it.kind === "project");
 
   return (
@@ -109,7 +136,25 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
           }}
         />
         <div className="cmdk-results">
-          {items.length === 0 ? (
+          {dispatching ? (
+            <>
+              <div className="cmdk-group">派给谁?(快速建单)</div>
+              <button type="button" className="cmdk-item" disabled={busy} onClick={() => quickCreate(null)}>
+                <StatusIcon status="backlog" size={14} />
+                <span className="cmdk-item-title">先存草稿,不派 Run</span>
+                <span className="cmdk-item-meta">backlog</span>
+              </button>
+              {agents
+                .filter((a) => !a.archived_at)
+                .map((a) => (
+                  <button key={a.id} type="button" className="cmdk-item" disabled={busy} onClick={() => quickCreate(a)}>
+                    <WorkerAvatar name={a.name} size={18} />
+                    <span className="cmdk-item-title">{a.name}</span>
+                    <span className="cmdk-item-meta">发车并派首个 Run(接线后生效)</span>
+                  </button>
+                ))}
+            </>
+          ) : items.length === 0 && !canQuick ? (
             <div className="cmdk-empty">没有匹配的结果</div>
           ) : (
             items.map((it, i) => (
@@ -144,6 +189,20 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
                 </button>
               </React.Fragment>
             ))
+          )}
+          {!dispatching && canQuick && (
+            <>
+              <div className="cmdk-group">动作</div>
+              <button
+                type="button"
+                className="cmdk-item is-action"
+                onClick={() => setDispatching(true)}
+              >
+                <span className="cmdk-plus">+</span>
+                <span className="cmdk-item-title">快速建单:「{query.trim()}」</span>
+                <span className="cmdk-item-meta">选择执行 worker →</span>
+              </button>
+            </>
           )}
         </div>
         <div className="cmdk-foot">

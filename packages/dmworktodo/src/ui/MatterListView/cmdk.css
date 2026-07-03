@@ -110,3 +110,20 @@
   font-size: 11px;
   color: var(--wk-text-tertiary);
 }
+
+/* 快速建单动作行 */
+.cmdk-item.is-action .cmdk-item-title {
+  color: var(--wk-color-info);
+}
+
+.cmdk-plus {
+  width: 14px;
+  text-align: center;
+  color: var(--wk-color-info);
+  font-weight: 600;
+}
+
+.cmdk-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
