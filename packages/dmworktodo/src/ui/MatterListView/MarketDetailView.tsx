@@ -60,18 +60,25 @@ export default function MarketDetailView({
 
   return (
     <div className="mkt-root">
-      <div className="mkt-head">
+      <div className="mkt-crumbbar">
         <button className="mkt-back" type="button" onClick={onBack}>
           市集
         </button>
         <span className="mkt-crumb-sep">›</span>
-        <span className="mkt-title">{title || "…"}</span>
+        <span className="mkt-crumb-name">{title || "…"}</span>
       </div>
       {kind === "template" && tpl && (
         <div className="mkt-detail">
           <div className="mkt-onboard">
+            <div
+              className="mkt-hero-banner"
+              style={{
+                background: `linear-gradient(135deg, hsl(${(() => { let h = 0; for (const ch of tpl.name) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; })()} 42% 92%), hsl(${(() => { let h = 0; for (const ch of tpl.name) h = (h * 31 + ch.charCodeAt(0)) % 360; return (h + 40) % 360; })()} 38% 86%))`,
+              }}
+            >
+              <WorkerAvatar name={tpl.name} size={64} />
+            </div>
             <div className="mkt-hero">
-              <WorkerAvatar name={tpl.name} size={48} />
               <div>
                 <div className="mkt-hero-name">{tpl.name}</div>
                 <div className="mkt-hero-desc">{tpl.description}</div>
@@ -83,7 +90,6 @@ export default function MarketDetailView({
                   <span className="mkt-step-n">1</span>
                   <div className="mkt-step-body">
                     <div className="mkt-step-title">选择运行设备</div>
-                    <div className="mkt-step-hint">worker 会在这台设备上执行任务。</div>
                     <select
                       className="mkt-input"
                       value={runtimeId}

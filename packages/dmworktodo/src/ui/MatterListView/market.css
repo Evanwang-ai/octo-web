@@ -358,17 +358,16 @@
 }
 
 .mkt-pre {
-  margin: 6px 0 0;
-  padding: 12px 14px;
-  background: var(--wk-bg-hover);
+  margin: 8px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--wk-border-default);
   border-radius: 10px;
+  background: var(--wk-bg-base);
   font-size: 12px;
-  line-height: 1.6;
-  color: var(--wk-text-primary);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1.7;
+  color: var(--wk-text-secondary);
   white-space: pre-wrap;
-  max-height: 260px;
-  overflow: auto;
+  word-break: break-word;
 }
 
 .mkt-info {
@@ -418,4 +417,34 @@
 
 .mkt-wrap {
   word-break: break-all;
+}
+
+
+/* S8:详情面包屑条(小字工具条;22px 大标题属于列表页头) */
+.mkt-crumbbar {
+  flex: 0 0 auto;
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--wk-border-default);
+}
+
+.mkt-crumb-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+/* 模板详情 hero banner(列表卡视觉血缘) */
+.mkt-hero-banner {
+  height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--wk-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
 }
