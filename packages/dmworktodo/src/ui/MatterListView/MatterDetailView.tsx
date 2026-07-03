@@ -64,6 +64,7 @@ import { priorityMenu, statusMenu } from "./rowMenus";
 import PlanGraph from "./PlanGraph";
 import MatterComposer from "./MatterComposer";
 import ExperiencePanel from "./ExperiencePanel";
+import AttachmentPreview from "./AttachmentPreview";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
@@ -243,13 +244,14 @@ function relTime(iso?: string): string {
 }
 
 // 附件卡(时间线附件 + Brief input_attachments 共用):复用 IM 的文件图标/大小格式化;
-// URL 过 resolveAndGuardUrl,通过→新开标签(原生详情无 wk:file-preview 监听,不走预览事件),
+// URL 过 resolveAndGuardUrl,通过→点开 AttachmentPreview 预览 overlay(欠账 §9-④,替新开标签),
 // 不通过→死卡不可点。
 function TlAttachments({
   atts,
 }: {
   atts: Array<TimelineAttachment | InputAttachmentShape>;
 }) {
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
   return (
     <div className="mdv-tl-atts" role="list" aria-label="附件">
       {atts.map((att, i) => {
@@ -273,17 +275,16 @@ function TlAttachments({
           </>
         );
         return url ? (
-          <a
+          <button
             key={key}
+            type="button"
             className="mdv-att-card"
             role="listitem"
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
             title={name}
+            onClick={() => setPreview({ url, name })}
           >
             {body}
-          </a>
+          </button>
         ) : (
           <span
             key={key}
@@ -295,6 +296,13 @@ function TlAttachments({
           </span>
         );
       })}
+      {preview && (
+        <AttachmentPreview
+          url={preview.url}
+          name={preview.name}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </div>
   );
 }
