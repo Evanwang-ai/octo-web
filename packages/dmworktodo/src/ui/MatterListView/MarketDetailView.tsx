@@ -200,12 +200,15 @@ export default function MarketDetailView({
       {kind === "skill" && mkSkill && (
         <div className="mkt-detail">
           <div className="mkt-onboard">
+            <div
+              className="mkt-hero-banner is-skill"
+              style={{ color: `hsl(${hueOf(mkSkill.name)} 30% 55%)`, background: `hsl(${hueOf(mkSkill.name)} 25% 96%)` }}
+            >
+              <svg width="34" height="34" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+              </svg>
+            </div>
             <div className="mkt-hero">
-              <span className="mkt-skill-ic is-big">
-                <svg width="26" height="26" viewBox="0 0 16 16" fill="none" aria-hidden>
-                  <path d="M8 1.8l1.7 3.6 3.9.5-2.9 2.7.75 3.9L8 10.6l-3.45 1.9L5.3 8.6 2.4 5.9l3.9-.5L8 1.8Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-                </svg>
-              </span>
               <div>
                 <div className="mkt-hero-name">{mkSkill.name}</div>
                 <div className="mkt-hero-desc">{mkSkill.description}</div>
