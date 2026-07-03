@@ -210,3 +210,68 @@ export function summarizeActivity(buckets: ActivityDay[], windowDays: number) {
   const failed = win.reduce((s, b) => s + b.failed, 0);
   return { total, failed, successRate: total > 0 ? (total - failed) / total : null };
 }
+
+// ═══ 执行 transcript —— 契约对照表 §1.6 ═══
+import type { TaskMessagePayload } from "./types";
+
+// GET /api/tasks/{taskId}/messages —— 全量扁平数组,无分页;增量走 WS task:message(接线期)。
+export async function listTaskMessages(taskId: string): Promise<TaskMessagePayload[]> {
+  return simulated(() => wdb.messagesOf(taskId));
+}
+
+// ── timeline 构建(镜像 multica views/common/task-transcript/build-timeline)──
+export interface TimelineItem {
+  seq: number;
+  type: TaskMessagePayload["type"];
+  tool?: string;
+  content?: string;
+  input?: Record<string, unknown>;
+  output?: string;
+  created_at?: string;
+}
+
+// 显示层脱敏安全网(镜像 multica redact.ts 精神,轻量常见 4 类;服务端为主脱敏)。
+const SECRET_PATTERNS: Array<[RegExp, string]> = [
+  [/sk-[A-Za-z0-9-]{8,}/g, "sk-••••"],
+  [/(gh[pousr]_[A-Za-z0-9]{20,})/g, "gh•_••••"],
+  [/(Bearer\s+)[A-Za-z0-9._-]{12,}/g, "$1••••"],
+  [/(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,})/g, "jwt••••"],
+];
+
+export function redactSecrets(text: string): string {
+  let out = text;
+  for (const [re, rep] of SECRET_PATTERNS) out = out.replace(re, rep);
+  return out;
+}
+
+// 按 seq 排序 → 合并相邻同类型 text/thinking 碎片(daemon flush 拆分)→ 脱敏。
+export function buildTimeline(msgs: TaskMessagePayload[]): TimelineItem[] {
+  const sorted = [...msgs].sort((a, b) => a.seq - b.seq);
+  const out: TimelineItem[] = [];
+  for (const m of sorted) {
+    const prev = out[out.length - 1];
+    if (
+      prev &&
+      (m.type === "text" || m.type === "thinking") &&
+      prev.type === m.type &&
+      m.content
+    ) {
+      prev.content = `${prev.content || ""}${m.content}`;
+      continue;
+    }
+    out.push({
+      seq: m.seq,
+      type: m.type,
+      tool: m.tool,
+      content: m.content,
+      input: m.input,
+      output: m.output,
+      created_at: m.created_at,
+    });
+  }
+  for (const it of out) {
+    if (it.content) it.content = redactSecrets(it.content);
+    if (it.output) it.output = redactSecrets(it.output);
+  }
+  return out;
+}

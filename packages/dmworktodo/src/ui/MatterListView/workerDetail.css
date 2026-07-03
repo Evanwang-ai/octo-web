@@ -488,3 +488,27 @@
   font-size: 12px;
   color: var(--wk-color-error);
 }
+
+/* Run 行的"过程"按钮(transcript 入口,hover 现身) */
+.wkd-transcript-btn {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: transparent;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.wkd-run:hover .wkd-transcript-btn {
+  display: inline-flex;
+}
+
+.wkd-transcript-btn:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}

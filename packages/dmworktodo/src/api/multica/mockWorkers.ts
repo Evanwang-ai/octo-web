@@ -351,3 +351,92 @@ export function updateEnvOf(id: string, custom_env: Record<string, string>): Age
   }
   return envOf(id);
 }
+
+// ── transcript(Run 消息流)合成:按 task 的 kind/status 确定性生成,tool-call 级真实感 ──
+import type { TaskMessagePayload } from "./types";
+
+export function messagesOf(taskId: string): TaskMessagePayload[] {
+  seed();
+  const t = tasks.find((x) => x.id === taskId);
+  if (!t) return [];
+  const base = t.created_at;
+  const at = (offsetSec: number) =>
+    new Date(new Date(base).getTime() + offsetSec * 1000).toISOString();
+  let seq = 0;
+  const msg = (
+    partial: Pick<TaskMessagePayload, "type"> & Partial<TaskMessagePayload>,
+    offsetSec: number,
+  ): TaskMessagePayload => ({
+    task_id: t.id,
+    issue_id: t.issue_id,
+    seq: ++seq,
+    created_at: at(offsetSec),
+    ...partial,
+  });
+
+  const topic = t.trigger_summary || "本次任务";
+  const out: TaskMessagePayload[] = [
+    msg({ type: "text", content: `已认领:${topic}。先取数,再校验口径,最后出汇总。` }, 2),
+    msg({ type: "thinking", content: `任务涉及多张表,先确认数据源可达,再决定取数顺序。优先跑轻查询探量级,避免全表扫描。` }, 6),
+    msg(
+      {
+        type: "tool_use",
+        tool: "Bash",
+        input: { command: "psql -h warehouse.internal -c \"SELECT count(*) FROM ods.orders WHERE dt >= date_trunc('quarter', now())\"" },
+      },
+      10,
+    ),
+    msg({ type: "tool_result", tool: "Bash", output: " count\n-------\n 12840\n(1 row)\n\n耗时 340ms" }, 14),
+    msg(
+      {
+        type: "tool_use",
+        tool: "Read",
+        input: { file_path: "/data/exports/quarterly-metrics.csv", limit: 50 },
+      },
+      20,
+    ),
+    msg(
+      {
+        type: "tool_result",
+        tool: "Read",
+        output: "metric,q_value,yoy\ngmv,4.82亿,+12.4%\norders,12840,+8.1%\narpu,3753,+4.0%\n…(共 12 项指标)",
+      },
+      24,
+    ),
+  ];
+
+  if (t.status === "completed") {
+    out.push(
+      msg({ type: "text", content: `12 项指标全部取数完成,口径与上季度一致(两处小数位差异已修正)。产出已挂回路附件,给出一句话摘要:${topic} 已完成。` }, 30),
+    );
+  } else if (t.status === "failed") {
+    out.push(
+      msg(
+        {
+          type: "tool_use",
+          tool: "Bash",
+          input: { command: "psql -h warehouse.internal -c \"SELECT * FROM ods.user_profile_wide LIMIT 10\"" },
+        },
+        28,
+      ),
+      msg({ type: "error", content: t.error || "执行失败" }, 640),
+    );
+  } else if (t.status === "cancelled") {
+    out.push(msg({ type: "text", content: "收到取消指令,已停止后续步骤并清理临时文件。" }, 40));
+  } else if (t.status === "running") {
+    out.push(
+      msg(
+        {
+          type: "tool_use",
+          tool: "Bash",
+          input: { command: "python analyze.py --quarter 2026Q2 --out /data/exports/dashboard.json" },
+        },
+        30,
+      ),
+    );
+  } else {
+    // queued 等:尚未开跑,无消息
+    return [];
+  }
+  return out;
+}

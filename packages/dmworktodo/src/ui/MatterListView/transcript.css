@@ -1,0 +1,229 @@
+/**
+ * [INPUT]: dmworkbase 设计系统 --wk-* 变量。
+ * [OUTPUT]: TranscriptDialog 样式(.tsc-*):模态面板/头部/meta chips/事件行(型徽章)/pre 详情。
+ * [POS]: dmworktodo/ui/MatterListView 的执行 transcript 样式,结构参照 multica
+ *        agent-transcript-dialog(60px 定宽徽章/divide 行/展开 pre);颜色仅 --wk-*。
+ * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
+ */
+
+.tsc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.28);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+
+.tsc-panel {
+  width: 880px;
+  max-width: 100%;
+  height: calc(100vh - 96px);
+  background: var(--wk-bg-base);
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tsc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 8px;
+}
+
+.tsc-agent {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.tsc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--wk-border-default);
+  color: var(--wk-text-secondary);
+}
+
+.tsc-status.is-running {
+  color: var(--wk-color-info);
+  border-color: var(--wk-color-info);
+}
+
+.tsc-status.is-completed {
+  color: var(--wk-color-success);
+  border-color: var(--wk-color-success);
+}
+
+.tsc-status.is-failed {
+  color: var(--wk-color-error);
+  border-color: var(--wk-color-error);
+}
+
+.tsc-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wk-color-info);
+  animation: ibx-pulse 1.2s ease-in-out infinite;
+}
+
+.tsc-head-spacer {
+  flex: 1;
+}
+
+.tsc-close {
+  border: none;
+  background: transparent;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tsc-close:hover {
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-primary);
+}
+
+.tsc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 10px;
+  border-bottom: 1px solid var(--wk-border-default);
+}
+
+.tsc-chip {
+  font-size: 11px;
+  color: var(--wk-text-tertiary);
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  padding: 2px 8px;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tsc-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tsc-empty {
+  padding: 48px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--wk-text-tertiary);
+}
+
+.tsc-row-wrap {
+  border-bottom: 1px solid var(--wk-border-default);
+}
+
+.tsc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 16px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tsc-row:hover {
+  background: var(--wk-bg-hover);
+}
+
+/* 60px 定宽型徽章(镜像 multica colorClasses,色映射 --wk-*) */
+.tsc-badge {
+  flex-shrink: 0;
+  width: 64px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tsc-badge.is-text {
+  color: var(--wk-color-success);
+  background: color-mix(in srgb, var(--wk-color-success) 12%, transparent);
+}
+
+.tsc-badge.is-thinking {
+  color: var(--wk-text-tertiary);
+  background: var(--wk-bg-hover);
+}
+
+.tsc-badge.is-tool-use {
+  color: var(--wk-color-info);
+  background: color-mix(in srgb, var(--wk-color-info) 12%, transparent);
+}
+
+.tsc-badge.is-tool-result {
+  color: var(--wk-text-secondary);
+  background: var(--wk-bg-hover);
+}
+
+.tsc-badge.is-error {
+  color: var(--wk-color-error);
+  background: color-mix(in srgb, var(--wk-color-error) 12%, transparent);
+}
+
+.tsc-summary {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.tsc-row-meta {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--wk-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+.tsc-pre {
+  margin: 0 16px 10px 92px;
+  padding: 10px 12px;
+  background: var(--wk-bg-hover);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--wk-text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.tsc-pre.is-error {
+  color: var(--wk-color-error);
+}

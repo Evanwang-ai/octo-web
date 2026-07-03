@@ -32,6 +32,7 @@ import type { ActivityDay } from "../../api/multica/client";
 import type { Agent, AgentTask, RuntimeSummary } from "../../api/multica/types";
 import UserName from "../UserName";
 import { WorkerAvatar } from "./WorkersView";
+import TranscriptDialog from "./TranscriptDialog";
 import "./workers.css";
 import "./workerDetail.css";
 
@@ -118,8 +119,10 @@ function Sparkline({ days, width, height }: { days: ActivityDay[]; width: number
   );
 }
 
-function RunRow({ t }: { t: AgentTask }) {
+function RunRow({ t, onTranscript }: { t: AgentTask; onTranscript?: (t: AgentTask) => void }) {
   const st = RUN_STATUS[t.status] || { label: t.status, cls: "is-muted" };
+  // queued/等待目录还没开跑,无事件流(对齐 multica showTranscript 门控)。
+  const hasTranscript = t.status !== "queued" && t.status !== "waiting_local_directory";
   return (
     <div className="wkd-run">
       <span className={`wkd-run-dot ${st.cls}`} />
@@ -131,6 +134,21 @@ function RunRow({ t }: { t: AgentTask }) {
           {t.error && <span className="wkd-run-err"> · {t.error}</span>}
         </span>
       </span>
+      {onTranscript && hasTranscript && (
+        <button
+          type="button"
+          className="wkd-transcript-btn"
+          title="查看执行过程"
+          aria-label="查看执行过程"
+          onClick={() => onTranscript(t)}
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path d="M4.5 2.5h7A1.5 1.5 0 0 1 13 4v8a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12V4a1.5 1.5 0 0 1 1.5-1.5Z" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+          过程
+        </button>
+      )}
       <span className="wkd-run-meta">
         {fmtTime(t.completed_at || t.created_at)}
         {fmtDur(t) && ` · ${fmtDur(t)}`}
@@ -153,6 +171,7 @@ export default function WorkerDetailView({
   const [tab, setTab] = useState<Tab>("activity");
   const [recentShown, setRecentShown] = useState(5);
   const [busy, setBusy] = useState(false);
+  const [transcriptTask, setTranscriptTask] = useState<AgentTask | null>(null);
 
   // Instructions 编辑
   const [insDraft, setInsDraft] = useState("");
@@ -394,7 +413,7 @@ export default function WorkerDetailView({
                   {active.length === 0 ? (
                     <div className="wkd-none">无进行中的工作 —— 这个 worker 当前没有在跑任何 Run。</div>
                   ) : (
-                    active.map((t) => <RunRow key={t.id} t={t} />)
+                    active.map((t) => <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />)
                   )}
                 </section>
                 <section className="wkd-card">
@@ -422,7 +441,7 @@ export default function WorkerDetailView({
                   ) : (
                     <>
                       {terminal.slice(0, recentShown).map((t) => (
-                        <RunRow key={t.id} t={t} />
+                        <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />
                       ))}
                       {terminal.length > recentShown && (
                         <button type="button" className="wkd-more" onClick={() => setRecentShown((n) => n + 20)}>
@@ -443,7 +462,7 @@ export default function WorkerDetailView({
                 {tasks.length === 0 ? (
                   <div className="wkd-none">暂无 Run。</div>
                 ) : (
-                  tasks.map((t) => <RunRow key={t.id} t={t} />)
+                  tasks.map((t) => <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />)
                 )}
               </section>
             )}
@@ -728,6 +747,13 @@ export default function WorkerDetailView({
           </div>
         </main>
       </div>
+      {transcriptTask && (
+        <TranscriptDialog
+          task={transcriptTask}
+          agentName={agent.name}
+          onClose={() => setTranscriptTask(null)}
+        />
+      )}
     </div>
   );
 }

@@ -188,3 +188,20 @@ export interface RuntimeSummary {
   status: "online" | "offline";
   last_seen_at: string;
 }
+
+// ═══ 执行 transcript(Run 消息流)—— 契约对照表 §1.6,照抄 multica core/types/events.ts L228-239 ═══
+
+// 注意契约事实(multica 实测):无 role 字段、无 tool_use_id;tool_use/tool_result 是两条
+// 独立平铺消息,靠 seq 邻接 + tool 名视觉关联;input 是对象(展 JSON),output/content 纯字符串。
+export interface TaskMessagePayload {
+  task_id: string;
+  issue_id: string;
+  chat_session_id?: string;
+  seq: number; // 有序序号,去重/排序主键
+  type: "text" | "thinking" | "tool_use" | "tool_result" | "error";
+  tool?: string; // 仅 tool_use/tool_result
+  content?: string; // text/thinking/error 正文
+  input?: Record<string, unknown>; // tool_use 入参
+  output?: string; // tool_result 输出(纯字符串)
+  created_at?: string;
+}
