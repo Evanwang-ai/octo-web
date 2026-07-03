@@ -527,10 +527,12 @@ export default function MatterListView({
     });
   };
 
+  // "我的任务"收在 Tab 家族(Wave A-6 裁决:不造独立页)。assigned 打 assignee_id=me,
+  // 原标签"我参与的"是词漂——那是 multica involves_user_id(间接参与)的语义,接线后另加 tab。
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: "all", label: "全部" },
     { id: "created", label: "我发起的" },
-    { id: "assigned", label: "我参与的" },
+    { id: "assigned", label: "指派给我" },
   ];
   const isBoard = viewSpec.layout === "board";
   const filterCount = activeFilterCount(viewSpec.filters);

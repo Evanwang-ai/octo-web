@@ -12,3 +12,5 @@ mockWorkers.ts: worker 域内存 mock——纯静态 fixtures(worker 是 multica
 法则: 类型逐字照抄契约·client 签名对齐 multica fnName·mock 只在本层·UI 词过防火墙
 
 [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
+
+补(2026-07-03 Wave A-3):client.ts 增 listTaskMessages + buildTimeline(coalesce 相邻同型 text/thinking 碎片,镜像 multica build-timeline)+ redactSecrets(显示层脱敏安全网 4 类);types.ts 增 TaskMessagePayload(5 型/seq 主键/无 role 无 tool_use_id);mockWorkers.ts 增 messagesOf(按 task kind/status 确定性合成 tool-call 级消息流)。
