@@ -169,6 +169,15 @@ export default function WorkerDetailView({
 
   useEffect(() => {
     let alive = true;
+    // agentId 变化时完整重置编辑态(当前路由用 key remount,此处是防御性一致)。
+    setAgent(null);
+    setInsDirty(false);
+    setEnvRows(null);
+    setEnvDirty(false);
+    setArgsDirty(false);
+    setMcpDirty(false);
+    setMcpErr("");
+    setRecentShown(5);
     Promise.all([getAgent(agentId), listAgentTasks(agentId), getWorkspaceAgentActivity30d(), listRuntimes()]).then(
       ([a, ts, act, rts]) => {
         if (!alive) return;
@@ -209,11 +218,13 @@ export default function WorkerDetailView({
     return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
   }, [terminal]);
 
+  // 返回服务端归一后的 agent,调用方用它回填草稿(保存后草稿=落库值,codex 双审 finding)。
   const patchAgent = async (req: Parameters<typeof updateAgent>[1]) => {
     setBusy(true);
     try {
       const next = await updateAgent(agentId, req);
       setAgent(next);
+      return next;
     } finally {
       setBusy(false);
     }
@@ -446,7 +457,8 @@ export default function WorkerDetailView({
                     className="wkd-save-btn"
                     disabled={!insDirty || busy}
                     onClick={async () => {
-                      await patchAgent({ instructions: insDraft });
+                      const next = await patchAgent({ instructions: insDraft });
+                      setInsDraft(next.instructions);
                       setInsDirty(false);
                     }}
                   >
@@ -610,7 +622,10 @@ export default function WorkerDetailView({
                     className="wkd-save-btn"
                     disabled={!argsDirty || busy}
                     onClick={async () => {
-                      await patchAgent({ custom_args: argsDraft.map((a) => a.trim()).filter(Boolean) });
+                      const next = await patchAgent({
+                        custom_args: argsDraft.map((a) => a.trim()).filter(Boolean),
+                      });
+                      setArgsDraft(next.custom_args);
                       setArgsDirty(false);
                     }}
                   >

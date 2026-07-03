@@ -257,14 +257,17 @@ export function tasksOf(agentId: string): AgentTask[] {
     .map((x) => ({ ...x }));
 }
 
+// 稳定 seed:取 agent id 数字部分,归档/恢复不改变其它 worker 的伪随机历史(codex 双审 finding)。
+const seedOf = (agentId: string) => Number(agentId.replace(/\D/g, "")) || 1;
+
 // 30 天运行数(与 30 天桶同一伪随机源,数字与柱子一致)。
 export function runCounts(): AgentRunCount[] {
   seed();
   return agents
     .filter((a) => !a.archived_at)
-    .map((a, ai) => ({
+    .map((a) => ({
       agent_id: a.id,
-      run_count: activityOf(a.id, ai).reduce((s, b) => s + b.task_count, 0),
+      run_count: activityOf(a.id, seedOf(a.id)).reduce((s, b) => s + b.task_count, 0),
     }));
 }
 
@@ -286,7 +289,7 @@ function activityOf(agentId: string, ai: number): AgentActivityBucket[] {
 
 export function activity30d(): AgentActivityBucket[] {
   seed();
-  return agents.filter((a) => !a.archived_at).flatMap((a, ai) => activityOf(a.id, ai));
+  return agents.filter((a) => !a.archived_at).flatMap((a) => activityOf(a.id, seedOf(a.id)));
 }
 
 // ── 变更 ──

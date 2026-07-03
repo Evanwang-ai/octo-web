@@ -2,7 +2,7 @@
 // 绞杀式迁移完成(2026-07-03):最后一个 iframe 表面(收件箱)已换 InboxView,iframe 机器整体拆除。
 // view 状态机:matters 列表 / detail 详情 / cards 经验 / automation 自动化 / projects·projectDetail 项目 / inbox 收件箱。
 // portal 到 document.body 覆盖 56px NavRail 右侧全区(复刻 MatterWorkspace:contentLeft 祖先 transform 困住 fixed)。
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WKApp } from "@octo/base";
 import {
@@ -22,6 +22,7 @@ import ProjectDetailView from "./ProjectDetailView";
 import InboxView from "./InboxView";
 import WorkersView from "./WorkersView";
 import WorkerDetailView from "./WorkerDetailView";
+import CommandPalette from "./CommandPalette";
 
 type View =
   | "matters"
@@ -46,6 +47,10 @@ export default function MatterRouteHost() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [projectDetailId, setProjectDetailId] = useState<string | null>(null);
   const [workerId, setWorkerId] = useState<string | null>(null);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+  // ref 镜像:全局 keydown 监听(空依赖只注册一次)读它,避免 stale 闭包。
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   // matter 鉴权断言:随 token/space 变化同步 localStorage(matter 域 SPA 同源读取,如直开 /matter/ui/)。
   const token = WKApp.loginInfo.token || "";
@@ -161,10 +166,20 @@ export default function MatterRouteHost() {
     const pending = takePendingMatterDetailId();
     if (pending) openDetail(pending);
 
+    // ⌘K/Ctrl+K:loop 板块激活时唤起命令面板(Wave A-4)。
+    const onKeydown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && activeRef.current) {
+        e.preventDefault();
+        setCmdkOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKeydown);
+
     WKApp.mittBus.on("wk:nav-menu-activated", onMenu);
     WKApp.mittBus.on("wk:open-matter-workspace", onOpenWorkspace);
     WKApp.mittBus.on("wk:open-matter-detail", onOpenDetail);
     return () => {
+      window.removeEventListener("keydown", onKeydown);
       WKApp.mittBus.off("wk:nav-menu-activated", onMenu);
       WKApp.mittBus.off("wk:open-matter-workspace", onOpenWorkspace);
       WKApp.mittBus.off("wk:open-matter-detail", onOpenDetail);
@@ -205,6 +220,12 @@ export default function MatterRouteHost() {
           {view === "workerDetail" && workerId && (
             <WorkerDetailView key={workerId} agentId={workerId} onBack={showWorkers} />
           )}
+          <CommandPalette
+            open={cmdkOpen}
+            onClose={() => setCmdkOpen(false)}
+            onOpenMatter={openDetail}
+            onOpenProject={openProjectDetail}
+          />
         </div>
       </div>
     </div>,

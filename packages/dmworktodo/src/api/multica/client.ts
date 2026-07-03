@@ -189,13 +189,14 @@ export function deriveActivityBuckets(
   agentId: string,
 ): ActivityDay[] {
   const out: ActivityDay[] = Array.from({ length: 30 }, () => ({ total: 0, failed: 0 }));
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // 全程用 UTC 日号比较(bucket_at 是 UTC 午夜锚):本地日界转换会在西半球时区错位一天。
+  const MS_DAY = 86_400_000;
+  const todayUtc = Math.floor(Date.now() / MS_DAY);
   for (const b of buckets) {
     if (b.agent_id !== agentId) continue;
-    const d = new Date(b.bucket_at);
-    d.setHours(0, 0, 0, 0);
-    const daysAgo = Math.round((today.getTime() - d.getTime()) / 86_400_000);
+    const t = new Date(b.bucket_at).getTime();
+    if (Number.isNaN(t)) continue;
+    const daysAgo = todayUtc - Math.floor(t / MS_DAY);
     if (daysAgo < 0 || daysAgo > 29) continue;
     out[29 - daysAgo] = { total: b.task_count, failed: b.failed_count };
   }
