@@ -230,6 +230,7 @@ export interface TimelineReq {
   channel_name?: string;
   participant_uid?: string;
   msgs?: ExtractMessage[];
+  parent_entry_id?: string; // 批注/回复挂靠的父条目(vanilla inline reply)
 }
 
 /** @deprecated 使用 TimelineAttachmentReq 替代 */

@@ -66,6 +66,7 @@ import MatterComposer from "./MatterComposer";
 import ExperiencePanel from "./ExperiencePanel";
 import AttachmentPreview from "./AttachmentPreview";
 import AgentCardModal from "./AgentCardModal";
+import AnnotateLayer from "./AnnotateLayer";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
@@ -982,7 +983,7 @@ export default function MatterDetailView({
                     <span className="mdv-tl-time">{relTime(e.created_at)}</span>
                   </div>
                   {e.content && (
-                    <div className="mdv-tl-content">
+                    <div className="mdv-tl-content" data-annot-entry={e.id}>
                       <MarkdownContent content={e.content} />
                     </div>
                   )}
@@ -1184,6 +1185,17 @@ export default function MatterDetailView({
       {agentCardUid && (
         <AgentCardModal uid={agentCardUid} onClose={() => setAgentCardUid(null)} />
       )}
+
+      {/* 选中文字批注(欠账 §9-③ annotFab):动态卡内选中→圈一笔→timeline+feedback 双写 */}
+      <AnnotateLayer
+        matterId={matterId}
+        onDone={() => {
+          reloadTimeline();
+          reloadActivities();
+          const gen = ++writeGenRef.current;
+          getMatter(matterId).then((m) => applyIfLatest(gen, m as MatterDetailFull));
+        }}
+      />
 
       {/* 优先级快改菜单(单实例,数据驱动) */}
       {satOpen && (
