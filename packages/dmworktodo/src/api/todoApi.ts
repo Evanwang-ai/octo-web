@@ -628,3 +628,43 @@ export async function updateSchedule(
 export async function deleteSchedule(id: string): Promise<void> {
   return del<void>(`/schedules/${id}`);
 }
+
+/**
+ * 回路附件上传(vanilla uploadMatterAttachment L5815 直译):octo-server 用户态上传,
+ * 同源 /api/v1/file/upload(token 头),返回 TimelineAttachmentReq 形状,挑完即传随下条发送。
+ */
+export async function uploadMatterAttachment(
+  file: File,
+  matterId: string,
+): Promise<{ file_url: string; file_name: string; file_size: number; mime_type: string | null }> {
+  const safe = String(file.name || "file").replace(/[^\w.一-龥-]+/g, "_");
+  const path = `matter/${matterId || "new"}/${Date.now()}_${safe}`;
+  const fd = new FormData();
+  fd.append("file", file);
+  if (file.type) fd.append("contenttype", file.type);
+  const token = WKApp.loginInfo.token;
+  const res = await fetch(`/api/v1/file/upload?type=common&path=${encodeURIComponent(path)}`, {
+    method: "POST",
+    headers: token ? { token } : undefined,
+    body: fd,
+  });
+  if (!res.ok) {
+    let msg = `上传失败 ${res.status}`;
+    try {
+      const j = (await res.json()) as { msg?: string };
+      if (j?.msg) msg = j.msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  const j = (await res.json()) as { path?: string; name?: string; size?: number };
+  let u = j.path || "";
+  if (u && !u.startsWith("http")) u = `${location.origin}/api/v1/${u.replace(/^\/+/, "")}`;
+  return {
+    file_url: u,
+    file_name: j.name || safe,
+    file_size: j.size || file.size || 0,
+    mime_type: file.type || null,
+  };
+}

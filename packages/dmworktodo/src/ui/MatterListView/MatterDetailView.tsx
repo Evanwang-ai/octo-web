@@ -61,6 +61,7 @@ import { resolveAndGuardUrl } from "../../utils/fileUrl";
 import { StatusIcon, PriorityIcon, STATUS_LABEL } from "./icons";
 import { priorityMenu, statusMenu } from "./rowMenus";
 import PlanGraph from "./PlanGraph";
+import MatterComposer from "./MatterComposer";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
@@ -840,27 +841,19 @@ export default function MatterDetailView({
         )}
 
         <div className="mdv-composer">
-          <input
-            className="mdv-input"
-            aria-label="添加进展"
-            placeholder="说一句 — 会记进这单的动态"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
+          {/* 族② composer(vanilla 轻路径):@提及 4→3 组 picker + 附件挑完即传 + feedback/timeline 双路 */}
+          <MatterComposer
+            matter={matter}
+            onSent={() => {
+              reloadTimeline();
+              reloadActivities(); // feedback 会落一条「圈了一笔」活动
+
+              // feedback 可能翻状态(review→in_progress),同步重拉本单。
+              getMatter(matterId).then((m) => {
+                if (mountedRef.current) setMatter((prev) => ({ ...prev, ...m }));
+              });
             }}
           />
-          <button
-            className="mdv-send"
-            type="button"
-            onClick={send}
-            disabled={sending || !draft.trim()}
-          >
-            发送
-          </button>
         </div>
       </div>
 
