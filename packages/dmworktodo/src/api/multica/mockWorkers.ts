@@ -273,7 +273,11 @@ export function runCounts(): AgentRunCount[] {
 
 function activityOf(agentId: string, ai: number): AgentActivityBucket[] {
   const out: AgentActivityBucket[] = [];
+  // 伪随机历史只属于 seed 内置 worker;运行期新建(id 带 -t)从零开始(边态自查 finding)。
+  if (agentId.includes("-t")) return out;
+  const createdAt = new Date(agents.find((a) => a.id === agentId)?.created_at || 0).getTime();
   for (let d = 0; d < 30; d++) {
+    if (Date.now() - d * DAY < createdAt) continue;
     const r = prand(ai + 1, d + 40);
     if (r < 0.45) continue; // 稀疏:只返回有 completion 的天(契约行为)
     const cnt = 1 + Math.floor(r * 4);

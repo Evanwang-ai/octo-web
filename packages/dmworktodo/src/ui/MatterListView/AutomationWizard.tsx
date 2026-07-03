@@ -202,7 +202,15 @@ export default function AutomationWizard({
             <>
               <label className="awz-field">
                 <span>执行方(bot)</span>
-                <select className="awz-input" value={executorUid} onChange={(e) => setExecutorUid(e.target.value)}>
+                <select
+                  className="awz-input"
+                  value={executorUid}
+                  onChange={(e) => {
+                    setExecutorUid(e.target.value);
+                    // 切执行方即失效旧目标群(旧 channels 未刷新前 save 会误判有效——codex 统审严重项)。
+                    setTargetChannelId("");
+                  }}
+                >
                   <option value="">选择执行 bot</option>
                   {botOptions.map((m) => (
                     <option key={m.uid} value={m.uid}>

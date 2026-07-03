@@ -1,7 +1,7 @@
 /**
  * [INPUT]: 无(纯函数)。
  * [OUTPUT]: cronHuman(cron 5 段 → 人话:每天/工作日/每周X/每月X号;步进/范围/高级原样)。
- * [POS]: MatterListView 自动化的 cron 人话工具,AutomationView(列表)+ ScheduleModal(编辑预览)共用。
+ * [POS]: MatterListView 自动化的 cron 人话工具,AutomationView(列表)+ AutomationWizard(编辑预览)+ AutomationDetailView 共用。
  *        对齐 vanilla parseCronSimple。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */

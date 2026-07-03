@@ -1,8 +1,8 @@
 /**
  * [INPUT]: 依赖 api/todoApi 的 listSchedules/updateSchedule/listProjects;./automationCron 的 cronHuman;
- *          ./ScheduleModal(原生 create/edit modal);utils/toast;../UserName。
+ *          ./AutomationWizard(三步向导 create/edit,D6);utils/toast;../UserName。
  * [OUTPUT]: 默认导出 AutomationView(原生自动化页:schedule 卡列表 + cron 人话 + enabled 开关 +
- *          原生 ScheduleModal 新建/编辑,内部 editing 状态驱动)。
+ *          三步向导新建/编辑(AutomationWizard),内部 editing 状态驱动;行点击进详情页)。
  * [POS]: dmworktodo/ui/MatterListView 的自动化(automation)视图,被 MatterRouteHost 以 view="automation" 挂载(替 iframe);
  *        真相源 vanilla feat/loop renderAutomation。**巨型 modal 已原生化,自动化编辑器 iframe 已杀**。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -48,10 +48,13 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
   }, []);
 
   // 每卡状态点串(run 历史 mock;接线换 §1.10 真端点)。
+  // 依赖 id 集合而非数组引用:开关乐观更新/重载不触发全量重拉(codex 统审)。
+  const scheduleIdsKey = useMemo(() => schedules.map((s) => s.id).sort().join(","), [schedules]);
   useEffect(() => {
-    if (schedules.length === 0) return;
+    if (!scheduleIdsKey) return;
     let alive = true;
-    Promise.all(schedules.map((s) => listAutopilotRuns(s.id).then((rs) => [s.id, rs] as const))).then(
+    const ids = scheduleIdsKey.split(",");
+    Promise.all(ids.map((id) => listAutopilotRuns(id).then((rs) => [id, rs] as const))).then(
       (pairs) => {
         if (alive) setRunsMap(Object.fromEntries(pairs));
       },
@@ -59,7 +62,8 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
     return () => {
       alive = false;
     };
-  }, [schedules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleIdsKey]);
 
   const reloadSchedules = useCallback(() => {
     listSchedules()

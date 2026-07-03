@@ -43,6 +43,7 @@ export default function AutomationDetailView({
 }) {
   const [editing, setEditing] = useState<Schedule | null>(null);
   const [sched, setSched] = useState<Schedule | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [runs, setRuns] = useState<AutopilotRunLite[]>([]);
   const [busy, setBusy] = useState(false);
   const [delArmed, setDelArmed] = useState(false);
@@ -50,7 +51,9 @@ export default function AutomationDetailView({
   const reload = async () => {
     // matter 后端无 GET /schedules/{id},靠列表缓存取详情(与项目详情同款兜底)。
     const list = await listSchedules();
-    setSched(list.find((s) => s.id === scheduleId) || null);
+    const hit = list.find((s) => s.id === scheduleId) || null;
+    setSched(hit);
+    setNotFound(!hit);
   };
 
   useEffect(() => {
@@ -62,7 +65,18 @@ export default function AutomationDetailView({
   if (!sched) {
     return (
       <div className="av-root">
-        <div className="avd-loading">加载中…</div>
+        <div className="avd-loading">
+          {notFound ? (
+            <>
+              这条自动化不存在或已删除。
+              <button type="button" className="avd-btn" style={{ marginLeft: 8 }} onClick={onBack}>
+                返回列表
+              </button>
+            </>
+          ) : (
+            "加载中…"
+          )}
+        </div>
       </div>
     );
   }
