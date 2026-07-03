@@ -84,6 +84,8 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
     else onOpenProject(it.project.id);
   };
 
+  const activeAgents = useMemo(() => agents.filter((a) => !a.archived_at), [agents]);
+
   // 快速建单:worker=null 先存草稿(backlog);选 worker 则发车(open)+ 派单预告(mock 期指派接线后生效)。
   const quickCreate = async (worker: Agent | null) => {
     const title = query.trim();
@@ -120,18 +122,29 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
+            // 派单段:↑↓/Enter 作用于派单选项(0=草稿,1..N=worker);Esc 先退回搜索段。
+            const max = dispatching ? activeAgents.length : items.length - 1;
             if (e.key === "Escape") {
               e.preventDefault();
-              onClose();
+              if (dispatching) setDispatching(false);
+              else onClose();
             } else if (e.key === "ArrowDown") {
               e.preventDefault();
-              setCursor((c) => Math.max(0, Math.min(c + 1, items.length - 1)));
+              setCursor((c) => Math.max(0, Math.min(c + 1, max)));
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
               setCursor((c) => Math.max(c - 1, 0));
-            } else if (e.key === "Enter" && items[cursor]) {
+            } else if (e.key === "Enter") {
               e.preventDefault();
-              pick(items[cursor]);
+              if (dispatching) {
+                if (cursor === 0) quickCreate(null);
+                else if (activeAgents[cursor - 1]) quickCreate(activeAgents[cursor - 1]);
+              } else if (items[cursor]) {
+                pick(items[cursor]);
+              } else if (canQuick) {
+                setDispatching(true);
+                setCursor(0);
+              }
             }
           }}
         />
@@ -139,20 +152,31 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
           {dispatching ? (
             <>
               <div className="cmdk-group">派给谁?(快速建单)</div>
-              <button type="button" className="cmdk-item" disabled={busy} onClick={() => quickCreate(null)}>
+              <button
+                type="button"
+                className={`cmdk-item${cursor === 0 ? " is-active" : ""}`}
+                disabled={busy}
+                onMouseEnter={() => setCursor(0)}
+                onClick={() => quickCreate(null)}
+              >
                 <StatusIcon status="backlog" size={14} />
                 <span className="cmdk-item-title">先存草稿,不派 Run</span>
                 <span className="cmdk-item-meta">草稿 · 发车后开始执行</span>
               </button>
-              {agents
-                .filter((a) => !a.archived_at)
-                .map((a) => (
-                  <button key={a.id} type="button" className="cmdk-item" disabled={busy} onClick={() => quickCreate(a)}>
-                    <WorkerAvatar name={a.name} size={18} />
-                    <span className="cmdk-item-title">{a.name}</span>
-                    <span className="cmdk-item-meta">发车并派首个 Run(接线后生效)</span>
-                  </button>
-                ))}
+              {activeAgents.map((a, i) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className={`cmdk-item${cursor === i + 1 ? " is-active" : ""}`}
+                  disabled={busy}
+                  onMouseEnter={() => setCursor(i + 1)}
+                  onClick={() => quickCreate(a)}
+                >
+                  <WorkerAvatar name={a.name} size={18} />
+                  <span className="cmdk-item-title">{a.name}</span>
+                  <span className="cmdk-item-meta">发车并派首个 Run(接线后生效)</span>
+                </button>
+              ))}
             </>
           ) : items.length === 0 && !canQuick ? (
             <div className="cmdk-empty">没有匹配的结果</div>
@@ -196,7 +220,10 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
               <button
                 type="button"
                 className="cmdk-item is-action"
-                onClick={() => setDispatching(true)}
+                onClick={() => {
+                  setDispatching(true);
+                  setCursor(0);
+                }}
               >
                 <span className="cmdk-plus">+</span>
                 <span className="cmdk-item-title">快速建单:「{query.trim()}」</span>
