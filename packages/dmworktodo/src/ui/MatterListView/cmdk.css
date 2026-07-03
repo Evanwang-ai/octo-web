@@ -10,7 +10,7 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.32);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -23,7 +23,7 @@
   background: var(--wk-bg-base);
   border: 1px solid var(--wk-border-default);
   border-radius: 12px;
-  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--wk-shadow-modal, 0 12px 48px rgba(0, 0, 0, 0.18));
   overflow: hidden;
   display: flex;
   flex-direction: column;

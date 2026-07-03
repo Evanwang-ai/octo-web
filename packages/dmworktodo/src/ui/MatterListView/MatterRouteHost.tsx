@@ -167,11 +167,15 @@ export default function MatterRouteHost() {
     if (pending) openDetail(pending);
 
     // ⌘K/Ctrl+K:loop 板块激活时唤起命令面板(Wave A-4)。
+    // 可编辑区聚焦时不劫持(聊天输入框等场景,codex 双审 finding);面板自身输入框例外(⌘K 再按=关)。
     const onKeydown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && activeRef.current) {
-        e.preventDefault();
-        setCmdkOpen((v) => !v);
-      }
+      if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && activeRef.current)) return;
+      const el = e.target as HTMLElement | null;
+      const editable =
+        el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (editable && !el.closest(".cmdk-panel")) return;
+      e.preventDefault();
+      setCmdkOpen((v) => !v);
     };
     window.addEventListener("keydown", onKeydown);
 

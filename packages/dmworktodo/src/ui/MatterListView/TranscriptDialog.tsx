@@ -40,9 +40,13 @@ function summaryOf(it: TimelineItem): string {
     const input = it.input || {};
     for (const key of ["command", "query", "file_path", "path", "pattern", "description", "prompt", "url"]) {
       const v = input[key];
-      if (typeof v === "string" && v.trim()) return v;
+      if (typeof v === "string" && v.trim()) return v.slice(0, 200);
     }
-    return JSON.stringify(input).slice(0, 200);
+    try {
+      return JSON.stringify(input).slice(0, 200);
+    } catch {
+      return "[无法序列化的入参]";
+    }
   }
   if (it.type === "tool_result") return (it.output || "").replace(/\s+/g, " ").trim().slice(0, 200);
   const firstLine = (it.content || "").split("\n").find((l) => l.trim());
@@ -65,8 +69,13 @@ function durationOf(task: AgentTask): string {
 
 function DetailPre({ it }: { it: TimelineItem }) {
   let text = "";
-  if (it.type === "tool_use") text = JSON.stringify(it.input ?? {}, null, 2);
-  else if (it.type === "tool_result") {
+  if (it.type === "tool_use") {
+    try {
+      text = JSON.stringify(it.input ?? {}, null, 2);
+    } catch {
+      text = "[无法序列化的入参(循环引用)]";
+    }
+  } else if (it.type === "tool_result") {
     text = it.output || "";
     if (text.length > 4000) text = `${text.slice(0, 4000)}\n… (已截断)`;
   } else text = it.content || "";
@@ -87,6 +96,9 @@ export default function TranscriptDialog({
 
   useEffect(() => {
     let alive = true;
+    // 换 Run 时回加载态并清空展开集(防御:当前入口每次重开 Dialog,但同实例切换也要正确)。
+    setItems(null);
+    setOpenSeqs(new Set());
     listTaskMessages(task.id).then((msgs) => {
       if (alive) setItems(buildTimeline(msgs));
     });

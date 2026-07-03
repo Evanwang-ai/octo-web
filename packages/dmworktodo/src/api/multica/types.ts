@@ -205,3 +205,74 @@ export interface TaskMessagePayload {
   output?: string; // tool_result 输出(纯字符串)
   created_at?: string;
 }
+
+// ═══ 小队 Squads —— 契约对照表 §1.9,照抄 multica core/types/squad.ts ═══
+
+export type SquadMemberType = "agent" | "member";
+
+// 列表头像堆用的轻量预览(Squad.member_preview)。
+export interface SquadMemberPreview {
+  member_type: SquadMemberType;
+  member_id: string;
+  role: string;
+}
+
+export interface Squad {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string;
+  instructions: string; // Squad Instructions(创建不含,建后 PUT 补——契约坑)
+  avatar_url: string | null;
+  leader_id: string; // leader 恒为 agent
+  creator_id: string;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+  archived_by: string | null;
+  member_count?: number; // 列表专用
+  member_preview?: SquadMemberPreview[]; // 列表专用
+}
+
+export interface SquadMember {
+  id: string;
+  squad_id: string;
+  member_type: SquadMemberType;
+  member_id: string;
+  role: string;
+  created_at: string;
+}
+
+// POST /api/squads —— 注意:req 无 instructions 字段(建后走 PUT 补)。
+export interface CreateSquadRequest {
+  name: string;
+  description?: string;
+  leader_id: string;
+  avatar_url?: string;
+}
+
+export interface UpdateSquadRequest {
+  name?: string;
+  description?: string;
+  instructions?: string;
+  leader_id?: string;
+  avatar_url?: string;
+}
+
+// GET /squads/{id}/members/status:5 态 + 人类成员 status=null(无状态灯)。
+export type SquadMemberStatusValue = "working" | "idle" | "offline" | "unstable" | "archived";
+
+export interface SquadActiveIssueBrief {
+  issue_id: string;
+  identifier: string;
+  title: string;
+  issue_status: string;
+}
+
+export interface SquadMemberStatus {
+  member_type: SquadMemberType;
+  member_id: string;
+  status: SquadMemberStatusValue | null;
+  active_issues: SquadActiveIssueBrief[];
+  last_active_at: string | null;
+}

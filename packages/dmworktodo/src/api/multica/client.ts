@@ -250,13 +250,15 @@ export function buildTimeline(msgs: TaskMessagePayload[]): TimelineItem[] {
   const out: TimelineItem[] = [];
   for (const m of sorted) {
     const prev = out[out.length - 1];
+    // 仅当前一条有正文才并入(空占位不吸收后续正文,避免 seq/时刻错位——codex 双审 finding)。
     if (
       prev &&
       (m.type === "text" || m.type === "thinking") &&
       prev.type === m.type &&
-      m.content
+      m.content &&
+      prev.content
     ) {
-      prev.content = `${prev.content || ""}${m.content}`;
+      prev.content = `${prev.content}${m.content}`;
       continue;
     }
     out.push({

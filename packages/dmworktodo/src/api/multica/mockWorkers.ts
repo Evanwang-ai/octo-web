@@ -419,7 +419,13 @@ export function messagesOf(taskId: string): TaskMessagePayload[] {
         },
         28,
       ),
-      msg({ type: "error", content: t.error || "执行失败" }, 640),
+      msg(
+        { type: "error", content: t.error || "执行失败" },
+        // error 时刻对齐 Run 的 completed_at(codex 双审:固定偏移会晚于行内时长)
+        t.completed_at
+          ? Math.max(30, Math.round((new Date(t.completed_at).getTime() - new Date(base).getTime()) / 1000))
+          : 30,
+      ),
     );
   } else if (t.status === "cancelled") {
     out.push(msg({ type: "text", content: "收到取消指令,已停止后续步骤并清理临时文件。" }, 40));

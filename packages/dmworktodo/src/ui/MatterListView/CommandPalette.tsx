@@ -62,7 +62,11 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
     ];
   }, [query, matters, projects]);
 
+  // query 变化归零;数据源返回后 items 变短也把 cursor 收回界内(空结果=0,防 -1/越界)。
   useEffect(() => setCursor(0), [query]);
+  useEffect(() => {
+    setCursor((c) => Math.max(0, Math.min(c, items.length - 1)));
+  }, [items.length]);
 
   const pick = (it: Item) => {
     onClose();
@@ -94,7 +98,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
               onClose();
             } else if (e.key === "ArrowDown") {
               e.preventDefault();
-              setCursor((c) => Math.min(c + 1, items.length - 1));
+              setCursor((c) => Math.max(0, Math.min(c + 1, items.length - 1)));
             } else if (e.key === "ArrowUp") {
               e.preventDefault();
               setCursor((c) => Math.max(c - 1, 0));
