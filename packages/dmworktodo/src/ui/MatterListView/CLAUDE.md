@@ -35,6 +35,11 @@ detail.css: 详情 + Inspector 样式,全 `--wk-*`。markdown 场景矫正(.wk-m
 InboxView.tsx: **原生收件箱(2026-07-03,方向A Wave A-1,替掉全站最后一个 iframe)**——split-pane:380px 列表列(头部 44px「收件箱+未读数+⋯批量菜单」/行=头像+未读点+标题+hover归档+状态图标+摘要行+紧凑相对时间)+ 阅读窗(issue_id→内嵌 MatterDetailView backLabel="收件箱";纯系统信→轻量卡 MarkdownContent;未选→空态)。结构镜像 multica views/inbox(18型摘要 switch=inbox-detail-label、去重=deduplicateInboxItems、选中即读、批量四件);视觉=Linear INBOX 截图+Linear-2 figma 实测(行内缩8px圆角8px/gap 1px/13·12px 字阶);文案过词表(issue→回路/agent→worker/task→执行)。数据走 api/multica/client(mock 换源点);变更 emit wk:inbox-changed→NavRail badge 刷新(module.tsx 注册,首拉延后4s+space-changed 监听)。欢迎系统信=契约表§2.3-⑫ 前端本地注入。
 inbox.css: 收件箱样式(.ibx-*):列表列/行/批量头/阅读窗轻量卡/空态/骨架屏,全 --wk-*,实测值来自 Linear-2 figma node 4:521。
 MatterDetailView.tsx 补:**backLabel prop**(默认"全部回路";收件箱内嵌传"收件箱",修面包屑词漂)。
+WorkersView.tsx: **worker 列表(2026-07-03,方向A Wave A-2 ⭐)**——loop 板块内(会2拍板,子导航第五项);scope 三档(我的/全部/已归档)+ 表格行 64px 双行(合成首字头像+presence 状态点/名+私有锁+描述/状态含 workload 后缀"在线·N个任务"/所有者/设备/最近活跃/RUNS 右对齐);统计三端点一次拉取+前端 Map 派生(镜像 multica agents-page,无 N+1);默认排序=最近活跃。新建按钮 disabled(建虾流依赖设备/模型轮询,接线后开放)。导出 WorkerAvatar 供详情复用。
+WorkerDetailView.tsx: **worker 详情多 tab(Wave A-2 ⭐)**——面包屑+presence pill+归档/恢复;左 Inspector 320px(身份卡/属性:设备·模型·思考力度·可见性·并发/详情:所有者·创建·更新/技能 chips,V1 只读——设备/模型选择器依赖 initiateListModels 轮询,接线欠账);右 7 tab:动态(当前活跃 Run+近30天卡[次数/成功率/平均时长/Sparkline 堆叠柱含失败红顶]+最近工作分页)/Runs 全量/Instructions textarea 编辑保存/技能列表/环境变量 **reveal-first**(数量+锁→显示并编辑→password 掩码行+眼睛+增删,"****"保留语义在 mock 层)/自定义参数行编辑/MCP JSON 校验编辑(redacted 只读态)。写路径 E2E 验证(编辑→保存→remount 重拉仍在)。
+workers.css / workerDetail.css: worker 域样式(.wkr-*/.wkd-*),结构参照 multica agents-page(ROW 64/grid 列/320px inspector)+ Bus/Multica 截图,颜色全 --wk-*。
+MatterSubNav.tsx 更新:SubNavKey 加 "workers",五项(全部回路/项目/自动化/worker/经验),BotIcon 内联。
+MatterRouteHost.tsx 更新:view 加 workers/workerDetail,showWorkers/openWorkerDetail。
 
 法则: 成员完整·一行一文件·复用设计系统件·真相源 vanilla feat/loop·不碰 Go 后端
 

@@ -1,8 +1,8 @@
-// L3 | MatterSubNav — Matter 模块左侧子导航(全部回路/项目/自动化/经验)。
-// 统一导航源:全部回路→原生列表;项目/自动化/经验→iframe(绞杀式,各表面 React 化后改原生)。
+// L3 | MatterSubNav — Matter 模块左侧子导航(全部回路/项目/自动化/worker/经验)。
+// 五项全部原生视图;worker 域收在 loop 板块内(2026-07 会2拍板,不进全局导航)。
 import React from "react";
 
-export type SubNavKey = "matters" | "projects" | "automation" | "cards";
+export type SubNavKey = "matters" | "projects" | "automation" | "workers" | "cards";
 
 function ListIcon() {
   return (
@@ -38,10 +38,23 @@ function DocIcon() {
   );
 }
 
+function BotIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <rect x="3" y="5.5" width="10" height="7.5" rx="2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 5.5V3.2M8 3.2a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="6" cy="9" r="0.9" fill="currentColor" />
+      <circle cx="10" cy="9" r="0.9" fill="currentColor" />
+      <path d="M6.5 11.2h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 const ITEMS: Array<{ key: SubNavKey; label: string; icon: React.ReactNode }> = [
   { key: "matters", label: "全部回路", icon: <ListIcon /> },
   { key: "projects", label: "项目", icon: <FolderIcon /> },
   { key: "automation", label: "自动化", icon: <ClockIcon /> },
+  { key: "workers", label: "worker", icon: <BotIcon /> },
   { key: "cards", label: "经验", icon: <DocIcon /> },
 ];
 

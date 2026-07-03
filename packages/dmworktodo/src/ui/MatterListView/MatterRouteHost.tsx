@@ -20,6 +20,8 @@ import AutomationView from "./AutomationView";
 import ProjectsView from "./ProjectsView";
 import ProjectDetailView from "./ProjectDetailView";
 import InboxView from "./InboxView";
+import WorkersView from "./WorkersView";
+import WorkerDetailView from "./WorkerDetailView";
 
 type View =
   | "matters"
@@ -28,7 +30,9 @@ type View =
   | "cards"
   | "automation"
   | "projects"
-  | "projectDetail";
+  | "projectDetail"
+  | "workers"
+  | "workerDetail";
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -41,6 +45,7 @@ export default function MatterRouteHost() {
   const [section, setSection] = useState<SubNavKey>("matters");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [projectDetailId, setProjectDetailId] = useState<string | null>(null);
+  const [workerId, setWorkerId] = useState<string | null>(null);
 
   // matter 鉴权断言:随 token/space 变化同步 localStorage(matter 域 SPA 同源读取,如直开 /matter/ui/)。
   const token = WKApp.loginInfo.token || "";
@@ -96,8 +101,20 @@ export default function MatterRouteHost() {
     setActive(true);
     setView("inbox");
   };
+  // worker 域(loop 板块内,会2拍板):列表 + 详情。
+  const showWorkers = () => {
+    setActive(true);
+    setView("workers");
+    setSection("workers");
+  };
+  const openWorkerDetail = (id: string) => {
+    setActive(true);
+    setSection("workers");
+    setWorkerId(id);
+    setView("workerDetail");
+  };
 
-  // 子导航四项全部原生视图。
+  // 子导航五项全部原生视图。
   const onNavigate = (key: SubNavKey) => {
     if (key === "matters") {
       showMatterList();
@@ -107,6 +124,8 @@ export default function MatterRouteHost() {
       showAutomation();
     } else if (key === "projects") {
       showProjects();
+    } else if (key === "workers") {
+      showWorkers();
     }
   };
 
@@ -182,6 +201,10 @@ export default function MatterRouteHost() {
             />
           )}
           {view === "inbox" && <InboxView />}
+          {view === "workers" && <WorkersView onOpenDetail={openWorkerDetail} />}
+          {view === "workerDetail" && workerId && (
+            <WorkerDetailView key={workerId} agentId={workerId} onBack={showWorkers} />
+          )}
         </div>
       </div>
     </div>,

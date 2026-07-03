@@ -1,0 +1,315 @@
+/**
+ * [INPUT]: dmworkbase 设计系统 --wk-* 变量。
+ * [OUTPUT]: WorkersView + WorkerDetailView 样式(.wkr-*):列表(scope pills/表格行 64px 双行)
+ *           与详情(左 Inspector 320px + 右 tabs)。
+ * [POS]: dmworktodo/ui/MatterListView 的 worker 域样式。结构参照 multica agents-page
+ *        (ROW_HEIGHT 64/双行/grid 列)+ Bus/Multica 截图;颜色仅 --wk-*。
+ * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
+ */
+
+.wkr-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--wk-bg-base);
+}
+
+/* ── 头部 ── */
+.wkr-head {
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--wk-border-default);
+}
+
+.wkr-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.wkr-count {
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+}
+
+.wkr-head-hint {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+}
+
+.wkr-head-spacer {
+  flex: 1;
+}
+
+.wkr-new-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--wk-brand-primary, #1b1b1b);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.wkr-new-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── scope pills ── */
+.wkr-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+}
+
+.wkr-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.wkr-scope.is-active {
+  background: var(--wk-bg-selected);
+  border-color: transparent;
+  color: var(--wk-text-primary);
+  font-weight: 500;
+}
+
+.wkr-scope-n {
+  color: var(--wk-text-tertiary);
+  font-size: 11px;
+}
+
+/* ── 表格(grid 列模板对齐 multica GRID_COLS 语义)── */
+.wkr-table-head,
+.wkr-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.6fr) 150px 150px 170px 110px 80px;
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 16px;
+}
+
+.wkr-table-head {
+  height: 32px;
+  font-size: 11px;
+  color: var(--wk-text-tertiary);
+  border-bottom: 1px solid var(--wk-border-default);
+}
+
+.wkr-th-runs {
+  text-align: right;
+}
+
+.wkr-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.wkr-row {
+  width: 100%;
+  height: 64px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.wkr-row:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wkr-cell-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wkr-name-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.wkr-name-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.wkr-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wkr-lock {
+  color: var(--wk-text-tertiary);
+  flex-shrink: 0;
+}
+
+.wkr-desc {
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 合成头像 + 状态点 */
+.wkr-avatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.wkr-avatar-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.wkr-avatar-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--wk-bg-base);
+}
+
+.wkr-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: 0;
+}
+
+.wkr-avatar-dot.is-online,
+.wkr-dot.is-online {
+  background: var(--wk-color-success);
+}
+
+.wkr-avatar-dot.is-unstable,
+.wkr-dot.is-unstable {
+  background: var(--wk-color-warning);
+}
+
+.wkr-avatar-dot.is-offline,
+.wkr-dot.is-offline {
+  background: var(--wk-text-disabled);
+}
+
+.wkr-avatar-dot.is-archived,
+.wkr-dot.is-archived {
+  background: var(--wk-text-disabled);
+}
+
+.wkr-cell-status {
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wkr-busy {
+  color: var(--wk-text-tertiary);
+}
+
+.wkr-cell-owner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.wkr-cell-runtime,
+.wkr-cell-active {
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wkr-cell-runs {
+  font-size: 12px;
+  color: var(--wk-text-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 空态/骨架 ── */
+.wkr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: var(--wk-text-tertiary);
+  font-size: 13px;
+}
+
+.wkr-skel {
+  padding: 8px 16px;
+}
+
+.wkr-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 64px;
+}
+
+.wkr-skel-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--wk-bg-hover);
+  animation: ibx-pulse 1.4s ease-in-out infinite;
+}
+
+.wkr-skel-bar {
+  height: 10px;
+  border-radius: 4px;
+  background: var(--wk-bg-hover);
+  animation: ibx-pulse 1.4s ease-in-out infinite;
+}
