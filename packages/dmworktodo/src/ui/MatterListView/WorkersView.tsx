@@ -173,7 +173,7 @@ export default function WorkersView({
         <button
           type="button"
           className="wkr-new-btn"
-          title="从市集模板一键创建(手动建虾流随设备/模型选择器接线后开放)"
+          title="从市集模板一键创建"
           onClick={() => onOpenMarket?.()}
         >
           + 新建 worker

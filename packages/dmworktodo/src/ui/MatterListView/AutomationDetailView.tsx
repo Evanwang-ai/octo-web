@@ -204,7 +204,6 @@ export default function AutomationDetailView({
               </div>
             ))}
           </div>
-          <p className="avd-note">run 历史与投递/重放随 multica 接线扩展(契约 §1.10 全绿)。</p>
         </section>
       </div>
       {editing && (
