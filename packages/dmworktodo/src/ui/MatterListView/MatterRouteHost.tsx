@@ -287,7 +287,7 @@ export default function MatterRouteHost() {
             />
           )}
           {view === "inbox" && <InboxView />}
-          {view === "workers" && <WorkersView onOpenDetail={openWorkerDetail} />}
+          {view === "workers" && <WorkersView onOpenDetail={openWorkerDetail} onOpenMarket={showMarket} />}
           {view === "workerDetail" && workerId && (
             <WorkerDetailView key={workerId} agentId={workerId} onBack={showWorkers} />
           )}

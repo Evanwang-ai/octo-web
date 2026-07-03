@@ -86,7 +86,13 @@ interface Row {
   lastActive: number | null;
 }
 
-export default function WorkersView({ onOpenDetail }: { onOpenDetail: (id: string) => void }) {
+export default function WorkersView({
+  onOpenDetail,
+  onOpenMarket,
+}: {
+  onOpenDetail: (id: string) => void;
+  onOpenMarket?: () => void;
+}) {
   const [agents, setAgents] = useState<Agent[] | null>(null);
   const [runtimes, setRuntimes] = useState<RuntimeSummary[]>([]);
   const [snapshot, setSnapshot] = useState<AgentTask[]>([]);
@@ -172,8 +178,8 @@ export default function WorkersView({ onOpenDetail }: { onOpenDetail: (id: strin
         <button
           type="button"
           className="wkr-new-btn"
-          disabled
-          title="建虾流随设备/模型选择器接线后开放(D1)"
+          title="从市集模板一键创建(手动建虾流随设备/模型选择器接线后开放)"
+          onClick={() => onOpenMarket?.()}
         >
           + 新建 worker
         </button>

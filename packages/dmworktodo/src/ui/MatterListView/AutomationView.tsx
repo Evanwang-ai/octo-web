@@ -7,7 +7,7 @@
  *        真相源 vanilla feat/loop renderAutomation。**巨型 modal 已原生化,自动化编辑器 iframe 已杀**。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listSchedules, updateSchedule, listProjects } from "../../api/todoApi";
 import type { Schedule } from "../../bridge/types";
 import { Toast } from "../../utils/toast";
@@ -54,7 +54,7 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
     if (!scheduleIdsKey) return;
     let alive = true;
     const ids = scheduleIdsKey.split(",");
-    Promise.all(ids.map((id) => listAutopilotRuns(id).then((rs) => [id, rs] as const))).then(
+    Promise.all(ids.map((id: string) => listAutopilotRuns(id).then((rs) => [id, rs] as const))).then(
       (pairs) => {
         if (alive) setRunsMap(Object.fromEntries(pairs));
       },
