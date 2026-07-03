@@ -20,6 +20,7 @@ import {
 import type { MatterSummary } from "../../api/todoApi";
 import { useMemberList } from "../../hooks/useMemberList";
 import { Toast } from "../../utils/toast";
+import MarkdownContent from "@octo/base/src/Messages/Text/MarkdownContent";
 
 const SCOPE_LABEL: Record<string, string> = {
   matter: "当前回路",
@@ -41,7 +42,7 @@ export default function ExperiencePanel({
   creatorId: string;
   leaderUid?: string;
   myUid: string;
-  feedbackCount: number;
+  feedbackCount: number | null; // null=activities 未载,先不渲染无记录分支(时序守护)
 }) {
   const isTerminal = status === "done" || status === "cancelled";
   const isCreator = creatorId === myUid;
@@ -51,13 +52,39 @@ export default function ExperiencePanel({
   const [busy, setBusy] = useState(false);
   const [distillOpen, setDistillOpen] = useState(false);
   const [distillBot, setDistillBot] = useState("");
+  const [loadErr, setLoadErr] = useState(false);
 
   const { members } = useMemberList({});
   const bots = useMemo(() => members.filter((m) => m.isBot), [members]);
+  const aliveRef = React.useRef(true);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
-  const reload = () => getMatterSummary(matterId).then(setRow);
+  // matterId 闭包校验:旧响应不覆盖新面板(codex 双审严重项)。
+  const reload = () => {
+    const id = matterId;
+    return getMatterSummary(id)
+      .then((r) => {
+        if (aliveRef.current && id === matterId) {
+          setRow(r);
+          setLoadErr(false);
+        }
+      })
+      .catch(() => {
+        if (aliveRef.current && id === matterId) {
+          setRow(null);
+          setLoadErr(true);
+        }
+      });
+  };
 
   useEffect(() => {
+    setRow(undefined);
+    setLoadErr(false);
     if (isTerminal) reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matterId, isTerminal]);
@@ -116,15 +143,17 @@ export default function ExperiencePanel({
   };
 
   const content = (row?.content || "").split("\n")[0];
-  const truncated = content.length > 100;
-  const shown = expanded || !truncated ? content : `${content.slice(0, 100)}…`;
+  // vanilla:authorized 截 100 / draft 截 120。
+  const limit = row?.status === "draft" ? 120 : 100;
+  const truncated = content.length > limit;
+  const shown = expanded || !truncated ? content : `${content.slice(0, limit)}…`;
 
   let body: React.ReactNode;
   if (row && row.status === "authorized") {
     body = (
       <>
         <div className="mdv-exp-status is-done">✓ 已生效</div>
-        <div className="mdv-exp-content">{shown}</div>
+        <div className="mdv-exp-content"><MarkdownContent content={shown} /></div>
         <div className="mdv-exp-meta">
           范围:
           {isCreator ? (
@@ -154,7 +183,7 @@ export default function ExperiencePanel({
     body = (
       <>
         <div className="mdv-exp-status is-pending">● 待确认</div>
-        <div className="mdv-exp-content">{shown}</div>
+        <div className="mdv-exp-content"><MarkdownContent content={shown} /></div>
         <div className="mdv-exp-meta">点击「生效」后可选择适用范围</div>
         {truncated && (
           <button type="button" className="mdv-exp-toggle" onClick={() => setExpanded((v) => !v)}>
@@ -183,8 +212,11 @@ export default function ExperiencePanel({
       </>
     );
   } else if (!row && isCreator) {
-    body =
-      feedbackCount > 0 ? (
+    body = loadErr ? (
+      <div className="mdv-exp-status is-muted">经验读取失败</div>
+    ) : feedbackCount === null ? (
+      <div className="mdv-exp-status is-muted">…</div>
+    ) : feedbackCount > 0 ? (
         <>
           <div className="mdv-exp-status">这次任务有 {feedbackCount} 条反馈</div>
           <button type="button" className="mdv-exp-open" disabled={busy} onClick={() => setDistillOpen(true)}>
@@ -193,7 +225,7 @@ export default function ExperiencePanel({
         </>
       ) : (
         <>
-          <div className="mdv-exp-status">为了下次做得更好,点评一下?</div>
+          <div className="mdv-exp-status">为了下次做得更好，点评一下？</div>
           <textarea
             className="mdv-exp-review"
             rows={2}
@@ -237,7 +269,7 @@ export default function ExperiencePanel({
       {body}
       {distillOpen && (
         <div className="mdv-exp-distill">
-          <div className="mdv-exp-meta">由哪个 Bot 总结这次的经验?</div>
+          <div className="mdv-exp-meta">由哪个 Bot 总结这次的经验？</div>
           <select
             className="mdv-exp-scope"
             value={distillBot || bots[0]?.uid || ""}

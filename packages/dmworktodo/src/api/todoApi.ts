@@ -352,8 +352,11 @@ export interface FeedbackReq {
   anchor?: unknown; // 结构化锚点(json.RawMessage),如 {selection,...}
   target_uid?: string;
 }
-export async function addFeedback(matterId: string, req: FeedbackReq): Promise<void> {
-  return post<void>(`/matters/${matterId}/feedback`, req);
+export async function addFeedback(
+  matterId: string,
+  req: FeedbackReq,
+): Promise<{ matter_status?: string } | void> {
+  return post<{ matter_status?: string } | void>(`/matters/${matterId}/feedback`, req);
 }
 
 /** 发回来源群(把回路进展推回来源 IM 会话)。无 body,后端返 {status:queued}(agent_handler SendBack)。 */
@@ -685,8 +688,10 @@ export interface MatterSummary {
 export async function getMatterSummary(matterId: string): Promise<MatterSummary | null> {
   try {
     return await get<MatterSummary>(`/matters/${matterId}/summary`);
-  } catch {
-    return null;
+  } catch (e) {
+    // 只把 404(无记录)归一为 null;其它错误上抛,面板显示读取失败而非误判"暂无记录"。
+    if ((e as { status?: number }).status === 404) return null;
+    throw e;
   }
 }
 

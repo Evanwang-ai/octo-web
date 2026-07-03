@@ -318,6 +318,7 @@ export default function MatterDetailView({
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [outputs, setOutputs] = useState<MatterOutput[]>([]);
   const [activities, setActivities] = useState<MatterActivity[]>([]);
+  const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [iterations, setIterations] = useState<MatterIterations | null>(null);
   const [children, setChildren] = useState<MatterTreeChild[]>([]);
   const [subOpen, setSubOpen] = useState(false);
@@ -358,7 +359,10 @@ export default function MatterDetailView({
   const reloadActivities = useCallback(() => {
     listActivities(matterId, { limit: 20 })
       .then((ac) => {
-        if (mountedRef.current) setActivities(ac.data || []);
+        if (mountedRef.current) {
+          setActivities(ac.data || []);
+          setActivitiesLoaded(true); // feedbackCount 时序守护:未载时经验面板不判"无反馈"
+        }
       })
       .catch(() => {});
   }, [matterId]);
@@ -878,11 +882,9 @@ export default function MatterDetailView({
             onSent={() => {
               reloadTimeline();
               reloadActivities(); // feedback 会落一条「圈了一笔」活动
-
-              // feedback 可能翻状态(review→in_progress),同步重拉本单。
-              getMatter(matterId).then((m) => {
-                if (mountedRef.current) setMatter((prev) => ({ ...prev, ...m }));
-              });
+              // feedback 可能翻状态(review→in_progress);走代际守护,旧响应不盖新写(codex 双审)。
+              const gen = ++writeGenRef.current;
+              getMatter(matterId).then((m) => applyIfLatest(gen, m as MatterDetailFull));
             }}
           />
         </div>
@@ -1021,7 +1023,11 @@ export default function MatterDetailView({
           creatorId={matter.creator_id}
           leaderUid={matter.leader_uid}
           myUid={myUid}
-          feedbackCount={activities.filter((a) => a.action === "feedback_added").length}
+          feedbackCount={
+            activitiesLoaded
+              ? activities.filter((a) => a.action === "feedback_added").length
+              : null
+          }
         />
       </aside>
 

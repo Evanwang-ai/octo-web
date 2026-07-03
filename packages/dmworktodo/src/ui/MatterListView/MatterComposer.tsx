@@ -128,6 +128,10 @@ export default function MatterComposer({
   const send = async () => {
     const text = draft.trim();
     const hasAtts = atts.length > 0;
+    if (uploading) {
+      Toast.error("附件还在上传,稍等一下");
+      return;
+    }
     if ((!text && !hasAtts) || sending) {
       if (!text && !hasAtts) Toast.error("写点什么再发");
       return;
@@ -144,25 +148,35 @@ export default function MatterComposer({
         file_size,
         mime_type,
       }));
-      await addTimelineEntry(matter.id, timelineBody);
+      try {
+        await addTimelineEntry(matter.id, timelineBody);
+      } catch {
+        if (mountedRef.current) Toast.error("发送失败");
+        return;
+      }
+      // timeline 已落——此后无论 feedback 成败都清草稿,避免重试重复落档(codex 双审严重项)。
       if (asFeedback && text) {
-        await addFeedback(matter.id, {
-          content: text,
-          ...(mentions.length ? { target_uid: mentions[0].uid } : {}),
-        });
-        const who = mentions.length ? mentions[0].name : "";
-        Toast.success(
-          (matter.status as string) === "review"
-            ? `需要修改已记下${who ? ` — 已通知 ${who}` : ""}`
-            : `记下了${who ? ` — 已通知 ${who}` : ""}`,
-        );
+        try {
+          const resp = await addFeedback(matter.id, {
+            content: text,
+            ...(mentions.length ? { target_uid: mentions[0].uid } : {}),
+          });
+          const flipped =
+            resp?.matter_status === "in_progress" && (matter.status as string) === "review";
+          const who = mentions.length ? mentions[0].name : "";
+          Toast.success(
+            flipped
+              ? `已退回修改${who ? ` — 已通知 ${who}` : ""}`
+              : `记下了${who ? ` — 已通知 ${who}` : ""}`,
+          );
+        } catch {
+          if (mountedRef.current) Toast.error("动态已发,但通知对方失败");
+        }
       }
       if (!mountedRef.current) return;
       setDraft("");
       setAtts([]);
       onSent();
-    } catch {
-      if (mountedRef.current) Toast.error("发送失败");
     } finally {
       if (mountedRef.current) setSending(false);
     }
