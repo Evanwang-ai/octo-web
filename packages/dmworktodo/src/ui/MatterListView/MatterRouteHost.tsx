@@ -21,6 +21,8 @@ import ProjectsView from "./ProjectsView";
 import ProjectDetailView from "./ProjectDetailView";
 import InboxView from "./InboxView";
 import WorkersView from "./WorkersView";
+import SquadsView from "./SquadsView";
+import SquadDetailView from "./SquadDetailView";
 import WorkerDetailView from "./WorkerDetailView";
 import CommandPalette from "./CommandPalette";
 
@@ -33,7 +35,9 @@ type View =
   | "projects"
   | "projectDetail"
   | "workers"
-  | "workerDetail";
+  | "workerDetail"
+  | "squads"
+  | "squadDetail";
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -47,6 +51,7 @@ export default function MatterRouteHost() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [projectDetailId, setProjectDetailId] = useState<string | null>(null);
   const [workerId, setWorkerId] = useState<string | null>(null);
+  const [squadId, setSquadId] = useState<string | null>(null);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // ref 镜像:全局 keydown 监听(空依赖只注册一次)读它,避免 stale 闭包。
   const activeRef = useRef(active);
@@ -118,6 +123,18 @@ export default function MatterRouteHost() {
     setWorkerId(id);
     setView("workerDetail");
   };
+  // 小队域(⭐A-5):列表 + 详情。
+  const showSquads = () => {
+    setActive(true);
+    setView("squads");
+    setSection("squads");
+  };
+  const openSquadDetail = (id: string) => {
+    setActive(true);
+    setSection("squads");
+    setSquadId(id);
+    setView("squadDetail");
+  };
 
   // 子导航五项全部原生视图。
   const onNavigate = (key: SubNavKey) => {
@@ -131,6 +148,8 @@ export default function MatterRouteHost() {
       showProjects();
     } else if (key === "workers") {
       showWorkers();
+    } else if (key === "squads") {
+      showSquads();
     }
   };
 
@@ -223,6 +242,10 @@ export default function MatterRouteHost() {
           {view === "workers" && <WorkersView onOpenDetail={openWorkerDetail} />}
           {view === "workerDetail" && workerId && (
             <WorkerDetailView key={workerId} agentId={workerId} onBack={showWorkers} />
+          )}
+          {view === "squads" && <SquadsView onOpenDetail={openSquadDetail} />}
+          {view === "squadDetail" && squadId && (
+            <SquadDetailView key={squadId} squadId={squadId} onBack={showSquads} />
           )}
           <CommandPalette
             open={cmdkOpen}

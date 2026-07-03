@@ -277,3 +277,67 @@ export function buildTimeline(msgs: TaskMessagePayload[]): TimelineItem[] {
   }
   return out;
 }
+
+// ═══ 小队 Squads —— 契约对照表 §1.9,函数名对齐 multica client.ts L2021-2078 ═══
+import type {
+  CreateSquadRequest,
+  Squad,
+  SquadMember,
+  SquadMemberStatus,
+  SquadMemberType,
+  UpdateSquadRequest,
+} from "./types";
+import * as sdb from "./mockSquads";
+
+// GET /api/squads —— 列表含 member_count/member_preview。
+export async function listSquads(): Promise<Squad[]> {
+  return simulated(() => sdb.allSquads());
+}
+
+// GET /api/squads/{id}
+export async function getSquad(id: string): Promise<Squad> {
+  return simulated(() => sdb.getSquadById(id));
+}
+
+// POST /api/squads —— 契约坑:req 无 instructions,建后走 PUT 补;leader_id 必填。
+export async function createSquad(req: CreateSquadRequest): Promise<Squad> {
+  return simulated(() => sdb.createSquadIn(req));
+}
+
+// PUT /api/squads/{id} —— Squad Instructions 编辑/换 leader 走此,字段全可选。
+export async function updateSquad(id: string, req: UpdateSquadRequest): Promise<Squad> {
+  return simulated(() => sdb.updateSquadIn(id, req));
+}
+
+// DELETE /api/squads/{id} —— schema 有 archived_*,疑为归档语义,接线前 curl 核(契约表注记)。
+export async function deleteSquad(id: string): Promise<void> {
+  return simulated(() => sdb.deleteSquadIn(id));
+}
+
+// GET /api/squads/{squadId}/members
+export async function listSquadMembers(squadId: string): Promise<SquadMember[]> {
+  return simulated(() => sdb.membersOf(squadId));
+}
+
+// POST /api/squads/{squadId}/members —— 双态 member_type,role 自由 string。
+export async function addSquadMember(
+  squadId: string,
+  req: { member_type: SquadMemberType; member_id: string; role?: string },
+): Promise<SquadMember> {
+  return simulated(() => sdb.addMemberIn(squadId, req));
+}
+
+// DELETE /api/squads/{squadId}/members —— 契约坑:DELETE 带 JSON body 定位成员,非 path 参数。
+export async function removeSquadMember(
+  squadId: string,
+  req: { member_type: SquadMemberType; member_id: string },
+): Promise<void> {
+  return simulated(() => sdb.removeMemberIn(squadId, req));
+}
+
+// GET /api/squads/{squadId}/members/status —— 5 态 + 人类 status=null;宽松解析防白屏。
+export async function getSquadMemberStatus(
+  squadId: string,
+): Promise<{ members: SquadMemberStatus[] }> {
+  return simulated(() => ({ members: sdb.memberStatusOf(squadId) }));
+}
