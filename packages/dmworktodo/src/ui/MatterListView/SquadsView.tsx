@@ -56,18 +56,10 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
     <div className="sqd-root">
       <div className="sqd-head">
         <span className="sqd-title">小队</span>
-        {squads && <span className="sqd-count">{squads.length}</span>}
-        <span className="sqd-head-hint">领队 worker 协调、可搭人类成员的协作编队</span>
         <span className="sqd-head-spacer" />
         <button type="button" className="sqd-new-btn" onClick={() => setCreateOpen(true)}>
           + 新建小队
         </button>
-      </div>
-      <div className="sqd-table-head">
-        <span>小队</span>
-        <span>领队</span>
-        <span>成员</span>
-        <span>创建</span>
       </div>
       <div className="sqd-list">
         {squads === null ? (
@@ -75,22 +67,19 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
         ) : squads.length === 0 ? (
           <div className="sqd-empty">还没有小队 —— 新建一个,让领队 worker 带队干活。</div>
         ) : (
+          /* 行=Listview 语法:40px 单行、无列头,描述内联吃剩余宽,领队/成员堆/时间右缘聚集。 */
           squads.map((s) => (
             <button key={s.id} type="button" className="sqd-row" onClick={() => onOpenDetail(s.id)}>
-              <span className="sqd-cell-name">
-                <WorkerAvatar name={s.name} size={32} />
-                <span className="sqd-name-lines">
-                  <span className="sqd-name">{s.name}</span>
-                  {s.description && <span className="sqd-desc">{s.description}</span>}
-                </span>
-              </span>
-              <span className="sqd-cell-leader">
+              <WorkerAvatar name={s.name} size={20} />
+              <span className="sqd-name">{s.name}</span>
+              {s.description && <span className="sqd-desc">{s.description}</span>}
+              <span className="sqd-leader">
                 <WorkerHoverArea agentId={s.leader_id} className="sqd-leader-hover">
                   <WorkerAvatar name={agentName.get(s.leader_id) || "?"} size={18} />
                   {agentName.get(s.leader_id) || s.leader_id.slice(0, 8)}
                 </WorkerHoverArea>
               </span>
-              <span className="sqd-cell-members">
+              <span className="sqd-members">
                 {(s.member_preview || []).length === 0 && !s.member_count ? (
                   <span className="sqd-none">—</span>
                 ) : (
@@ -98,12 +87,12 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
                     <span className="sqd-stack">
                       {(s.member_preview || []).map((m) =>
                         m.member_type === "agent" ? (
-                          <WorkerAvatar key={m.member_id} name={agentName.get(m.member_id) || "?"} size={20} />
+                          <WorkerAvatar key={m.member_id} name={agentName.get(m.member_id) || "?"} size={18} />
                         ) : (
                           <WKAvatar
                             key={m.member_id}
                             channel={new Channel(m.member_id, ChannelTypePerson)}
-                            style={{ width: 20, height: 20, borderRadius: "50%" }}
+                            style={{ width: 18, height: 18, borderRadius: "50%" }}
                           />
                         ),
                       )}
@@ -114,7 +103,7 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
                   </>
                 )}
               </span>
-              <span className="sqd-cell-created">{fmtDays(s.created_at)}</span>
+              <span className="sqd-created">{fmtDays(s.created_at)}</span>
             </button>
           ))
         )}

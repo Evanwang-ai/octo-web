@@ -12,8 +12,6 @@
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { WKApp } from "@octo/base";
-import WKAvatar from "@octo/base/src/Components/WKAvatar";
-import { Channel, ChannelTypePerson } from "wukongimjssdk";
 import {
   listAgents,
   listRuntimes,
@@ -30,7 +28,6 @@ import type {
   AgentTask,
   RuntimeSummary,
 } from "../../api/multica/types";
-import UserName from "../UserName";
 import WorkerHoverArea from "./WorkerHoverCard";
 import "./workers.css";
 
@@ -172,8 +169,6 @@ export default function WorkersView({
     <div className="wkr-root">
       <div className="wkr-head">
         <span className="wkr-title">worker</span>
-        {agents && <span className="wkr-count">{counts.all}</span>}
-        <span className="wkr-head-hint">能领取回路、留下评论、推进状态的 AI 队友</span>
         <span className="wkr-head-spacer" />
         <button
           type="button"
@@ -197,14 +192,6 @@ export default function WorkersView({
           </button>
         ))}
       </div>
-      <div className="wkr-table-head">
-        <span>worker</span>
-        <span>状态</span>
-        <span>所有者</span>
-        <span>设备</span>
-        <span>最近活跃</span>
-        <span className="wkr-th-runs">运行次数</span>
-      </div>
       <div className="wkr-list">
         {agents === null ? (
           <div className="wkr-skel" aria-hidden>
@@ -221,6 +208,8 @@ export default function WorkersView({
             <span>{scope === "archived" ? "没有已归档的 worker" : "还没有 worker"}</span>
           </div>
         ) : (
+          /* 行=Listview 语法:40px 单行、无列头、presence 收进头像点、描述内联吃剩余宽、
+             元数据右缘聚集(任务数[仅忙时]/设备/RUNS 等宽/活跃时间恒右)。所有者收进 hover 卡。 */
           scoped.map((r) => {
             const conf = AVAIL_CONF[r.presence.availability];
             const busy = r.presence.runningCount + r.presence.queuedCount;
@@ -231,42 +220,21 @@ export default function WorkersView({
                 className="wkr-row"
                 onClick={() => onOpenDetail(r.agent.id)}
               >
-                <span className="wkr-cell-name">
-                  <WorkerHoverArea agentId={r.agent.id}>
-                    <WorkerAvatar name={r.agent.name} size={32} dot={conf.cls} />
-                  </WorkerHoverArea>
-                  <span className="wkr-name-lines">
-                    <span className="wkr-name-top">
-                      <span className="wkr-name">{r.agent.name}</span>
-                      {r.agent.visibility === "private" && (
-                        <svg className="wkr-lock" width="11" height="11" viewBox="0 0 16 16" fill="none" aria-label="私有">
-                          <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-                          <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.4" />
-                        </svg>
-                      )}
-                    </span>
-                    {r.agent.description && <span className="wkr-desc">{r.agent.description}</span>}
-                  </span>
-                </span>
-                <span className="wkr-cell-status">
-                  <span className={`wkr-dot ${conf.cls}`} />
-                  {conf.label}
-                  {busy > 0 && <span className="wkr-busy"> · {busy} 个任务</span>}
-                </span>
-                <span className="wkr-cell-owner">
-                  {r.agent.owner_id && (
-                    <>
-                      <WKAvatar
-                        channel={new Channel(r.agent.owner_id, ChannelTypePerson)}
-                        style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0 }}
-                      />
-                      <UserName uid={r.agent.owner_id} />
-                    </>
-                  )}
-                </span>
-                <span className="wkr-cell-runtime">{r.runtime?.name || "—"}</span>
-                <span className="wkr-cell-active">{lastActiveLabel(r.lastActive)}</span>
-                <span className="wkr-cell-runs">{r.runCount.toLocaleString()}</span>
+                <WorkerHoverArea agentId={r.agent.id}>
+                  <WorkerAvatar name={r.agent.name} size={20} dot={conf.cls} />
+                </WorkerHoverArea>
+                <span className="wkr-name">{r.agent.name}</span>
+                {r.agent.visibility === "private" && (
+                  <svg className="wkr-lock" width="11" height="11" viewBox="0 0 16 16" fill="none" aria-label="私有">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                )}
+                {r.agent.description && <span className="wkr-desc">{r.agent.description}</span>}
+                {busy > 0 && <span className="wkr-meta-busy">{busy} 个任务</span>}
+                {r.runtime?.name && <span className="wkr-meta">{r.runtime.name}</span>}
+                <span className="wkr-meta-runs">{r.runCount.toLocaleString()}</span>
+                <span className="wkr-meta-time">{lastActiveLabel(r.lastActive)}</span>
               </button>
             );
           })
