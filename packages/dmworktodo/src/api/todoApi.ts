@@ -320,6 +320,7 @@ export interface MatterTreeNode {
     has_children?: boolean;
   };
   mode?: string;
+  mode_config?: string; // JSON 字符串:critic{generator,verifier}/roundtable{participants}/pipeline{steps}
   children: MatterTreeChild[];
   barrier_state?: string; // none / waiting / ready …
   join_ready?: boolean;

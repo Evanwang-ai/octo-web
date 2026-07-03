@@ -19,7 +19,7 @@
  *        兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WKApp, ContextMenus } from "@octo/base";
 import type { ContextMenusContext, ContextMenusData } from "@octo/base";
 import WKAvatar from "@octo/base/src/Components/WKAvatar";
@@ -61,7 +61,7 @@ import { Toast } from "../../utils/toast";
 import { resolveAndGuardUrl } from "../../utils/fileUrl";
 import { StatusIcon, PriorityIcon, STATUS_LABEL } from "./icons";
 import { priorityMenu, statusMenu } from "./rowMenus";
-import PlanGraph from "./PlanGraph";
+import PlanGraph, { roleNodesFromConfig } from "./PlanGraph";
 import MatterComposer from "./MatterComposer";
 import ExperiencePanel from "./ExperiencePanel";
 import AttachmentPreview from "./AttachmentPreview";
@@ -369,6 +369,8 @@ export default function MatterDetailView({
   const [expSummary, setExpSummary] = useState<MatterSummary | null>(null);
   const [expGen, setExpGen] = useState(0);
   const [children, setChildren] = useState<MatterTreeChild[]>([]);
+  // role 拓扑图数据源(欠账 §9-⑧):tree.mode_config(JSON 字符串,领队配置的角色分派)。
+  const [treeCfg, setTreeCfg] = useState<string | undefined>(undefined);
   const [subOpen, setSubOpen] = useState(false);
   const [subTitle, setSubTitle] = useState("");
   const [subBusy, setSubBusy] = useState(false);
@@ -423,7 +425,10 @@ export default function MatterDetailView({
   const reloadTree = useCallback(() => {
     getMatterTree(matterId)
       .then((t) => {
-        if (mountedRef.current) setChildren(t.children || []);
+        if (mountedRef.current) {
+          setChildren(t.children || []);
+          setTreeCfg(t.mode_config);
+        }
       })
       .catch(() => {});
   }, [matterId]);
@@ -465,7 +470,10 @@ export default function MatterDetailView({
     // 子任务树:非关键,失败静默。
     getMatterTree(matterId)
       .then((t) => {
-        if (alive) setChildren(t.children || []);
+        if (alive) {
+          setChildren(t.children || []);
+          setTreeCfg(t.mode_config);
+        }
       })
       .catch(() => {});
     return () => {
@@ -477,6 +485,21 @@ export default function MatterDetailView({
   useEffect(() => {
     setInspOpen(!window.matchMedia("(max-width: 1180px)").matches);
   }, [matterId]);
+
+  // 换单时清 role 拓扑数据源,避免上一单的 mode_config 短暂串台。
+  useEffect(() => {
+    setTreeCfg(undefined);
+  }, [matterId]);
+
+  // role 拓扑节点(欠账 §9-⑧):无子任务且领队已配 mode_config 时派生;spoke=timeline 有该 uid 发言。
+  const roleNodes = useMemo(() => {
+    if (children.length > 0) return null;
+    return roleNodesFromConfig(
+      matter?.mode,
+      treeCfg,
+      timeline.map((e) => e.user_id).filter(Boolean) as string[],
+    );
+  }, [children.length, matter?.mode, treeCfg, timeline]);
 
   // 经验总结行数据:仅终态拉取(summary 只在终态产生);ExperiencePanel 变更走 expGen 触发重拉。
   const expTerminal =
@@ -832,10 +855,20 @@ export default function MatterDetailView({
               status={matter.status}
               nodes={children}
             />
+          ) : roleNodes ? (
+            /* role 拓扑预告图(欠账 §9-⑧,vanilla roleGraphHTML):无子任务但领队已配 mode_config,
+               从配置画角色布局,spoke=timeline 有发言。 */
+            <PlanGraph
+              leaderUid={matter.leader_uid}
+              mode={matter.mode}
+              status={matter.status}
+              nodes={[]}
+              roles={roleNodes}
+            />
           ) : (
             !subOpen &&
             /* 空态分支对齐 vanilla subsBlockHTML(L7265-7270):有 mode=等待领队配置(领队接单后自动分配角色),
-               无 mode=暂无子任务。角色拓扑图 roleNodesFromConfig(mode_config)未还原,记欠账。 */
+               无 mode=暂无子任务。 */
             (matter.mode ? (
               <div className="mdv-await">
                 <div className="mdv-await-title">等待领队配置</div>

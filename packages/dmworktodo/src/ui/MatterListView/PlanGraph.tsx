@@ -1,9 +1,12 @@
 /**
  * [INPUT]: 依赖 react 的 useLayoutEffect/useRef/useState;../UserName;api/todoApi 的 MatterTreeChild 类型。
  * [OUTPUT]: 默认导出 PlanGraph(几何即语义计划图:领队 root → 子任务节点列 → 汇总 join,
- *          SVG 贝塞尔连线,mode-aware 线性[critic/pipeline]/扇形[split/swarm/roundtable]布局)。
+ *          SVG 贝塞尔连线,mode-aware 线性[critic/pipeline]/扇形[split/swarm/roundtable]布局);
+ *          导出 RoleNode 类型 + roleNodesFromConfig(欠账 §9-⑧,vanilla L7125-7146 直译:
+ *          无子任务时从 mode_config 派生角色预告图,spoke=timeline 有该 uid 发言)。
  * [POS]: MatterListView 详情的计划图(P1 子件④),数据来自 getMatterTree nodes + matter mode/leader/status;
- *        真相源 vanilla planGraphHTML/drawPlanEdges。兄弟:MatterDetailView。
+ *        roles 变体(role 拓扑)数据=tree.mode_config+timeline。真相源 vanilla planGraphHTML/
+ *        drawPlanEdges/roleNodesFromConfig/roleGraphHTML。兄弟:MatterDetailView。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 import React, { useLayoutEffect, useRef, useState } from "react";
@@ -40,27 +43,79 @@ const ROOT_TITLE: Record<string, (n: number) => string> = {
 const ROOT_ID = "__pg_root";
 const JOIN_ID = "__pg_join";
 
+// ── role 拓扑(欠账 §9-⑧,vanilla roleNodesFromConfig L7125-7146 直译)──
+export interface RoleNode {
+  id: string;
+  role: string; // 位置 tag:生成方/验证方/参与者/步骤名
+  uid?: string;
+  spoke: boolean; // timeline 里该 uid 是否发过言
+}
+
+/** 无子任务时从 mode_config(JSON 字符串)派生角色预告节点;解析失败或空配置返 null。 */
+export function roleNodesFromConfig(
+  mode: string | undefined,
+  configStr: string | undefined,
+  timelineUids: string[],
+): RoleNode[] | null {
+  if (!mode || !configStr) return null;
+  let cfg: Record<string, unknown>;
+  try {
+    cfg = JSON.parse(configStr) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const spoken = (uid?: string) => !!uid && timelineUids.includes(uid);
+  const nodes: RoleNode[] = [];
+  if (mode === "critic") {
+    const g = (cfg.generator as string) || "";
+    const v = (cfg.verifier as string) || "";
+    nodes.push({ id: "gen", role: "生成方", uid: g || undefined, spoke: spoken(g) });
+    nodes.push({ id: "ver", role: "验证方", uid: v || undefined, spoke: spoken(v) });
+  } else if (mode === "roundtable") {
+    ((cfg.participants as string[]) || []).forEach((uid, i) => {
+      nodes.push({ id: `p${i}`, role: "参与者", uid, spoke: spoken(uid) });
+    });
+  } else if (mode === "pipeline") {
+    ((cfg.steps as Array<{ id?: string; title?: string; assignee?: string }>) || []).forEach(
+      (step, i) => {
+        const uid = step.assignee || "";
+        nodes.push({
+          id: step.id || `s${i}`,
+          role: step.title || `步骤 ${i + 1}`,
+          uid: uid || undefined,
+          spoke: spoken(uid),
+        });
+      },
+    );
+  }
+  return nodes.length ? nodes : null;
+}
+
 export default function PlanGraph({
   leaderUid,
   mode,
   status,
   nodes,
+  roles,
 }: {
   leaderUid?: string;
   mode?: string;
   status: string;
   nodes: MatterTreeChild[];
+  roles?: RoleNode[]; // 提供时渲染 role 预告图(vanilla roleGraphHTML),忽略 nodes
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState<string[]>([]);
   const isLinear = mode === "pipeline" || mode === "critic";
+  // roles 变体与 children 变体共用布局/连线,只换节点语义。
+  const itemIds = roles ? roles.map((r) => r.id) : nodes.map((c) => c.id);
 
   // 依赖:线性=链(root→c0→c1→…→join);扇形=root→每 child、每 child→join。
   const childDeps = (i: number): string[] =>
-    isLinear ? [i ? nodes[i - 1].id : ROOT_ID] : [ROOT_ID];
+    isLinear ? [i ? itemIds[i - 1] : ROOT_ID] : [ROOT_ID];
   const joinDeps: string[] = isLinear
-    ? [nodes.length ? nodes[nodes.length - 1].id : ROOT_ID]
-    : nodes.map((c) => c.id);
+    ? [itemIds.length ? itemIds[itemIds.length - 1] : ROOT_ID]
+    : itemIds;
 
   // 布局后测量节点位置 → 画贝塞尔连线(几何即语义)。
   useLayoutEffect(() => {
@@ -85,17 +140,17 @@ export default function PlanGraph({
       const mx = (x1 + x2) / 2;
       paths.push(`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
     };
-    nodes.forEach((c, i) => childDeps(i).forEach((d) => link(d, c.id)));
+    itemIds.forEach((id, i) => childDeps(i).forEach((d) => link(d, id)));
     joinDeps.forEach((d) => link(d, JOIN_ID));
     setEdges(paths);
-    // 依赖 nodes 引用 + mode + status(状态变→环色变→无需重画线,但布局可能变)。
+    // 依赖 nodes/roles 引用 + mode + status(状态变→环色变→无需重画线,但布局可能变)。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, mode, status]);
+  }, [nodes, roles, mode, status]);
 
   const node = (
     id: string,
     roleTag: string,
-    title: string,
+    title: React.ReactNode,
     uid: string | undefined,
     ring: string,
     stateText: string,
@@ -106,7 +161,7 @@ export default function PlanGraph({
         <span className={`pg-dot ${ring}`} />
         <span className="pg-role-tag">{roleTag}</span>
       </div>
-      <div className="pg-title" title={title}>
+      <div className="pg-title" title={typeof title === "string" ? title : undefined}>
         {title}
       </div>
       <div className="pg-asg">
@@ -116,26 +171,51 @@ export default function PlanGraph({
     </div>
   );
 
-  const doneN = nodes.filter((c) => c.status === "done").length;
-  const allDone = nodes.length > 0 && doneN === nodes.length;
-  const jring = status === "done" ? "done" : allDone ? "review" : "todo";
-  const jtext = jring === "done" ? "已完成" : jring === "review" ? "子回路已齐" : "等待中";
-  const rootTitle = (ROOT_TITLE[mode || ""] || ((n: number) => `拆成 ${n} 份`))(
-    nodes.length,
-  );
-
-  const childNodes = nodes.map((c) =>
-    node(
-      c.id,
-      c.step_id || "子任务",
-      c.title,
-      // Codex#5:assignee 两种形态,user_id 缺则回落 id,避免误显"没人接"。
-      c.assignees?.[0]?.user_id ?? c.assignees?.[0]?.id,
-      RING[c.status] || "todo",
-      STATE_TEXT[c.status] || c.status,
-      "pg-child",
-    ),
-  );
+  // join/root/子节点语义按变体分派(roles=vanilla roleGraphHTML;children=planGraphHTML)。
+  let jring: string;
+  let jtext: string;
+  let rootTitle: React.ReactNode;
+  let rootState: string;
+  let childNodes: React.ReactNode[];
+  if (roles) {
+    const spokeN = roles.filter((r) => r.spoke).length;
+    const allSpoke = roles.length > 0 && spokeN === roles.length;
+    jring = status === "done" ? "done" : allSpoke ? "review" : "todo";
+    jtext = jring === "done" ? "已完成" : jring === "review" ? "可汇总" : "等待中";
+    rootTitle = `编排 ${roles.length} 个角色`;
+    rootState = "主持中";
+    childNodes = roles.map((r) => {
+      const ring = status === "done" ? "done" : r.spoke ? "review" : "todo";
+      return node(
+        r.id,
+        r.role,
+        r.uid ? <UserName uid={r.uid} /> : "待分配",
+        r.uid,
+        ring,
+        ring === "done" ? "完成" : ring === "review" ? "已发言" : "待发言",
+        "pg-child",
+      );
+    });
+  } else {
+    const doneN = nodes.filter((c) => c.status === "done").length;
+    const allDone = nodes.length > 0 && doneN === nodes.length;
+    jring = status === "done" ? "done" : allDone ? "review" : "todo";
+    jtext = jring === "done" ? "已完成" : jring === "review" ? "子回路已齐" : "等待中";
+    rootTitle = (ROOT_TITLE[mode || ""] || ((n: number) => `拆成 ${n} 份`))(nodes.length);
+    rootState = `已 @ ${nodes.length} 路`;
+    childNodes = nodes.map((c) =>
+      node(
+        c.id,
+        c.step_id || "子任务",
+        c.title,
+        // Codex#5:assignee 两种形态,user_id 缺则回落 id,避免误显"没人接"。
+        c.assignees?.[0]?.user_id ?? c.assignees?.[0]?.id,
+        RING[c.status] || "todo",
+        STATE_TEXT[c.status] || c.status,
+        "pg-child",
+      ),
+    );
+  }
 
   return (
     <div className="plan-graph" ref={wrapRef}>
@@ -146,7 +226,7 @@ export default function PlanGraph({
       </svg>
       <div className="pg-cols">
         <div className="pg-col">
-          {node(ROOT_ID, "领队", rootTitle, leaderUid, "done", `已 @ ${nodes.length} 路`, "pg-root")}
+          {node(ROOT_ID, "领队", rootTitle, leaderUid, "done", rootState, "pg-root")}
         </div>
         {isLinear ? (
           childNodes.map((n, i) => (
