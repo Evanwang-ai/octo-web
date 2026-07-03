@@ -21,6 +21,10 @@ import {
 } from "../../api/multica/client";
 import type { Agent, AgentPresenceDetail, AgentTask } from "../../api/multica/types";
 import { WorkerAvatar } from "./WorkersView";
+import { WKApp } from "@octo/base";
+import WKAvatar from "@octo/base/src/Components/WKAvatar";
+import { Channel, ChannelTypePerson } from "wukongimjssdk";
+import UserName from "../UserName";
 import "./workerHover.css";
 
 const AVAIL_LABEL: Record<AgentPresenceDetail["availability"], { label: string; cls: string }> = {
@@ -93,6 +97,22 @@ function Card({ data, x, y }: { data: CardData; x: number; y: number }) {
             {successRate !== null && ` · ${Math.round(successRate * 100)}% 成功`}
           </div>
         </div>
+        {/* 所有者(F1:列表 owner 列删除后归此,信息不丢) */}
+        {agent.owner_id && (
+          <div className="wkhc-block">
+            <div className="wkhc-block-k">所有者</div>
+            <div className="wkhc-block-v wkhc-owner">
+              <WKAvatar
+                channel={new Channel(agent.owner_id, ChannelTypePerson)}
+                style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0 }}
+              />
+              <UserName uid={agent.owner_id} />
+              {agent.owner_id === (WKApp.loginInfo.uid ?? "") && (
+                <span className="wkhc-mine">我</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body,

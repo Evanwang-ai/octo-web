@@ -133,11 +133,15 @@
 }
 
 .wkr-name {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
   font-size: 13px;
   font-weight: 500;
   color: var(--wk-text-primary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .wkr-lock {
@@ -231,6 +235,29 @@
 
 .wkr-avatar-dot.is-offline,
 .wkr-avatar-dot.is-archived {
+  background: var(--wk-text-disabled);
+}
+
+/* 独立状态点(详情 presence pill/设备行复用,F3) */
+.wkr-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: 0;
+}
+
+.wkr-dot.is-online {
+  background: var(--wk-color-success);
+}
+
+.wkr-dot.is-unstable {
+  background: var(--wk-color-warning);
+}
+
+.wkr-dot.is-offline,
+.wkr-dot.is-archived {
   background: var(--wk-text-disabled);
 }
 

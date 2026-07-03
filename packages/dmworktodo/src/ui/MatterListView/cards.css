@@ -110,7 +110,7 @@
   background: var(--wk-bg-surface);
   margin-bottom: 8px;
 }
-.cv-card:hover {
+.cv-card.is-open:hover {
   border-color: var(--wk-brand-tint-15);
 }
 .cv-card.is-open {

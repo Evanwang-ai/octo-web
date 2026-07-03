@@ -197,9 +197,6 @@
 .av-dot {
   color: var(--wk-text-disabled);
 }
-.av-target {
-  color: var(--wk-text-tertiary);
-}
 .av-ai {
   display: inline-flex;
   align-items: center;
@@ -210,4 +207,17 @@
   font-weight: 700;
   color: var(--wk-color-accent);
   background: color-mix(in srgb, var(--wk-color-accent) 12%, transparent);
+}
+
+
+/* 输出去向(F2:发到群/项目名/回路列表) */
+.av-target {
+  flex: none;
+  min-width: 84px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

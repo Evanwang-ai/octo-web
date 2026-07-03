@@ -18,6 +18,13 @@ import {
 } from "../../api/multica/client";
 import type { AgentTemplate, MarketSkill, RuntimeSummary } from "../../api/multica/types";
 import { WorkerAvatar } from "./WorkersView";
+
+// 名字 hue(与 WorkerAvatar/市集卡同算法,视觉血缘)。
+function hueOf(name: string): number {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return h;
+}
 import "./market.css";
 
 export default function MarketDetailView({
@@ -73,7 +80,7 @@ export default function MarketDetailView({
             <div
               className="mkt-hero-banner"
               style={{
-                background: `linear-gradient(135deg, hsl(${(() => { let h = 0; for (const ch of tpl.name) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; })()} 42% 92%), hsl(${(() => { let h = 0; for (const ch of tpl.name) h = (h * 31 + ch.charCodeAt(0)) % 360; return (h + 40) % 360; })()} 38% 86%))`,
+                background: `linear-gradient(135deg, hsl(${hueOf(tpl.name)} 42% 92%), hsl(${(hueOf(tpl.name) + 40) % 360} 38% 86%))`,
               }}
             >
               <WorkerAvatar name={tpl.name} size={64} />

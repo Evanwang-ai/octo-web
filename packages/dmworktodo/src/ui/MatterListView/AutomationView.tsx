@@ -182,6 +182,7 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
                       ))}
                     </span>
                   )}
+                  <span className="av-target">{target(s)}</span>
                   <span className="av-cron">{cronHuman(s.cron_expr)}</span>
                   <span className="av-exec">
                     <UserName uid={s.executor_uid} />
