@@ -685,6 +685,61 @@ export interface MatterSummary {
   updated_at?: string;
 }
 
+// ─── 战绩名片(欠账 §9-⑤ openAgentCard;/agents/stats + /agent-cards 后端就绪,curl 实测 2026-07-03)───
+
+export interface AgentStatMatter {
+  matter_id: string;
+  seq_no?: number;
+  title?: string;
+  done_at?: string;
+}
+export interface AgentPrefRow {
+  summary_id: string;
+  matter_id: string;
+  scope_type?: string;
+  content: string;
+  confidence?: number;
+  hit_count?: number;
+  miss_count?: number;
+  updated_at?: string;
+  matter_seq_no?: number;
+  matter_title?: string;
+}
+export interface AgentStats {
+  assigned?: number;
+  done?: number;
+  in_review?: number;
+  in_progress?: number;
+  recent?: AgentStatMatter[];
+  current?: AgentStatMatter[];
+  preferences?: AgentPrefRow[];
+}
+
+/** GET /agents/stats?uids= —— 单 uid 取回其战绩(vanilla cache.stats 同源)。 */
+export async function getAgentStats(uid: string): Promise<AgentStats> {
+  const json = await get<{ stats?: Record<string, AgentStats> }>("/agents/stats", { uids: uid });
+  return json.stats?.[uid] || Object.values(json.stats || {})[0] || {};
+}
+
+export interface AgentCardDeclared {
+  tagline?: string;
+  description?: string;
+  skills?: string[];
+  systems?: string[];
+  capabilities?: Array<{ name?: string }>;
+  visibility?: string;
+}
+
+/** GET /agent-cards/:uid —— bot 声明的协作能力(declared)+ 观察者可见性(viewer)。 */
+export async function getAgentCard(
+  uid: string,
+): Promise<{
+  declared?: AgentCardDeclared;
+  viewer?: { declared_visible?: boolean; relationship?: string };
+}> {
+  return get(`/agent-cards/${encodeURIComponent(uid)}`);
+}
+
 /** GET /matters/:id/summary —— 无记录时 404,容错返 null。 */
 export async function getMatterSummary(matterId: string): Promise<MatterSummary | null> {
   try {

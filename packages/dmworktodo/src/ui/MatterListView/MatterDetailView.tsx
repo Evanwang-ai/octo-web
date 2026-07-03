@@ -65,6 +65,7 @@ import PlanGraph from "./PlanGraph";
 import MatterComposer from "./MatterComposer";
 import ExperiencePanel from "./ExperiencePanel";
 import AttachmentPreview from "./AttachmentPreview";
+import AgentCardModal from "./AgentCardModal";
 import "./detail.css";
 
 // 真实后端字段比 bridge/types 的 MatterDetail 多(stale),本地增广。
@@ -307,11 +308,32 @@ function TlAttachments({
   );
 }
 
-function PropAvatar({ label, uid }: { label: string; uid: string }) {
+function PropAvatar({
+  label,
+  uid,
+  onOpenCard,
+}: {
+  label: string;
+  uid: string;
+  onOpenCard?: (uid: string) => void;
+}) {
   return (
     <div className="mdv-prop">
       <span className="mdv-prop-label">{label}</span>
-      <span className="mdv-prop-val">
+      <span
+        className={`mdv-prop-val${onOpenCard ? " is-clickable" : ""}`}
+        role={onOpenCard ? "button" : undefined}
+        tabIndex={onOpenCard ? 0 : undefined}
+        title={onOpenCard ? "看战绩名片" : undefined}
+        onClick={onOpenCard ? () => onOpenCard(uid) : undefined}
+        onKeyDown={
+          onOpenCard
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") onOpenCard(uid);
+              }
+            : undefined
+        }
+      >
         <WKAvatar
           channel={new Channel(uid, ChannelTypePerson)}
           style={{ width: 18, height: 18, borderRadius: "50%" }}
@@ -363,6 +385,8 @@ export default function MatterDetailView({
   const [inspOpen, setInspOpen] = useState<boolean>(
     () => !window.matchMedia("(max-width: 1180px)").matches,
   );
+  // 战绩名片(欠账 §9-⑤):Inspector 头像行点击打开。
+  const [agentCardUid, setAgentCardUid] = useState<string | null>(null);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
@@ -1045,10 +1069,10 @@ export default function MatterDetailView({
               {PRIORITY_LABEL[matter.priority ?? 0]}
             </button>
           </div>
-          <PropAvatar label="发起人" uid={matter.creator_id} />
+          <PropAvatar label="发起人" uid={matter.creator_id} onOpenCard={setAgentCardUid} />
           {/* 领队/协作者:恒渲染,空态"没定"/"暂无"(vanilla L8159/8179——字段不因空而消失) */}
           {matter.leader_uid ? (
-            <PropAvatar label="领队" uid={matter.leader_uid} />
+            <PropAvatar label="领队" uid={matter.leader_uid} onOpenCard={setAgentCardUid} />
           ) : (
             <div className="mdv-prop">
               <span className="mdv-prop-label">领队</span>
@@ -1057,7 +1081,12 @@ export default function MatterDetailView({
           )}
           {(matter.assignees || []).length > 0 ? (
             (matter.assignees || []).map((a) => (
-              <PropAvatar key={a.id} label="协作者" uid={a.user_id} />
+              <PropAvatar
+                key={a.id}
+                label="协作者"
+                uid={a.user_id}
+                onOpenCard={setAgentCardUid}
+              />
             ))
           ) : (
             <div className="mdv-prop">
@@ -1117,6 +1146,11 @@ export default function MatterDetailView({
           onChanged={() => setExpGen((g) => g + 1)}
         />
       </aside>
+
+      {/* 战绩名片(欠账 §9-⑤ openAgentCard) */}
+      {agentCardUid && (
+        <AgentCardModal uid={agentCardUid} onClose={() => setAgentCardUid(null)} />
+      )}
 
       {/* 优先级快改菜单(单实例,数据驱动) */}
       {satOpen && (

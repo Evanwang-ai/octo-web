@@ -434,6 +434,15 @@ button.mdv-att-card:hover {
   overflow: hidden;
   opacity: 0;
 }
+/* Inspector 头像行可点开战绩名片 */
+.mdv-prop-val.is-clickable {
+  cursor: pointer;
+  border-radius: 6px;
+}
+.mdv-prop-val.is-clickable:hover .mdv-prop-name {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .mdv-insp-toggle {
   margin-left: auto;
   display: flex;
