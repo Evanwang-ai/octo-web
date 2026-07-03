@@ -2,7 +2,7 @@
 // 五项全部原生视图;worker 域收在 loop 板块内(2026-07 会2拍板,不进全局导航)。
 import React from "react";
 
-export type SubNavKey = "matters" | "projects" | "automation" | "workers" | "squads" | "skills" | "cards";
+export type SubNavKey = "matters" | "projects" | "automation" | "workers" | "squads" | "skills" | "market" | "cards";
 
 function ListIcon() {
   return (
@@ -69,14 +69,43 @@ function SkillIcon() {
   );
 }
 
-const ITEMS: Array<{ key: SubNavKey; label: string; icon: React.ReactNode }> = [
-  { key: "matters", label: "全部回路", icon: <ListIcon /> },
-  { key: "projects", label: "项目", icon: <FolderIcon /> },
-  { key: "automation", label: "自动化", icon: <ClockIcon /> },
-  { key: "workers", label: "worker", icon: <BotIcon /> },
-  { key: "squads", label: "小队", icon: <SquadIcon /> },
-  { key: "skills", label: "技能", icon: <SkillIcon /> },
-  { key: "cards", label: "经验", icon: <DocIcon /> },
+function MarketIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M2.5 5.5 4 2.5h8l1.5 3M2.5 5.5h11M2.5 5.5V12A1.5 1.5 0 0 0 4 13.5h8a1.5 1.5 0 0 0 1.5-1.5V5.5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M6 8h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// D5(Evan 拍板):Attio 范式分组,治八项爬行。
+const GROUPS: Array<{ title: string; items: Array<{ key: SubNavKey; label: string; icon: React.ReactNode }> }> = [
+  {
+    title: "工作",
+    items: [
+      { key: "matters", label: "全部回路", icon: <ListIcon /> },
+      { key: "projects", label: "项目", icon: <FolderIcon /> },
+      { key: "automation", label: "自动化", icon: <ClockIcon /> },
+    ],
+  },
+  {
+    title: "团队",
+    items: [
+      { key: "workers", label: "worker", icon: <BotIcon /> },
+      { key: "squads", label: "小队", icon: <SquadIcon /> },
+    ],
+  },
+  {
+    title: "能力",
+    items: [
+      { key: "skills", label: "技能", icon: <SkillIcon /> },
+      { key: "market", label: "市集", icon: <MarketIcon /> },
+    ],
+  },
+  {
+    title: "沉淀",
+    items: [{ key: "cards", label: "经验", icon: <DocIcon /> }],
+  },
 ];
 
 export default function MatterSubNav({
@@ -90,16 +119,21 @@ export default function MatterSubNav({
     <nav className="mlv-subnav">
       <div className="mlv-subnav-head">回路</div>
       <div className="mlv-subnav-items">
-        {ITEMS.map((it) => (
-          <button
-            key={it.key}
-            type="button"
-            className={`mlv-subnav-item${current === it.key ? " is-active" : ""}`}
-            onClick={() => onNavigate(it.key)}
-          >
-            <span className="mlv-subnav-ic">{it.icon}</span>
-            <span className="mlv-subnav-label">{it.label}</span>
-          </button>
+        {GROUPS.map((g) => (
+          <div key={g.title} className="mlv-subnav-group">
+            <div className="mlv-subnav-group-title">{g.title}</div>
+            {g.items.map((it) => (
+              <button
+                key={it.key}
+                type="button"
+                className={`mlv-subnav-item${current === it.key ? " is-active" : ""}`}
+                onClick={() => onNavigate(it.key)}
+              >
+                <span className="mlv-subnav-ic">{it.icon}</span>
+                <span className="mlv-subnav-label">{it.label}</span>
+              </button>
+            ))}
+          </div>
         ))}
       </div>
     </nav>

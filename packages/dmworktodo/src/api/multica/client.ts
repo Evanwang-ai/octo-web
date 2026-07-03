@@ -375,3 +375,40 @@ export async function deleteSkill(id: string): Promise<void> {
 export async function importSkill(req: { url: string }): Promise<Skill> {
   return simulated(() => kdb.importSkillIn(req.url));
 }
+
+// ═══ 市集 Marketplace —— S6 卡⑦(D4:技能+worker 模板)═══
+// 模板三端点原判待定升 V1用;技能货架接线走 importSkill(source_url),货架数据 mock 演示。
+import type { AgentTemplate, AgentTemplateSummary, MarketSkill, Skill as MarketInstalledSkill } from "./types";
+import * as mdb from "./mockMarket";
+
+// GET /api/agent-templates
+export async function listAgentTemplates(): Promise<AgentTemplateSummary[]> {
+  return simulated(() => mdb.allTemplates().map(({ instructions, skills, ...sum }) => sum));
+}
+
+// GET /api/agent-templates/{slug}
+export async function getAgentTemplate(slug: string): Promise<AgentTemplate> {
+  return simulated(() => mdb.getTemplate(slug));
+}
+
+// POST /api/agents/from-template —— 服务端并发拉 skill,失败 422 整体回滚(契约注记)。
+export async function createAgentFromTemplate(req: {
+  slug: string;
+  name?: string;
+  runtime_id: string;
+}): Promise<Agent> {
+  return simulated(() => mdb.createFromTemplate(req.slug, req));
+}
+
+// 市集技能货架(mock 演示;接线=importSkill(source_url))。
+export async function listMarketSkills(): Promise<MarketSkill[]> {
+  return simulated(() => mdb.allMarketSkills());
+}
+
+export async function getMarketSkillDetail(slug: string): Promise<MarketSkill> {
+  return simulated(() => mdb.getMarketSkill(slug));
+}
+
+export async function installMarketSkill(slug: string): Promise<MarketInstalledSkill> {
+  return simulated(() => mdb.installMarketSkill(slug));
+}

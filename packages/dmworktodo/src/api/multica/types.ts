@@ -322,3 +322,39 @@ export interface UpdateSkillRequest {
   config?: Record<string, unknown>;
   files?: Array<{ path: string; content: string }>;
 }
+
+// ═══ 市集 Marketplace(S6 卡⑦,D4=技能+worker 模板)═══
+// worker 模板:契约端点 listAgentTemplates/getAgentTemplate/createAgentFromTemplate(原判待定,
+// D4 升 V1用)。字段为 mock 合理形状,接线时照 multica agent.ts L374-407 逐字对齐。
+
+export interface AgentTemplateSkillRef {
+  name: string;
+  description: string;
+  source_url?: string;
+}
+
+export interface AgentTemplateSummary {
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  author: string;
+  installs: number;
+  recommended_model?: string;
+}
+
+export interface AgentTemplate extends AgentTemplateSummary {
+  instructions: string;
+  skills: AgentTemplateSkillRef[];
+}
+
+// 市集货架技能(展示形状;真实来源=importSkill URL 导入,货架仅 mock 演示)。
+export interface MarketSkill {
+  slug: string;
+  name: string;
+  description: string;
+  author: string;
+  installs: number;
+  source_url: string;
+  content_preview: string;
+}

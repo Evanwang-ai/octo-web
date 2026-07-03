@@ -1,0 +1,389 @@
+/**
+ * [INPUT]: dmworkbase 设计系统 --wk-* 变量。
+ * [OUTPUT]: MarketplaceView + MarketDetailView 样式(.mkt-*)。
+ * [POS]: dmworktodo/ui/MatterListView 的市集样式。骨架=Notion 市集(容器 1248 居中/
+ *        3 列卡 gap 20)+ Notion connector 详情(左步骤引导+右 key-value);颜色仅 --wk-*。
+ * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
+ */
+
+.mkt-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--wk-bg-base);
+  overflow-y: auto;
+}
+
+.mkt-head {
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--wk-border-default);
+  position: sticky;
+  top: 0;
+  background: var(--wk-bg-base);
+  z-index: 2;
+}
+
+.mkt-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.mkt-head-hint {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+}
+
+.mkt-back {
+  border: none;
+  background: transparent;
+  padding: 2px 4px;
+  font-size: 13px;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+}
+
+.mkt-back:hover {
+  color: var(--wk-text-primary);
+}
+
+.mkt-crumb-sep {
+  color: var(--wk-text-disabled);
+  font-size: 12px;
+}
+
+/* ── 首页:分类侧栏 + 卡网格(Notion 市集 1248 容器/3 列/gap 20)── */
+.mkt-body {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 1248px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+  box-sizing: border-box;
+}
+
+.mkt-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 56px;
+  align-self: start;
+}
+
+.mkt-cat {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+}
+
+.mkt-cat:hover {
+  background: var(--wk-bg-hover);
+}
+
+.mkt-cat.is-active {
+  background: var(--wk-bg-selected);
+  color: var(--wk-text-primary);
+  font-weight: 500;
+}
+
+.mkt-section {
+  margin-bottom: 28px;
+}
+
+.mkt-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+  margin-bottom: 12px;
+}
+
+.mkt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.mkt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  background: var(--wk-bg-base);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  min-height: 132px;
+}
+
+.mkt-card:hover {
+  background: var(--wk-bg-hover);
+  border-color: color-mix(in srgb, var(--wk-border-default) 40%, var(--wk-text-tertiary));
+}
+
+.mkt-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mkt-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.mkt-installed {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: var(--wk-color-success);
+  background: color-mix(in srgb, var(--wk-color-success) 12%, transparent);
+}
+
+.mkt-card-desc {
+  flex: 1;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--wk-text-secondary);
+}
+
+.mkt-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--wk-text-tertiary);
+}
+
+.mkt-skill-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--wk-bg-hover);
+  color: var(--wk-text-secondary);
+  flex-shrink: 0;
+}
+
+.mkt-skill-ic.is-big {
+  width: 48px;
+  height: 48px;
+}
+
+.mkt-empty {
+  padding: 60px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--wk-text-tertiary);
+}
+
+/* ── 详情:左 onboarding 步骤 + 右信息栏(Notion connector 配方)── */
+.mkt-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 32px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+  box-sizing: border-box;
+}
+
+.mkt-onboard {
+  min-width: 0;
+}
+
+.mkt-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.mkt-hero-name {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--wk-text-primary);
+}
+
+.mkt-hero-desc {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--wk-text-secondary);
+}
+
+.mkt-step {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--wk-border-default);
+}
+
+.mkt-step-n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--wk-brand-primary, #1b1b1b);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mkt-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mkt-step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.mkt-step-hint {
+  margin: 3px 0 8px;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+}
+
+.mkt-input {
+  width: 100%;
+  max-width: 360px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  background: var(--wk-bg-base);
+  box-sizing: border-box;
+}
+
+.mkt-input:focus {
+  outline: none;
+  border-color: var(--wk-color-info);
+}
+
+.mkt-primary {
+  padding: 7px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--wk-brand-primary, #1b1b1b);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mkt-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mkt-done {
+  padding: 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--wk-color-success) 40%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--wk-color-success) 7%, transparent);
+  margin: 14px 0;
+}
+
+.mkt-done-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wk-color-success);
+  margin-bottom: 4px;
+}
+
+.mkt-done .mkt-primary {
+  margin-top: 10px;
+}
+
+.mkt-ins-preview {
+  margin-top: 18px;
+}
+
+.mkt-pre {
+  margin: 6px 0 0;
+  padding: 12px 14px;
+  background: var(--wk-bg-hover);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--wk-text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.mkt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  align-self: start;
+  position: sticky;
+  top: 64px;
+}
+
+.mkt-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--wk-text-primary);
+}
+
+.mkt-kv.is-col {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mkt-kv-k {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wk-text-tertiary);
+}
+
+.mkt-skill-line {
+  font-size: 12.5px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--wk-border-default);
+}
+
+.mkt-skill-line:last-child {
+  border-bottom: none;
+}
+
+.mkt-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.mkt-wrap {
+  word-break: break-all;
+}

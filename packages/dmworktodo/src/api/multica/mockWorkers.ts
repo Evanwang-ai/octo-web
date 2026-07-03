@@ -293,6 +293,47 @@ export function activity30d(): AgentActivityBucket[] {
 }
 
 // ── 变更 ──
+// 模板建虾(市集 createAgentFromTemplate 落点):新 agent 入库,presence 立即可派生。
+export function createAgentIn(req: {
+  name: string;
+  description: string;
+  instructions: string;
+  runtime_id: string;
+  model: string;
+  skills: Array<{ id: string; name: string; description: string }>;
+}): Agent {
+  seed();
+  const me = WKApp.loginInfo.uid || "";
+  const a: Agent = {
+    id: `ag-${agents.length + 1}-t`,
+    workspace_id: WKApp.shared.currentSpaceId || "",
+    runtime_id: req.runtime_id,
+    name: req.name,
+    description: req.description,
+    instructions: req.instructions,
+    avatar_url: null,
+    runtime_mode: "local",
+    custom_args: [],
+    has_custom_env: false,
+    custom_env_key_count: 0,
+    mcp_config: null,
+    mcp_config_redacted: false,
+    visibility: "workspace",
+    status: "idle",
+    max_concurrent_tasks: 1,
+    model: req.model,
+    thinking_level: "",
+    owner_id: me,
+    skills: req.skills,
+    created_at: iso(0),
+    updated_at: iso(0),
+    archived_at: null,
+    archived_by: null,
+  };
+  agents.push(a);
+  return { ...a };
+}
+
 export function updateAgentIn(id: string, req: UpdateAgentRequest): Agent {
   seed();
   const idx = agents.findIndex((a) => a.id === id);

@@ -25,6 +25,8 @@ import SquadsView from "./SquadsView";
 import SquadDetailView from "./SquadDetailView";
 import SkillsView from "./SkillsView";
 import SkillDetailView from "./SkillDetailView";
+import MarketplaceView from "./MarketplaceView";
+import MarketDetailView from "./MarketDetailView";
 import WorkerDetailView from "./WorkerDetailView";
 import CommandPalette from "./CommandPalette";
 
@@ -41,7 +43,9 @@ type View =
   | "squads"
   | "squadDetail"
   | "skills"
-  | "skillDetail";
+  | "skillDetail"
+  | "market"
+  | "marketDetail";
 
 export default function MatterRouteHost() {
   const menuId = WKApp.currentMenuId;
@@ -57,6 +61,7 @@ export default function MatterRouteHost() {
   const [workerId, setWorkerId] = useState<string | null>(null);
   const [squadId, setSquadId] = useState<string | null>(null);
   const [skillId, setSkillId] = useState<string | null>(null);
+  const [marketTarget, setMarketTarget] = useState<{ kind: "template" | "skill"; slug: string } | null>(null);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // ref 镜像:全局 keydown 监听(空依赖只注册一次)读它,避免 stale 闭包。
   const activeRef = useRef(active);
@@ -152,6 +157,18 @@ export default function MatterRouteHost() {
     setSkillId(id);
     setView("skillDetail");
   };
+  // 市集(⑦):首页 + onboarding 详情。
+  const showMarket = () => {
+    setActive(true);
+    setView("market");
+    setSection("market");
+  };
+  const openMarketDetail = (kind: "template" | "skill", slug: string) => {
+    setActive(true);
+    setSection("market");
+    setMarketTarget({ kind, slug });
+    setView("marketDetail");
+  };
 
   // 子导航五项全部原生视图。
   const onNavigate = (key: SubNavKey) => {
@@ -169,6 +186,8 @@ export default function MatterRouteHost() {
       showSquads();
     } else if (key === "skills") {
       showSkills();
+    } else if (key === "market") {
+      showMarket();
     }
   };
 
@@ -269,6 +288,17 @@ export default function MatterRouteHost() {
           {view === "skills" && <SkillsView onOpenDetail={openSkillDetail} />}
           {view === "skillDetail" && skillId && (
             <SkillDetailView key={skillId} skillId={skillId} onBack={showSkills} />
+          )}
+          {view === "market" && <MarketplaceView onOpenDetail={openMarketDetail} />}
+          {view === "marketDetail" && marketTarget && (
+            <MarketDetailView
+              key={`${marketTarget.kind}-${marketTarget.slug}`}
+              kind={marketTarget.kind}
+              slug={marketTarget.slug}
+              onBack={showMarket}
+              onOpenWorker={openWorkerDetail}
+              onOpenSkill={openSkillDetail}
+            />
           )}
           <CommandPalette
             open={cmdkOpen}
