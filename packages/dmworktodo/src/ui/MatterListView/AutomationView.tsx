@@ -145,10 +145,11 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
 
       {!loading && schedules.length > 0 && (
         <div className="av-list">
+          {/* 行=Listview 语法:40px 单行——开关/标题/runbook 首行内联/右缘(健康点串·cron·执行方·下次) */}
           {schedules.map((s) => {
             const on = s.enabled === 1 || s.enabled === true;
             return (
-              <div key={s.id} className={`av-card${on ? "" : " is-off"}`}>
+              <div key={s.id} className={`av-row${on ? "" : " is-off"}`}>
                 <button
                   type="button"
                   className={`av-switch${on ? " is-on" : ""}`}
@@ -161,7 +162,7 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
                   <span className="av-switch-knob" />
                 </button>
                 <div
-                  className="av-card-body"
+                  className="av-row-body"
                   role="button"
                   tabIndex={0}
                   onClick={() => onOpenDetail(s.id)}
@@ -172,30 +173,23 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
                     }
                   }}
                 >
-                  <div className="av-card-top">
-                    <span className="av-cron">{cronHuman(s.cron_expr)}</span>
-                    {on && s.next_run_at && (
-                      <span className="av-next">下次 {relFuture(s.next_run_at)}</span>
-                    )}
-                    {!on && <span className="av-next av-off-tag">已停用</span>}
-                  </div>
-                  <div className="av-title">{s.title || "未命名自动化"}</div>
-                  <div className="av-meta">
-                    <span className="av-exec">
-                      <UserName uid={s.executor_uid} />
-                      {isBot(s.executor_uid) && <span className="av-ai">AI</span>}
-                    </span>
-                    <span className="av-dot">·</span>
-                    <span className="av-target">{target(s)}</span>
-                  </div>
-                  {s.runbook && <div className="av-runbook">{s.runbook.split("\n")[0]}</div>}
+                  <span className="av-title">{s.title || "未命名自动化"}</span>
+                  {s.runbook && <span className="av-runbook">{s.runbook.split("\n")[0]}</span>}
                   {(runsMap[s.id]?.length ?? 0) > 0 && (
-                    <div className="av-dots" title="最近 8 次运行">
+                    <span className="av-dots" title="最近 8 次运行">
                       {runsMap[s.id].slice(0, 8).reverse().map((r) => (
                         <span key={r.id} className={`av-hdot ${r.status === "failed" ? "is-bad" : "is-ok"}`} />
                       ))}
-                    </div>
+                    </span>
                   )}
+                  <span className="av-cron">{cronHuman(s.cron_expr)}</span>
+                  <span className="av-exec">
+                    <UserName uid={s.executor_uid} />
+                    {isBot(s.executor_uid) && <span className="av-ai">AI</span>}
+                  </span>
+                  <span className="av-next">
+                    {on ? (s.next_run_at ? `下次 ${relFuture(s.next_run_at)}` : "") : "已停用"}
+                  </span>
                 </div>
               </div>
             );

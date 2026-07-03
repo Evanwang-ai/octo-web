@@ -60,25 +60,98 @@
   padding: 4px 24px 32px;
 }
 
-/* 卡片 */
-.av-card {
+/* ── 行(Listview .mlv-row 公式,S8:开关/标题/runbook 内联/右缘元数据)── */
+.av-row {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 14px 16px;
-  border: 1px solid var(--wk-border-default);
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 16px);
+  height: 40px;
+  margin: 0 8px;
+  padding: 0 10px;
   border-radius: var(--wk-r-md, 8px);
-  background: var(--wk-bg-surface);
-  margin-bottom: 10px;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: background 0.1s;
+  box-sizing: border-box;
 }
-.av-card:hover {
-  border-color: var(--wk-brand-tint-15);
-  box-shadow: var(--wk-shadow-sm);
+
+.av-row:hover {
+  background: var(--wk-brand-tint-06);
 }
-.av-card.is-off {
-  opacity: 0.7;
+
+.av-row.is-off .av-title,
+.av-row.is-off .av-runbook {
+  color: var(--wk-text-disabled);
 }
+
+.av-row-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  height: 100%;
+}
+
+.av-title {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wk-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40%;
+}
+
+.av-runbook {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.av-dots {
+  flex: none;
+  display: inline-flex;
+  gap: 3px;
+}
+
+.av-cron {
+  flex: none;
+  min-width: 110px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  white-space: nowrap;
+}
+
+.av-exec {
+  flex: none;
+  min-width: 90px;
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  white-space: nowrap;
+}
+
+.av-next {
+  flex: none;
+  min-width: 88px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--wk-text-disabled);
+  white-space: nowrap;
+}
+
+
+/* 卡片 */
 
 /* 开关 */
 .av-switch {
@@ -116,46 +189,6 @@
 }
 
 /* 卡片正文 */
-.av-card-body {
-  flex: 1 1 auto;
-  min-width: 0;
-  cursor: pointer;
-}
-.av-card-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-.av-cron {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--wk-text-primary);
-}
-.av-next {
-  font-size: 12px;
-  color: var(--wk-text-tertiary);
-}
-.av-off-tag {
-  color: var(--wk-text-disabled);
-}
-.av-title {
-  font-size: 14px;
-  font-weight: 550;
-  color: var(--wk-text-primary);
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.av-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  color: var(--wk-text-secondary);
-  margin-bottom: 4px;
-}
 .av-exec {
   display: inline-flex;
   align-items: center;
@@ -166,13 +199,6 @@
 }
 .av-target {
   color: var(--wk-text-tertiary);
-}
-.av-runbook {
-  font-size: 12.5px;
-  color: var(--wk-text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .av-ai {
   display: inline-flex;
