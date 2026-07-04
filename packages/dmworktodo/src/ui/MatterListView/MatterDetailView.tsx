@@ -910,7 +910,12 @@ export default function MatterDetailView({
             </div>
             <div className="mdv-iters" role="list">
               {iterations.rounds.map((r, i) => (
-                <div key={r.round} className="mdv-iter" role="listitem">
+                <div
+                  key={r.round}
+                  className={`mdv-iter${i === iterations.rounds.length - 1 ? " is-now" : ""}`}
+                  data-outcome={r.outcome || ""}
+                  role="listitem"
+                >
                   <span className="mdv-iter-round">第 {r.round} 轮</span>
                   <span className="mdv-iter-badge" data-outcome={r.outcome || ""}>
                     {OUTCOME_LABEL[r.outcome || ""] || r.outcome || "—"}
@@ -930,7 +935,11 @@ export default function MatterDetailView({
               ))}
               {/* 经验总结行(vanilla summaryLine L8203-8210):rounds 之后追加,status→人话+语义色 */}
               {expSummary && (
-                <div className="mdv-iter" role="listitem">
+                <div
+                  className="mdv-iter"
+                  data-outcome={expSummary.status === "authorized" ? "confirmed" : "pending_review"}
+                  role="listitem"
+                >
                   <span className="mdv-iter-round">经验总结</span>
                   <span
                     className="mdv-iter-badge"

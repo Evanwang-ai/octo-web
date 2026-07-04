@@ -937,22 +937,60 @@ button.mdv-att-card:hover {
   cursor: pointer;
 }
 
-/* ── 迭代轮次 ── */
+/* ── 迭代轮次(原子J:版本序列=竖线连点,StackAI 配方;轮次卡框撤=去盒中盒) ── */
 .mdv-iters {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  padding-left: 2px;
+}
+.mdv-iters::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: color-mix(in srgb, var(--wk-border-default) 80%, transparent);
 }
 .mdv-iter {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 11px;
-  border: 1px solid var(--wk-border-default);
-  border-radius: var(--wk-r-md);
-  background: var(--wk-bg-surface);
+  min-height: 30px;
+  padding: 0 2px 0 22px;
   font-size: 12.5px;
   color: var(--wk-text-secondary);
+}
+/* 节点骑线:outcome 上色,当前轮=info 环 */
+.mdv-iter::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wk-text-disabled);
+  border: 2px solid var(--wk-bg-surface);
+}
+.mdv-iter[data-outcome="confirmed"]::before,
+.mdv-iter[data-outcome="accepted"]::before {
+  background: var(--wk-color-success);
+}
+.mdv-iter[data-outcome="needs_revision"]::before,
+.mdv-iter[data-outcome="rejected"]::before,
+.mdv-iter[data-outcome="sent_back"]::before {
+  background: var(--wk-color-error);
+}
+.mdv-iter[data-outcome="pending_review"]::before {
+  background: var(--wk-color-warning);
+}
+.mdv-iter.is-now::before {
+  background: var(--wk-color-info);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wk-color-info) 18%, transparent);
 }
 .mdv-iter-round {
   font-weight: 600;
