@@ -369,13 +369,19 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* 原子D 单行事件公式:32px,点即状态(成功不写字),时长·时间恒右缘 */
+.avd-runs {
+  display: flex;
+  flex-direction: column;
+}
+
 .avd-run {
-  flex: 1;
-  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 8px;
+  margin: 0 -8px;
   border-radius: 8px;
 }
 
@@ -383,15 +389,9 @@
   background: var(--wk-bg-hover);
 }
 
-.avd-run-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
 .avd-run-title {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 13px;
   color: var(--wk-text-primary);
   white-space: nowrap;
@@ -399,13 +399,16 @@
   text-overflow: ellipsis;
 }
 
-.avd-run-sub {
+.avd-run-inline {
+  flex: 0 0 auto;
   font-size: 12px;
   color: var(--wk-text-tertiary);
+  white-space: nowrap;
 }
 
 .avd-run-meta {
   flex-shrink: 0;
+  margin-left: auto;
   font-size: 12px;
   color: var(--wk-text-tertiary);
 }

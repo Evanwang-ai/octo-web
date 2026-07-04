@@ -5,7 +5,7 @@
  * [OUTPUT]: 对外默认导出 AutomationDetailView —— 自动化详情页(S6 卡⑧新增)。
  * [POS]: dmworktodo/ui/MatterListView 的自动化详情,MatterRouteHost view="automationDetail" 挂载。
  *        头=名+启停开关+编辑(开向导)+删除(两击);属性行=cron 人话/时区/执行方/输出/下次运行;
- *        runbook 卡;run 历史=GitHub 时间线(复用 .wkd-tl 家族,与 worker 档案同款组件语言)。
+ *        runbook 卡;run 历史=原子D 单行事件公式(32px 行/点即状态/时间右缘,S9 撤竖线)。
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
 import React, { useEffect, useState } from "react";
@@ -179,28 +179,24 @@ export default function AutomationDetailView({
 
         <section className="wkd-tl-wrap">
           <div className="wkd-card-title">
-            运行历史 <span className="wkd-group-n">{runs.length} 次(近 8 次)</span>
+            运行历史 <span className="wkd-group-n">近 {runs.length} 次</span>
           </div>
-          <div className="wkd-tl">
+          {/* 原子D 公式:32px 单行,点即状态(成功不写字),时长·时间恒右缘 */}
+          <div className="avd-runs">
             {runs.map((r) => (
-              <div key={r.id} className="wkd-tl-item">
-                <span className="wkd-tl-node">
-                  <span
-                    className={`wkd-run-dot ${
-                      r.status === "success" ? "is-success" : r.status === "failed" ? "is-error" : "is-brand"
-                    }`}
-                  />
+              <div key={r.id} className="avd-run">
+                <span
+                  className={`wkd-run-dot ${
+                    r.status === "success" ? "is-success" : r.status === "failed" ? "is-error" : "is-brand"
+                  }`}
+                />
+                <span className="avd-run-title">{r.summary}</span>
+                {r.status !== "success" && (
+                  <span className="avd-run-inline">{r.status === "failed" ? "失败" : "运行中"}</span>
+                )}
+                <span className="avd-run-meta">
+                  {r.duration_sec}s · {fmtTime(r.started_at)}
                 </span>
-                <div className="avd-run">
-                  <div className="avd-run-main">
-                    <span className="avd-run-title">{r.summary}</span>
-                    <span className="avd-run-sub">
-                      {r.status === "success" ? "成功" : r.status === "failed" ? "失败" : "运行中"}
-                      {` · ${r.duration_sec}s`}
-                    </span>
-                  </div>
-                  <span className="avd-run-meta">{fmtTime(r.started_at)}</span>
-                </div>
               </div>
             ))}
           </div>

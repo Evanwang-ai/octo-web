@@ -128,17 +128,19 @@ function RunRow({ t, onTranscript }: { t: AgentTask; onTranscript?: (t: AgentTas
   const st = RUN_STATUS[t.status] || { label: t.status, cls: "is-muted" };
   // queued/等待目录还没开跑,无事件流(对齐 multica showTranscript 门控)。
   const hasTranscript = t.status !== "queued" && t.status !== "waiting_local_directory";
+  const title = t.trigger_summary || KIND_LABEL[t.kind || "direct"] || "Run";
+  const kindLabel = t.kind ? KIND_LABEL[t.kind] || t.kind : "";
   return (
+    /* 原子D 公式:32px 单行,点即状态(completed 不写字),时间恒右缘 */
     <div className="wkd-run">
       <span className={`wkd-run-dot ${st.cls}`} />
-      <span className="wkd-run-main">
-        <span className="wkd-run-title">{t.trigger_summary || KIND_LABEL[t.kind || "direct"] || "Run"}</span>
-        <span className="wkd-run-sub">
-          {st.label}
-          {t.kind && ` · ${KIND_LABEL[t.kind] || t.kind}`}
-          {t.error && <span className="wkd-run-err"> · {t.error}</span>}
-        </span>
-      </span>
+      <span className="wkd-run-title">{title}</span>
+      {t.status !== "completed" && <span className="wkd-run-inline">{st.label}</span>}
+      {/* 同词去重守护:kind 已含于标题则不复读 */}
+      {kindLabel && !title.includes(kindLabel) && (
+        <span className="wkd-run-inline">{kindLabel}</span>
+      )}
+      {t.error && <span className="wkd-run-err">{t.error}</span>}
       {onTranscript && hasTranscript && (
         <button
           type="button"
@@ -449,18 +451,11 @@ export default function WorkerDetailView({
                   {terminal.length === 0 ? (
                     <div className="wkd-none">还没有完成过 Run。</div>
                   ) : (
-                    <div className="wkd-tl">
-                      {terminal.slice(0, recentShown).map((t) => {
-                        const st = RUN_STATUS[t.status] || { label: t.status, cls: "is-muted" };
-                        return (
-                          <div key={t.id} className="wkd-tl-item">
-                            <span className="wkd-tl-node">
-                              <span className={`wkd-run-dot ${st.cls}`} />
-                            </span>
-                            <RunRow t={t} onTranscript={setTranscriptTask} />
-                          </div>
-                        );
-                      })}
+                    /* 原子D 裁决5:竖线只给版本序列,run 流不画线 */
+                    <div className="wkd-runs">
+                      {terminal.slice(0, recentShown).map((t) => (
+                        <RunRow key={t.id} t={t} onTranscript={setTranscriptTask} />
+                      ))}
                       {terminal.length > recentShown && (
                         <button
                           type="button"

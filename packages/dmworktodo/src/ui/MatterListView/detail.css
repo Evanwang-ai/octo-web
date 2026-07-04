@@ -147,11 +147,11 @@
   font-size: 13px;
 }
 
-/* timeline */
+/* timeline(原子D 合并流:发言=hairline 卡,系统事件=无框行,同流交错) */
 .mdv-timeline {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 .mdv-tl-row {
   display: flex;
@@ -159,10 +159,16 @@
 }
 .mdv-tl-av {
   flex: 0 0 auto;
+  padding-top: 4px;
 }
+/* 发言卡:边界的语义=作者的话语权(Linear 同款,系统事件不配框) */
 .mdv-tl-body {
   flex: 1 1 auto;
   min-width: 0;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--wk-bg-surface);
 }
 .mdv-tl-meta {
   display: flex;
@@ -880,25 +886,15 @@ button.mdv-att-card:hover {
   opacity: 0.9;
 }
 
-/* ── 进度 activities 轨迹 ── */
-.mdv-acts {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+/* ── 系统事件行(原子D 单行公式:16px 头像+主谓宾+时间右缘,无框) ── */
 .mdv-act {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 24px;
+  padding: 0 2px;
   font-size: 12.5px;
   color: var(--wk-text-secondary);
-}
-.mdv-act-dot {
-  flex: 0 0 auto;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--wk-text-disabled);
 }
 .mdv-act-actor {
   font-weight: 600;

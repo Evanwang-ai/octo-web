@@ -301,16 +301,22 @@
   flex-shrink: 0;
 }
 
-/* Run 行 */
+/* Run 行(原子D 单行事件公式:32px,点即状态,时间恒右缘) */
 .wkd-run {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 8px;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 8px;
   margin: 0 -8px;
   border: none;
   border-radius: 8px;
   transition: background 0.1s;
+}
+
+.wkd-runs {
+  display: flex;
+  flex-direction: column;
 }
 
 .wkd-run:hover {
@@ -344,15 +350,9 @@
   background: var(--wk-text-disabled);
 }
 
-.wkd-run-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
 .wkd-run-title {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 13px;
   color: var(--wk-text-primary);
   white-space: nowrap;
@@ -360,20 +360,26 @@
   text-overflow: ellipsis;
 }
 
-.wkd-run-sub {
+.wkd-run-inline {
+  flex: 0 0 auto;
   font-size: 12px;
   color: var(--wk-text-tertiary);
+  white-space: nowrap;
+}
+
+.wkd-run-err {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--wk-color-error);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.wkd-run-err {
-  color: var(--wk-color-error);
-}
-
 .wkd-run-meta {
   flex-shrink: 0;
+  margin-left: auto;
   font-size: 12px;
   color: var(--wk-text-tertiary);
 }
@@ -570,65 +576,13 @@
   background: var(--wk-color-success);
 }
 
-/* 履历时间线(GitHub:2px 竖线 + 节点骑线 + 行内容) */
+/* 履历区容器(原子D:竖线只给版本序列,run 流不画线——.wkd-tl 线族已撤) */
 .wkd-tl-wrap {
   padding: 2px 2px 8px;
 }
 
 .wkd-tl-wrap .wkd-card-title {
   margin: 8px 0 10px;
-}
-
-.wkd-tl {
-  position: relative;
-  padding-left: 22px;
-}
-
-.wkd-tl::before {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: color-mix(in srgb, var(--wk-border-default) 70%, transparent);
-}
-
-.wkd-tl-item {
-  position: relative;
-}
-
-.wkd-tl-node {
-  position: absolute;
-  left: -22px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--wk-bg-hover);
-  border: 2px solid var(--wk-bg-base);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.wkd-tl-node .wkd-run-dot {
-  width: 6px;
-  height: 6px;
-  margin: 0;
-}
-
-/* 时间线内的 Run 行:去卡片边框,行态呈现 */
-.wkd-tl .wkd-run {
-  border: none;
-  border-radius: 8px;
-  margin-bottom: 2px;
-  padding: 8px 10px;
-}
-
-.wkd-tl .wkd-run:hover {
-  background: var(--wk-bg-hover);
 }
 
 /* 配置页:Attio 左组导航骨架 */
@@ -671,11 +625,6 @@
 
 .wkd-cfg-body {
   min-width: 0;
-}
-
-/* 时间线行内的状态点由节点承担,行内自带点隐藏(免重复) */
-.wkd-tl .wkd-run > .wkd-run-dot {
-  display: none;
 }
 
 /* S8:配置区去盒中盒——外卡框退场,节=标题行+控件(textarea/表格自带边界) */
