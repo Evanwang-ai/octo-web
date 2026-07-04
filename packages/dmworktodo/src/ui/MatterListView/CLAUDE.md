@@ -78,3 +78,9 @@ PlanGraph.tsx roles 变体(欠账⑧,1d40f5e3): 导出 roleNodesFromConfig(vanil
 **反模式三件套(设置页感来源,一票否决)**:表格列头、盒中盒(卡内卡)、顶栏解释性副文案。
 CDP 视口坑:Emulation.clearDeviceMetricsOverride 后 innerWidth 可能仍卡在旧值,显式 size 1600x900 钉住再验收;窄视口截图会误判 grid/flex 布局问题。
 codex 统审六 findings 全落地:F1 hover 卡补所有者块(列表删列后信息要有新家,不是消失)F2 自动化行补 target 去向 F3 恢复 .wkr-dot(详情 presence pill 仍在用——删共享 css 类前 grep 全部消费者)F4 三列表名字改可收缩截断(flex 0 1 auto+max 40%,长名不挤爆右缘)F5 hueOf 提出 IIFE F6 收起行 hover 不出框(边界=展开语义)。embedded 看板抑制自身页头(项目详情"页中页"双 22px 标题+双黑按钮=双头怪,建单入口收进工具条保留 projectId 预填)。
+
+═══ S9 原子化重组(2026-07-04,底稿=计划文档/Matter-功能原子树-重组底稿-2026-07-04.md,参照库=好看的设计/Mobbin 三轴)═══
+**范式:每原子一张设计决策卡(Bus/S9-原子决策卡/),该原子所有出现处一次推平。**
+原子D 事件流(D-事件流.md):①卡与行的分野=有无正文——纯谓词事件(创建/流转)=无框单行灰,发言(有正文)=hairline 白卡(bg-surface,边框=作者话语权,Linear 同款)②单行公式=头像16+主语500+谓词灰+时间恒右缘 ③竖线只给版本序列,普通事件流不画线(Vercel/Linear 均无线)。落地:**MatterDetailView 进度+动态合并为一条时间交错流**(stream memo,activities=mdv-act 行/timeline=mdv-tl-row 卡,批注锚点不动);worker RunRow 单行化(32px/成功不写字/kind 同词去重守护);自动化 run 历史撤竖线改 Laravel 行式(.avd-runs);.wkd-tl 线族/.mdv-acts 已删。
+原子J Run(J-Run执行.md):Run 三粒度=点(8px 终态色)/行(D 公式特化:时长·时间右缘)/版本轴(迭代轮次=StackAI 竖线连点,节点色=outcome[打回红/确认绿/待确认橙],**当前轮=info 环覆盖 outcome 色**,轮次卡框撤);transcript 保持 S6 Langfuse 双栏。列表活动指示/小队 active_issues 挂接线。
+原子C 详情骨架(C-详情骨架.md):**Inspector 恒右**(Linear/Cursor/Notion 三源:左叙事右结构)——wkd-body/sqd-body grid 翻转(minmax(0,1fr)+296/320px,inspector order:2+border-left),回路/worker/小队三页同拓扑。欠账:自动化详情属性卡→右栏、项目详情成员/上下文归右栏。技能编辑器双栏/市集 hue hero=有意保留的例外。
