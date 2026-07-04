@@ -502,19 +502,6 @@ export default function MatterDetailView({
     );
   }, [children.length, matter?.mode, treeCfg, timeline]);
 
-  // 动态合并流(原子D 裁决1):activities 系统事件 + timeline 发言,按时间交错;
-  // 分野=有无正文——纯谓词事件无框行,发言 hairline 卡。
-  const stream = useMemo(() => {
-    const items: Array<
-      | { kind: "act"; ts: string; act: MatterActivity }
-      | { kind: "post"; ts: string; post: TimelineEntry }
-    > = [
-      ...activities.map((a) => ({ kind: "act" as const, ts: a.created_at, act: a })),
-      ...timeline.map((e) => ({ kind: "post" as const, ts: e.created_at, post: e })),
-    ];
-    return items.sort((x, y) => new Date(x.ts).getTime() - new Date(y.ts).getTime());
-  }, [activities, timeline]);
-
   // 经验总结行数据:仅终态拉取(summary 只在终态产生);ExperiencePanel 变更走 expGen 触发重拉。
   const expTerminal =
     (matter?.status as string) === "done" || (matter?.status as string) === "cancelled";
@@ -910,12 +897,7 @@ export default function MatterDetailView({
             </div>
             <div className="mdv-iters" role="list">
               {iterations.rounds.map((r, i) => (
-                <div
-                  key={r.round}
-                  className={`mdv-iter${i === iterations.rounds.length - 1 ? " is-now" : ""}`}
-                  data-outcome={r.outcome || ""}
-                  role="listitem"
-                >
+                <div key={r.round} className="mdv-iter" role="listitem">
                   <span className="mdv-iter-round">第 {r.round} 轮</span>
                   <span className="mdv-iter-badge" data-outcome={r.outcome || ""}>
                     {OUTCOME_LABEL[r.outcome || ""] || r.outcome || "—"}
@@ -935,11 +917,7 @@ export default function MatterDetailView({
               ))}
               {/* 经验总结行(vanilla summaryLine L8203-8210):rounds 之后追加,status→人话+语义色 */}
               {expSummary && (
-                <div
-                  className="mdv-iter"
-                  data-outcome={expSummary.status === "authorized" ? "confirmed" : "pending_review"}
-                  role="listitem"
-                >
+                <div className="mdv-iter" role="listitem">
                   <span className="mdv-iter-round">经验总结</span>
                   <span
                     className="mdv-iter-badge"
@@ -960,55 +938,61 @@ export default function MatterDetailView({
           </div>
         )}
 
-        {/* 动态 = 合并流(原子D 裁决1,Linear Activity 同款):
-            系统事件(activities 纯谓词)=无框行,发言(timeline 有正文)=hairline 卡,按时间交错 */}
+        {/* 进度 = activities 审计轨迹(对齐 vanilla:进度取 /activities) */}
+        {activities.length > 0 && (
+          <div className="mdv-section">
+            <div className="mdv-section-head">
+              进度<span className="mdv-section-count">{activities.length} 条</span>
+            </div>
+            <div className="mdv-acts" role="list">
+              {activities.map((a) => (
+                <div key={a.id} className="mdv-act" role="listitem">
+                  <span className="mdv-act-dot" />
+                  <span className="mdv-act-actor">
+                    <UserName uid={a.actor_id} />
+                  </span>
+                  <span className="mdv-act-text">{actHuman(a)}</span>
+                  <span className="mdv-act-time">{relTime(a.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 动态 = timeline(发车 composer 写入的进展/讨论) */}
         <div className="mdv-section">
           <div className="mdv-section-head">
-            动态<span className="mdv-section-count">{stream.length} 条</span>
+            动态<span className="mdv-section-count">{timeline.length} 条</span>
           </div>
           <div className="mdv-timeline" role="list">
-            {stream.length === 0 && <div className="mdv-empty">还没有动态</div>}
-            {stream.map((item) =>
-              item.kind === "act" ? (
-                <div key={`a-${item.act.id}`} className="mdv-act" role="listitem">
+            {timeline.length === 0 && <div className="mdv-empty">还没有动态</div>}
+            {timeline.map((e) => (
+              <div key={e.id} className="mdv-tl-row" role="listitem">
+                <span className="mdv-tl-av">
                   <WKAvatar
-                    channel={new Channel(item.act.actor_id, ChannelTypePerson)}
-                    style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0 }}
+                    channel={new Channel(e.user_id, ChannelTypePerson)}
+                    style={{ width: 22, height: 22, borderRadius: "50%" }}
                   />
-                  <span className="mdv-act-actor">
-                    <UserName uid={item.act.actor_id} />
-                  </span>
-                  <span className="mdv-act-text">{actHuman(item.act)}</span>
-                  <span className="mdv-act-time">{relTime(item.act.created_at)}</span>
-                </div>
-              ) : (
-                <div key={`p-${item.post.id}`} className="mdv-tl-row" role="listitem">
-                  <span className="mdv-tl-av">
-                    <WKAvatar
-                      channel={new Channel(item.post.user_id, ChannelTypePerson)}
-                      style={{ width: 22, height: 22, borderRadius: "50%" }}
-                    />
-                  </span>
-                  <div className="mdv-tl-body">
-                    <div className="mdv-tl-meta">
-                      <span className="mdv-tl-name">
-                        <UserName uid={item.post.user_id} />
-                      </span>
-                      {isBot(item.post.user_id) && <span className="mdv-ai">AI</span>}
-                      <span className="mdv-tl-time">{relTime(item.post.created_at)}</span>
-                    </div>
-                    {item.post.content && (
-                      <div className="mdv-tl-content" data-annot-entry={item.post.id}>
-                        <MarkdownContent content={item.post.content} />
-                      </div>
-                    )}
-                    {Array.isArray(item.post.attachments) && item.post.attachments.length > 0 && (
-                      <TlAttachments atts={item.post.attachments} />
-                    )}
+                </span>
+                <div className="mdv-tl-body">
+                  <div className="mdv-tl-meta">
+                    <span className="mdv-tl-name">
+                      <UserName uid={e.user_id} />
+                    </span>
+                    {isBot(e.user_id) && <span className="mdv-ai">AI</span>}
+                    <span className="mdv-tl-time">{relTime(e.created_at)}</span>
                   </div>
+                  {e.content && (
+                    <div className="mdv-tl-content" data-annot-entry={e.id}>
+                      <MarkdownContent content={e.content} />
+                    </div>
+                  )}
+                  {Array.isArray(e.attachments) && e.attachments.length > 0 && (
+                    <TlAttachments atts={e.attachments} />
+                  )}
                 </div>
-              ),
-            )}
+              </div>
+            ))}
           </div>
         </div>
 

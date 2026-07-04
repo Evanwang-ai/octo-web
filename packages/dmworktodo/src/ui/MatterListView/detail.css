@@ -147,11 +147,11 @@
   font-size: 13px;
 }
 
-/* timeline(原子D 合并流:发言=hairline 卡,系统事件=无框行,同流交错) */
+/* timeline */
 .mdv-timeline {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 .mdv-tl-row {
   display: flex;
@@ -159,16 +159,10 @@
 }
 .mdv-tl-av {
   flex: 0 0 auto;
-  padding-top: 4px;
 }
-/* 发言卡:边界的语义=作者的话语权(Linear 同款,系统事件不配框) */
 .mdv-tl-body {
   flex: 1 1 auto;
   min-width: 0;
-  border: 1px solid var(--wk-border-default);
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: var(--wk-bg-surface);
 }
 .mdv-tl-meta {
   display: flex;
@@ -886,15 +880,25 @@ button.mdv-att-card:hover {
   opacity: 0.9;
 }
 
-/* ── 系统事件行(原子D 单行公式:16px 头像+主谓宾+时间右缘,无框) ── */
+/* ── 进度 activities 轨迹 ── */
+.mdv-acts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .mdv-act {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 24px;
-  padding: 0 2px;
   font-size: 12.5px;
   color: var(--wk-text-secondary);
+}
+.mdv-act-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wk-text-disabled);
 }
 .mdv-act-actor {
   font-weight: 600;
@@ -937,60 +941,22 @@ button.mdv-att-card:hover {
   cursor: pointer;
 }
 
-/* ── 迭代轮次(原子J:版本序列=竖线连点,StackAI 配方;轮次卡框撤=去盒中盒) ── */
+/* ── 迭代轮次 ── */
 .mdv-iters {
-  position: relative;
   display: flex;
   flex-direction: column;
-  padding-left: 2px;
-}
-.mdv-iters::before {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 12px;
-  bottom: 12px;
-  width: 2px;
-  background: color-mix(in srgb, var(--wk-border-default) 80%, transparent);
+  gap: 6px;
 }
 .mdv-iter {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 30px;
-  padding: 0 2px 0 22px;
+  padding: 7px 11px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md);
+  background: var(--wk-bg-surface);
   font-size: 12.5px;
   color: var(--wk-text-secondary);
-}
-/* 节点骑线:outcome 上色,当前轮=info 环 */
-.mdv-iter::before {
-  content: "";
-  position: absolute;
-  left: 1px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--wk-text-disabled);
-  border: 2px solid var(--wk-bg-surface);
-}
-.mdv-iter[data-outcome="confirmed"]::before,
-.mdv-iter[data-outcome="accepted"]::before {
-  background: var(--wk-color-success);
-}
-.mdv-iter[data-outcome="needs_revision"]::before,
-.mdv-iter[data-outcome="rejected"]::before,
-.mdv-iter[data-outcome="sent_back"]::before {
-  background: var(--wk-color-error);
-}
-.mdv-iter[data-outcome="pending_review"]::before {
-  background: var(--wk-color-warning);
-}
-.mdv-iter.is-now::before {
-  background: var(--wk-color-info);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wk-color-info) 18%, transparent);
 }
 .mdv-iter-round {
   font-weight: 600;
