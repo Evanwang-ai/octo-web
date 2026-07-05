@@ -62,7 +62,7 @@ const KIND_LABEL: Record<string, string> = {
   comment: "评论触发",
   autopilot: "自动化运行",
   chat: "对话",
-  quick_create: "快速建单",
+  quick_create: "快速创建",
   direct: "直接派发",
 };
 
@@ -342,7 +342,7 @@ export default function WorkerDetailView({
             ) : null}
             <div className="wkd-prop">
               <span className="wkd-prop-k">可见性</span>
-              <span className="wkd-prop-v">{agent.visibility === "private" ? "仅自己" : "组队可见"}</span>
+              <span className="wkd-prop-v">{agent.visibility === "private" ? "仅自己" : "空间可见"}</span>
             </div>
             <div className="wkd-prop">
               <span className="wkd-prop-k">并发</span>
@@ -521,7 +521,7 @@ export default function WorkerDetailView({
                   已挂载技能 <span className="wkd-group-n">{agent.skills.length}</span>
                 </div>
                 {agent.skills.length === 0 ? (
-                  <div className="wkd-none">暂无技能 —— 技能库上线后可在此挂载。</div>
+                  <div className="wkd-none">暂无技能</div>
                 ) : (
                   agent.skills.map((s) => (
                     <div key={s.id} className="wkd-skill-row">

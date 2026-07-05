@@ -204,7 +204,7 @@ export default function WorkersView({
           </div>
         ) : scoped.length === 0 ? (
           <div className="wkr-empty">
-            <WorkerAvatar name="虾" size={36} />
+            <WorkerAvatar name="Worker" size={36} />
             <span>{scope === "archived" ? "没有已归档的 worker" : "还没有 worker"}</span>
           </div>
         ) : (

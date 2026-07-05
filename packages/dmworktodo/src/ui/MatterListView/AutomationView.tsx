@@ -140,7 +140,7 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
 
       {loading && <div className="av-state">加载中…</div>}
       {!loading && schedules.length === 0 && (
-        <div className="av-state">还没有自动化 · 定个时间,让 worker 按点干活</div>
+        <div className="av-state">暂无自动化</div>
       )}
 
       {!loading && schedules.length > 0 && (

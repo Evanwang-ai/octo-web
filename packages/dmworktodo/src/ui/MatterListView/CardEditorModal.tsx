@@ -137,7 +137,7 @@ export default function CardEditorModal({
             <textarea
               className="ce-textarea"
               rows={4}
-              placeholder="一条可执行的祈使句"
+              placeholder="行为规则"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
@@ -147,7 +147,7 @@ export default function CardEditorModal({
             <textarea
               className="ce-textarea"
               rows={2}
-              placeholder="来自哪次任务的什么反馈"
+              placeholder="依据"
               value={evidence}
               onChange={(e) => setEvidence(e.target.value)}
             />
@@ -157,7 +157,7 @@ export default function CardEditorModal({
             <textarea
               className="ce-textarea"
               rows={2}
-              placeholder="什么情况下不应该用这条规则"
+              placeholder="不适用场景"
               value={avoid}
               onChange={(e) => setAvoid(e.target.value)}
             />

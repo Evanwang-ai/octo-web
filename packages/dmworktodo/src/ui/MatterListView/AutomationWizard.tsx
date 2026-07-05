@@ -30,7 +30,7 @@ const CRON_PRESETS: { label: string; cron: string }[] = [
   { label: "每月 1 号 9:00", cron: "0 9 1 * *" },
 ];
 
-const STEPS = ["要做什么", "什么时候", "谁来做、发到哪"];
+const STEPS = ["任务", "计划", "执行与输出"];
 
 export default function AutomationWizard({
   editing,
@@ -158,11 +158,11 @@ export default function AutomationWizard({
                 />
               </label>
               <label className="awz-field">
-                <span>RUNBOOK —— 告诉执行方每次要干什么</span>
+                <span>任务说明</span>
                 <textarea
                   className="awz-textarea"
                   rows={7}
-                  placeholder={"例如:\n1. 巡检各服务健康度\n2. 异常则建回路上报,@值班人\n3. 全部正常则安静通过"}
+                  placeholder="每次运行要执行的任务"
                   value={runbook}
                   onChange={(e) => setRunbook(e.target.value)}
                 />
@@ -201,7 +201,7 @@ export default function AutomationWizard({
           {step === 2 && (
             <>
               <label className="awz-field">
-                <span>执行方(bot)</span>
+                <span>执行 worker</span>
                 <select
                   className="awz-input"
                   value={executorUid}
@@ -211,7 +211,7 @@ export default function AutomationWizard({
                     setTargetChannelId("");
                   }}
                 >
-                  <option value="">选择执行 bot</option>
+                  <option value="">选择 worker</option>
                   {botOptions.map((m) => (
                     <option key={m.uid} value={m.uid}>
                       {m.name}

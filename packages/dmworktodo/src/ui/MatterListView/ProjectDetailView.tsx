@@ -157,7 +157,7 @@ export default function ProjectDetailView({
       await removeProjectBot(projectId, botUid);
       reloadMembers();
     } catch {
-      if (mountedRef.current) Toast.error("移除 bot 失败");
+      if (mountedRef.current) Toast.error("移除 worker 失败");
     }
   };
 
@@ -176,7 +176,7 @@ export default function ProjectDetailView({
       reloadMembers();
     } catch {
       // 后端只放行主人自己的 bot;加别人的 bot 会被拒。
-      if (mountedRef.current) Toast.error("加 Bot 失败(只能加自己的 bot)");
+      if (mountedRef.current) Toast.error("添加失败(只能添加自己的 worker)");
     } finally {
       if (mountedRef.current) setAddingBot(false);
     }
@@ -288,7 +288,7 @@ export default function ProjectDetailView({
                 value={memberUids}
                 onChange={onMembersChange}
                 humansOnly
-                placeholder="加人(空间内任意人,免费)"
+                placeholder="添加成员"
               />
             </div>
             <div className="pdv-list">
@@ -307,20 +307,20 @@ export default function ProjectDetailView({
             </div>
 
             <div className="pdv-sec-h">
-              可调度 Bot<span className="pdv-sec-c">{bots.length}</span>
+              可调度 worker<span className="pdv-sec-c">{bots.length}</span>
               <button
                 type="button"
                 className="pdv-add-bot"
                 onClick={() => setBotPickerOpen((o) => !o)}
               >
-                {botPickerOpen ? "收起" : "+ 加 Bot"}
+                {botPickerOpen ? "收起" : "+ 添加 worker"}
               </button>
             </div>
             {botPickerOpen && (
               <div className="pdv-bot-picker">
                 {botsLoading && <div className="pdv-empty">加载中…</div>}
                 {!botsLoading && botCandidates.length === 0 && (
-                  <div className="pdv-empty">没有可添加的 Bot(只能加自己的 bot)</div>
+                  <div className="pdv-empty">暂无可添加的 worker</div>
                 )}
                 {botCandidates.map((b) => (
                   <button
@@ -343,7 +343,7 @@ export default function ProjectDetailView({
               </div>
             )}
             <div className="pdv-list">
-              {bots.length === 0 && <div className="pdv-empty">还没有常驻 bot(主人在此加自己的 bot)</div>}
+              {bots.length === 0 && <div className="pdv-empty">暂无常驻 worker</div>}
               {bots.map((b) => (
                 <div key={b.id} className="pdv-row">
                   <WKAvatar

@@ -1,6 +1,6 @@
 /**
  * [INPUT]: ./types 的 AgentTemplate/MarketSkill;./mockWorkers 的 createAgentFromSeed;
- *          ./mockSkills 的 createSkillIn(安装拷贝)。
+ *          ./mockSkills 的 createSkillIn(安装拷贝);../todoApi 的 listSchedules(run 摘要织入名称)。
  * [OUTPUT]: 市集域内存 mock:worker 模板货架 + 技能货架 + 安装动作,供 ./client 消费。
  * [POS]: dmworktodo/api/multica 的市集 mock(S6 卡⑦)。模板安装=真建 worker(落 mockWorkers,
  *        全站可见);技能安装=createSkill 拷贝进技能库。接线:模板走 createAgentFromTemplate,
@@ -132,10 +132,45 @@ export function installMarketSkill(slug: string) {
 
 // ── 自动化 run 历史合成(卡⑧;按 schedule 节奏造最近 N 次,确定性)──
 import type { AutopilotRunLite } from "./types";
+import { listSchedules } from "../todoApi";
 
 const runCache = new Map<string, AutopilotRunLite[]>();
 
+// schedule 名称懒水合(织进 run 摘要):失败不缓存,下次调用重试(同 mockInbox 降级策略);
+// 就绪后清 runCache 重织——数值全由 scheduleId 伪随机派生,重生成不跳。
+let schedTitles: Map<string, string> | null = null;
+let schedTitlesLoading = false;
+function hydrateScheduleTitles(): void {
+  if (schedTitles || schedTitlesLoading) return;
+  schedTitlesLoading = true;
+  listSchedules()
+    .then((list) => {
+      schedTitles = new Map(list.map((s) => [String(s.id), s.title]));
+      runCache.clear();
+    })
+    .catch(() => {
+      schedTitlesLoading = false;
+    });
+}
+
+// 摘要池:6 成功 + 3 失败(schedule 名可用时织入;确定性取样)。
+const label = (name?: string) => (name ? `「${name}」` : "本次运行");
+const OK_SUMMARIES: Array<(name?: string) => string> = [
+  (n) => `${label(n)}按计划完成,产出已挂回路`,
+  (n) => `${label(n)}运行正常,本次无增量,安静通过`,
+  () => "已创建回路并派发执行,等待执行方认领",
+  (n) => `${label(n)}完成:产出已生成,较上次新增 3 项`,
+  () => "巡检通过,全部检查项正常",
+  (n) => `${label(n)}完成,结果已同步到目标频道`,
+];
+const FAIL_SUMMARIES: Array<(name?: string) => string> = [
+  () => "执行超时:目标数据源未在窗口内响应",
+  (n) => `${label(n)}执行失败:执行方并发已满,任务被挤占`,
+  (n) => `${label(n)}中止:必填配置项缺失,需人工检查`,
+];
+
 export function runsOfSchedule(scheduleId: string): AutopilotRunLite[] {
+  hydrateScheduleTitles();
   const hit = runCache.get(scheduleId);
   if (hit) return hit.map((r) => ({ ...r }));
   let h = 0;
@@ -145,6 +180,7 @@ export function runsOfSchedule(scheduleId: string): AutopilotRunLite[] {
     return x - Math.floor(x);
   };
   const DAY = 86_400_000;
+  const title = schedTitles?.get(scheduleId);
   const out: AutopilotRunLite[] = [];
   for (let i = 0; i < 8; i++) {
     const failed = prand(i) > 0.85;
@@ -155,10 +191,11 @@ export function runsOfSchedule(scheduleId: string): AutopilotRunLite[] {
       started_at: new Date(Date.now() - (i + 1) * DAY + prand(i + 20) * 3_600_000).toISOString(),
       duration_sec: 40 + Math.floor(prand(i + 40) * 200),
       summary: failed
-        ? "执行超时:目标数据源未在窗口内响应"
-        : ["已创建回路并派发执行", "产出已生成,无异常", "巡检通过,全部服务健康"][Math.floor(prand(i + 60) * 3)],
+        ? FAIL_SUMMARIES[Math.floor(prand(i + 60) * FAIL_SUMMARIES.length)](title)
+        : OK_SUMMARIES[Math.floor(prand(i + 60) * OK_SUMMARIES.length)](title),
     });
   }
-  runCache.set(scheduleId, out);
+  // 名称未就绪时不缓存:下次调用(名称水合完成后)重织带名摘要。
+  if (schedTitles) runCache.set(scheduleId, out);
   return out.map((r) => ({ ...r }));
 }

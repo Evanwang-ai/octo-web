@@ -33,11 +33,11 @@ const STATE_TEXT: Record<string, string> = {
   cancelled: "已取消",
 };
 const ROOT_TITLE: Record<string, (n: number) => string> = {
-  critic: (n) => `生成→验证 ${n} 步`,
-  pipeline: (n) => `流水线 ${n} 步`,
-  split: (n) => `分成 ${n} 块`,
-  swarm: (n) => `竞选 ${n} 路`,
-  roundtable: (n) => `圆桌 ${n} 方`,
+  critic: (n) => `生成-验证 · ${n} 步`,
+  pipeline: (n) => `流水线 · ${n} 步`,
+  split: (n) => `分头干 · ${n} 个子任务`,
+  swarm: (n) => `撒网 · ${n} 路`,
+  roundtable: (n) => `圆桌 · ${n} 方`,
 };
 
 const ROOT_ID = "__pg_root";
@@ -165,7 +165,7 @@ export default function PlanGraph({
         {title}
       </div>
       <div className="pg-asg">
-        {uid ? <UserName uid={uid} /> : <span className="pg-noone">没人接</span>}
+        {uid ? <UserName uid={uid} /> : <span className="pg-noone">待认领</span>}
       </div>
       <div className={`pg-state ${ring}`}>{stateText}</div>
     </div>
@@ -201,14 +201,14 @@ export default function PlanGraph({
     const allDone = nodes.length > 0 && doneN === nodes.length;
     jring = status === "done" ? "done" : allDone ? "review" : "todo";
     jtext = jring === "done" ? "已完成" : jring === "review" ? "子回路已齐" : "等待中";
-    rootTitle = (ROOT_TITLE[mode || ""] || ((n: number) => `拆成 ${n} 份`))(nodes.length);
-    rootState = `已 @ ${nodes.length} 路`;
+    rootTitle = (ROOT_TITLE[mode || ""] || ((n: number) => `拆分 · ${n} 个子任务`))(nodes.length);
+    rootState = `已派 ${nodes.length} 个子任务`;
     childNodes = nodes.map((c) =>
       node(
         c.id,
         c.step_id || "子任务",
         c.title,
-        // Codex#5:assignee 两种形态,user_id 缺则回落 id,避免误显"没人接"。
+        // Codex#5:assignee 两种形态,user_id 缺则回落 id,避免误显"待认领"。
         c.assignees?.[0]?.user_id ?? c.assignees?.[0]?.id,
         RING[c.status] || "todo",
         STATE_TEXT[c.status] || c.status,

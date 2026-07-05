@@ -36,7 +36,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [cursor, setCursor] = useState(0);
-  // 快速建单第二段:选执行 worker(契约 §1.4 quick-create=建单即派 Run;三件套之 preview-trigger 在此预告)。
+  // 快速创建第二段:选执行 worker(契约 §1.4 quick-create=创建即派 Run;三件套之 preview-trigger 在此预告)。
   const [dispatching, setDispatching] = useState(false);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +86,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
 
   const activeAgents = useMemo(() => agents.filter((a) => !a.archived_at), [agents]);
 
-  // 快速建单:worker=null 先存草稿(backlog);选 worker 则发车(open)+ 派单预告(mock 期指派接线后生效)。
+  // 快速创建:worker=null 先存草稿(backlog);选 worker 则发送(open)+ 派发预告(mock 期指派接线后生效)。
   const quickCreate = async (worker: Agent | null) => {
     const title = query.trim();
     if (!title || busy) return;
@@ -151,7 +151,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
         <div className="cmdk-results">
           {dispatching ? (
             <>
-              <div className="cmdk-group">派给谁?(快速建单)</div>
+              <div className="cmdk-group">指派给谁?</div>
               <button
                 type="button"
                 className={`cmdk-item${cursor === 0 ? " is-active" : ""}`}
@@ -160,8 +160,8 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
                 onClick={() => quickCreate(null)}
               >
                 <StatusIcon status="backlog" size={14} />
-                <span className="cmdk-item-title">先存草稿,不派 Run</span>
-                <span className="cmdk-item-meta">草稿 · 发车后开始执行</span>
+                <span className="cmdk-item-title">保存为草稿</span>
+                <span className="cmdk-item-meta">草稿 · 发送后开始执行</span>
               </button>
               {activeAgents.map((a, i) => (
                 <button
@@ -174,7 +174,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
                 >
                   <WorkerAvatar name={a.name} size={18} />
                   <span className="cmdk-item-title">{a.name}</span>
-                  <span className="cmdk-item-meta">发车并派首个 Run(接线后生效)</span>
+                  <span className="cmdk-item-meta">发送并开始执行</span>
                 </button>
               ))}
             </>
@@ -226,7 +226,7 @@ export default function CommandPalette({ open, onClose, onOpenMatter, onOpenProj
                 }}
               >
                 <span className="cmdk-plus">+</span>
-                <span className="cmdk-item-title">快速建单:「{query.trim()}」</span>
+                <span className="cmdk-item-title">快速创建:「{query.trim()}」</span>
                 <span className="cmdk-item-meta">选择执行 worker →</span>
               </button>
             </>

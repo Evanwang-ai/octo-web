@@ -4,7 +4,8 @@
  * [POS]: dmworktodo/api/multica 的 worker 域 mock 数据源(Wave A-2,UI 先行)。
  *        纯静态 fixtures(worker 是 multica 实体,octo 侧无对应物可水合);
  *        30 天桶用 index 基伪随机(确定性,reload 图形不跳);变更(改配置/归档/env)落内存,
- *        返回形状对齐契约。接线时整文件废弃。
+ *        返回形状对齐契约。Run 摘要/instructions/transcript 按 worker 职责分池
+ *        (数据/审计/文档/巡检/评审,agent+index 确定性取样)。接线时整文件废弃。
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
 import { WKApp } from "@octo/base";
@@ -38,9 +39,13 @@ const runtimes: RuntimeSummary[] = [
 ];
 
 // ── agents ──
+// 职责分类:Run 摘要池、instructions 措辞、transcript 剧本三处共用(确定性)。
+type Role = "data" | "audit" | "docs" | "ops" | "review";
+
 interface Seed {
   name: string;
   description: string;
+  role: Role;
   runtime: string;
   model: string;
   thinking?: string;
@@ -58,6 +63,7 @@ const SEEDS: Seed[] = [
   {
     name: "执剑人",
     description: "回路执行主力:接单、拆解、汇报进度,产出直接挂回路。",
+    role: "data",
     runtime: "rt-1",
     model: "claude-sonnet-5",
     thinking: "high",
@@ -74,6 +80,7 @@ const SEEDS: Seed[] = [
   {
     name: "审计员",
     description: "对产出做二遍质检:口径、边界、遗漏,不通过就打回。",
+    role: "audit",
     runtime: "rt-2",
     model: "gpt-5.5",
     concurrent: 1,
@@ -83,6 +90,7 @@ const SEEDS: Seed[] = [
   {
     name: "取数师",
     description: "数据管道专职:连接内部数仓,按需取数、清洗、出报表。",
+    role: "data",
     runtime: "rt-2",
     model: "gpt-5.5-codex",
     visibility: "private",
@@ -93,6 +101,7 @@ const SEEDS: Seed[] = [
   {
     name: "文档官",
     description: "会议纪要、PRD 草稿、知识库沉淀,输出统一走 markdown。",
+    role: "docs",
     runtime: "rt-1",
     model: "claude-sonnet-5",
     thinking: "medium",
@@ -102,6 +111,7 @@ const SEEDS: Seed[] = [
   {
     name: "巡检兵",
     description: "定时巡检各服务健康度,异常自动建回路上报。",
+    role: "ops",
     runtime: "rt-3",
     model: "",
     createdDays: 14,
@@ -109,6 +119,7 @@ const SEEDS: Seed[] = [
   {
     name: "评审官",
     description: "代码评审专职:按团队规约给出分级 findings。",
+    role: "review",
     runtime: "rt-1",
     model: "claude-opus-4-8",
     thinking: "max",
@@ -117,13 +128,47 @@ const SEEDS: Seed[] = [
   },
   {
     name: "老兵",
-    description: "早期试验用 worker,已退役。",
+    description: "早期试验配置,已归档。",
+    role: "data",
     runtime: "rt-3",
     model: "",
     createdDays: 60,
     archived: true,
   },
 ];
+
+// 按职责分池的 Run 摘要(每类 3 条共 15 条;按 agent+index 确定性取样,治全员两值轮换的复读)。
+const TRIGGER_POOLS: Record<Role, string[]> = {
+  data: ["导出季度经营指标", "清洗 CRM 客户名单", "刷新留存分析看板"],
+  audit: ["复核 Q2 报表口径", "抽查上月对账差异", "核对发布清单与实际改动"],
+  docs: ["整理发布纪要", "起草新人入职手册", "沉淀本周评审会结论"],
+  ops: ["巡检各服务健康度", "核查证书到期情况", "排查夜间告警噪声"],
+  review: ["复审支付模块 PR", "评审数据管道重构方案", "检查新接口边界处理"],
+};
+
+// instructions 工作方式段:每类职责一段不同措辞(轻度差异化,治同模板套名字)。
+const INSTRUCTION_STYLE: Record<Role, string> = {
+  data: "- 一切数字可溯源:取数语句随产出一并贴出\n- 口径与上期不一致时先停下核对,再继续",
+  audit: "- 先对口径,再查边界与遗漏,最后复算一遍量级\n- 不通过就写明依据打回,不代改",
+  docs: "- 结论先行:任何纪要先给三行结论,再放待办与过程\n- 输出统一 markdown,标题层级不超过三级",
+  ops: "- 按巡检清单逐项过,异常立即建回路上报并 @值班人\n- 全部正常保持安静,不刷动态",
+  review: "- findings 按 严重/建议/可忽略 分级,每条带 文件:行号 与理由\n- 只评审不改码",
+};
+
+// 由 agent id 反查职责(seed 内置 worker 按 SEEDS 序;运行期新建兜底 data)。
+const roleOfAgent = (agentId: string): Role => SEEDS[seedOf(agentId) - 1]?.role ?? "data";
+
+// transcript 剧本三分类:数据类=psql/csv、评审类=读码给意见、文档类=写 markdown。
+type ScriptClass = "data" | "review" | "docs";
+const scriptClassOf = (role: Role): ScriptClass =>
+  role === "review" ? "review" : role === "docs" ? "docs" : "data";
+
+// failed Run 的错误文案按剧本类给(数据等数据源、评审等检出、文档等素材)。
+const FAIL_ERRORS: Record<ScriptClass, string> = {
+  data: "执行超时:等待数据源响应超过 10 分钟",
+  review: "执行中断:仓库检出失败,工作区不可用",
+  docs: "执行超时:素材读取长时间无响应",
+};
 
 let agents: Agent[] = [];
 let tasks: AgentTask[] = [];
@@ -147,7 +192,7 @@ function seed() {
     name: s.name,
     description: s.description,
     instructions:
-      `# 角色\n\n你是「${s.name}」,${s.description}\n\n## 工作方式\n\n- 接单后先在回路里回一句认领\n- 大改动先出计划贴到动态,确认后再动手\n- 产出物统一挂回路附件,并在动态里给一句话摘要\n\n## 边界\n\n- 不碰生产库的写操作\n- 超出职责范围的请求,建议转给合适的 worker`,
+      `# 角色\n\n你是「${s.name}」,${s.description}\n\n## 工作方式\n\n- 接单后先在回路里回一句认领\n${INSTRUCTION_STYLE[s.role]}\n- 产出物统一挂回路附件,并在动态里给一句话摘要\n\n## 边界\n\n- 不碰生产库的写操作\n- 超出职责范围的请求,建议转给合适的 worker`,
     avatar_url: null,
     runtime_mode: "local",
     custom_args: s.args || [],
@@ -192,7 +237,7 @@ function seed() {
           ? iso(created - durMin * MIN)
           : null,
       result: null,
-      error: status === "failed" ? "执行超时:等待数据源响应超过 10 分钟" : null,
+      error: status === "failed" ? FAIL_ERRORS[scriptClassOf(roleOfAgent(agentId))] : null,
       failure_reason: status === "failed" ? "timeout" : undefined,
       created_at: iso(created),
       kind: "direct",
@@ -206,13 +251,15 @@ function seed() {
     .filter((a) => !a.archived_at)
     .forEach((a, ai) => {
       const n = 3 + Math.floor(prand(ai, 1) * 4);
+      const pool = TRIGGER_POOLS[roleOfAgent(a.id)];
       for (let k = 0; k < n; k++) {
         pushTask(
           a.id,
           termStatus[Math.floor(prand(ai, k + 2) * termStatus.length)],
           (4 + k * 20 + prand(ai, k + 9) * 10) * HOUR,
           2 + Math.floor(prand(ai, k + 20) * 6),
-          { kind: k % 2 ? "autopilot" : "comment", trigger_summary: k % 2 ? "自动化运行" : "回路评论触发" },
+          // 摘要按职责池 agent+index 确定性取样(reload 不跳)。
+          { kind: k % 2 ? "autopilot" : "comment", trigger_summary: pool[(ai + k) % pool.length] },
         );
       }
     });
@@ -420,50 +467,103 @@ export function messagesOf(taskId: string): TaskMessagePayload[] {
   });
 
   const topic = t.trigger_summary || "本次任务";
+
+  // 三套按职责的剧本(数据类=psql/csv、评审类=读码给意见、文档类=写 markdown),按 agent 确定性分配。
+  type MsgSeed = Pick<TaskMessagePayload, "type"> & Partial<TaskMessagePayload>;
+  interface RunScript {
+    claim: string;
+    thinking: string;
+    calls: [MsgSeed, MsgSeed, MsgSeed, MsgSeed];
+    done: string;
+    failCall: MsgSeed;
+    runningCall: MsgSeed;
+  }
+  const cls = scriptClassOf(roleOfAgent(t.agent_id));
+  const script: RunScript =
+    cls === "review"
+      ? {
+          claim: `已认领:${topic}。先圈定改动范围,再逐文件过边界与规约。`,
+          thinking: `改动集中在回调与重试两条链路,先读主实现,再查调用点确认影响面,最后按分级整理意见。`,
+          calls: [
+            { type: "tool_use", tool: "Read", input: { file_path: "src/payment/callback.ts", limit: 200 } },
+            {
+              type: "tool_result",
+              tool: "Read",
+              output: "export async function handleCallback(evt: PayEvent) {\n  const order = await findOrder(evt.order_id);\n  …\n}\n(共 214 行)",
+            },
+            { type: "tool_use", tool: "Grep", input: { pattern: "handleCallback", path: "src" } },
+            { type: "tool_result", tool: "Grep", output: "src/payment/router.ts:41\nsrc/jobs/retry.ts:88\n(2 处调用)" },
+          ],
+          done: `评审完成:严重 1 条(回调未校验签名)、建议 2 条(重试无上限、日志缺关键字段),均附 文件:行号 与理由。清单已挂回路附件:${topic} 已完成。`,
+          failCall: { type: "tool_use", tool: "Read", input: { file_path: "src/payment/legacy/adapter.ts", limit: 200 } },
+          runningCall: { type: "tool_use", tool: "Grep", input: { pattern: "retryPayment", path: "src" } },
+        }
+      : cls === "docs"
+        ? {
+            claim: `已认领:${topic}。先归拢要点,再按模板成稿。`,
+            thinking: `素材散在回路动态和会议转录里,先提炼决议点排出结构;结论先行,过程与待办附后。`,
+            calls: [
+              { type: "tool_use", tool: "Read", input: { file_path: "notes/2026-Q2-会议转录.md", limit: 80 } },
+              { type: "tool_result", tool: "Read", output: "…(转录共 1204 行,提炼出 6 个决议点、4 项待办)" },
+              {
+                type: "tool_use",
+                tool: "Write",
+                input: { file_path: "docs/纪要-草稿.md", content: "# 纪要\n\n## 结论\n1. …\n\n## 待办\n- …" },
+              },
+              { type: "tool_result", tool: "Write", output: "已写入 docs/纪要-草稿.md(共 86 行)" },
+            ],
+            done: `成稿完成:三行结论先行,待办与过程附后,全文 markdown。文档已挂回路附件:${topic} 已完成。`,
+            failCall: { type: "tool_use", tool: "Read", input: { file_path: "notes/历史归档/2025-纪要索引.md", limit: 80 } },
+            runningCall: {
+              type: "tool_use",
+              tool: "Write",
+              input: { file_path: "docs/纪要-草稿.md", content: "# 纪要(更新中)\n\n## 结论\n1. …" },
+            },
+          }
+        : {
+            claim: `已认领:${topic}。先取数,再校验口径,最后出汇总。`,
+            thinking: `任务涉及多张表,先确认数据源可达,再决定取数顺序。优先跑轻查询探量级,避免全表扫描。`,
+            calls: [
+              {
+                type: "tool_use",
+                tool: "Bash",
+                input: { command: "psql -h warehouse.internal -c \"SELECT count(*) FROM ods.orders WHERE dt >= date_trunc('quarter', now())\"" },
+              },
+              { type: "tool_result", tool: "Bash", output: " count\n-------\n 12840\n(1 row)\n\n耗时 340ms" },
+              { type: "tool_use", tool: "Read", input: { file_path: "/data/exports/quarterly-metrics.csv", limit: 50 } },
+              {
+                type: "tool_result",
+                tool: "Read",
+                output: "metric,q_value,yoy\ngmv,4.82亿,+12.4%\norders,12840,+8.1%\narpu,3753,+4.0%\n…(共 12 项指标)",
+              },
+            ],
+            done: `12 项指标全部取数完成,口径与上季度一致(两处小数位差异已修正)。产出已挂回路附件,给出一句话摘要:${topic} 已完成。`,
+            failCall: {
+              type: "tool_use",
+              tool: "Bash",
+              input: { command: "psql -h warehouse.internal -c \"SELECT * FROM ods.user_profile_wide LIMIT 10\"" },
+            },
+            runningCall: {
+              type: "tool_use",
+              tool: "Bash",
+              input: { command: "python analyze.py --quarter 2026Q2 --out /data/exports/dashboard.json" },
+            },
+          };
+
   const out: TaskMessagePayload[] = [
-    msg({ type: "text", content: `已认领:${topic}。先取数,再校验口径,最后出汇总。` }, 2),
-    msg({ type: "thinking", content: `任务涉及多张表,先确认数据源可达,再决定取数顺序。优先跑轻查询探量级,避免全表扫描。` }, 6),
-    msg(
-      {
-        type: "tool_use",
-        tool: "Bash",
-        input: { command: "psql -h warehouse.internal -c \"SELECT count(*) FROM ods.orders WHERE dt >= date_trunc('quarter', now())\"" },
-      },
-      10,
-    ),
-    msg({ type: "tool_result", tool: "Bash", output: " count\n-------\n 12840\n(1 row)\n\n耗时 340ms" }, 14),
-    msg(
-      {
-        type: "tool_use",
-        tool: "Read",
-        input: { file_path: "/data/exports/quarterly-metrics.csv", limit: 50 },
-      },
-      20,
-    ),
-    msg(
-      {
-        type: "tool_result",
-        tool: "Read",
-        output: "metric,q_value,yoy\ngmv,4.82亿,+12.4%\norders,12840,+8.1%\narpu,3753,+4.0%\n…(共 12 项指标)",
-      },
-      24,
-    ),
+    msg({ type: "text", content: script.claim }, 2),
+    msg({ type: "thinking", content: script.thinking }, 6),
+    msg(script.calls[0], 10),
+    msg(script.calls[1], 14),
+    msg(script.calls[2], 20),
+    msg(script.calls[3], 24),
   ];
 
   if (t.status === "completed") {
-    out.push(
-      msg({ type: "text", content: `12 项指标全部取数完成,口径与上季度一致(两处小数位差异已修正)。产出已挂回路附件,给出一句话摘要:${topic} 已完成。` }, 30),
-    );
+    out.push(msg({ type: "text", content: script.done }, 30));
   } else if (t.status === "failed") {
     out.push(
-      msg(
-        {
-          type: "tool_use",
-          tool: "Bash",
-          input: { command: "psql -h warehouse.internal -c \"SELECT * FROM ods.user_profile_wide LIMIT 10\"" },
-        },
-        28,
-      ),
+      msg(script.failCall, 28),
       msg(
         { type: "error", content: t.error || "执行失败" },
         // error 时刻对齐 Run 的 completed_at(codex 双审:固定偏移会晚于行内时长)
@@ -475,16 +575,7 @@ export function messagesOf(taskId: string): TaskMessagePayload[] {
   } else if (t.status === "cancelled") {
     out.push(msg({ type: "text", content: "收到取消指令,已停止后续步骤并清理临时文件。" }, 40));
   } else if (t.status === "running") {
-    out.push(
-      msg(
-        {
-          type: "tool_use",
-          tool: "Bash",
-          input: { command: "python analyze.py --quarter 2026Q2 --out /data/exports/dashboard.json" },
-        },
-        30,
-      ),
-    );
+    out.push(msg(script.runningCall, 30));
   } else {
     // queued 等:尚未开跑,无消息
     return [];

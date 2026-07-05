@@ -65,7 +65,7 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
         {squads === null ? (
           <div className="sqd-empty">加载中…</div>
         ) : squads.length === 0 ? (
-          <div className="sqd-empty">还没有小队 —— 新建一个,让领队 worker 带队干活。</div>
+          <div className="sqd-empty">暂无小队</div>
         ) : (
           /* 行=Listview 语法:40px 单行、无列头,描述内联吃剩余宽,领队/成员堆/时间右缘聚集。 */
           squads.map((s) => (
@@ -113,7 +113,6 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
         <div className="sqd-overlay" onMouseDown={closeCreate}>
           <div className="sqd-modal" role="dialog" aria-label="创建小队" onMouseDown={(e) => e.stopPropagation()}>
             <div className="sqd-modal-title">创建小队</div>
-            <p className="sqd-modal-hint">领队 worker 接收分配给此小队的所有任务并协调团队。</p>
             <label className="sqd-field">
               <span>名称</span>
               <input
@@ -148,7 +147,7 @@ export default function SquadsView({ onOpenDetail }: { onOpenDetail: (id: string
                   ))}
               </select>
             </label>
-            <p className="sqd-modal-note">成员可在创建后进小队详情添加(worker 或组队成员)。</p>
+            <p className="sqd-modal-note">成员可在创建后进小队详情添加。</p>
             <div className="sqd-modal-foot">
               <button type="button" className="sqd-btn-ghost" onClick={closeCreate}>
                 取消

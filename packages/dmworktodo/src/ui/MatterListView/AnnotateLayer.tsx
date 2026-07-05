@@ -3,10 +3,10 @@
  * [OUTPUT]: 对外默认导出 AnnotateLayer —— 选中文字批注(欠账 §9-③,vanilla annotFab
  *           L10255-10293 + openInlineReply isFeedback 分支 L7805-7845 直译)。
  * [POS]: dmworktodo/ui/MatterListView 的批注浮层,MatterDetailView 挂载(动态/产出内容卡
- *        带 data-annot-entry=条目id)。选中卡内文字(≥2字)→「圈一笔」FAB→浮层(引用+输入)→
+ *        带 data-annot-entry=条目id)。选中卡内文字(≥2字)→「批注」FAB→浮层(引用+输入)→
  *        双写:timeline(content=批注: "snippet60…"+正文,parent_entry_id)+ feedback
  *        ({content, anchor:{snippet}, entry_id});timelinePosted 守护防重试重复落档;
- *        review 态服务端自动退回→toast"已批注 — 已退回修改"。
+ *        review 态服务端自动退回→toast"已批注 · 已退回修改"。
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
 import React, { useEffect, useRef, useState } from "react";
@@ -101,7 +101,7 @@ export default function AnnotateLayer({
     if (!box || busy) return;
     const t = text.trim();
     if (!t) {
-      Toast.error("写点什么再发");
+      Toast.error("内容不能为空");
       return;
     }
     setBusy(true);
@@ -122,7 +122,7 @@ export default function AnnotateLayer({
         ...(box.entryId ? { entry_id: box.entryId } : {}),
       });
       const flipped = resp?.matter_status === "in_progress";
-      Toast.success(flipped ? "已批注 — 已退回修改" : "已批注");
+      Toast.success(flipped ? "已批注 · 已退回修改" : "已批注");
       setBox(null);
       setText("");
       onDone();
@@ -149,7 +149,7 @@ export default function AnnotateLayer({
           style={{ left: fab.x, top: fab.y }}
           onClick={openBox}
         >
-          ✏ 圈一笔
+          ✏ 批注
         </button>
       )}
       {box && (
@@ -171,7 +171,7 @@ export default function AnnotateLayer({
             rows={3}
             autoFocus
             maxLength={4000}
-            placeholder="想指出什么 — 会圈给对方并记进动态"
+            placeholder="批注内容"
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -193,7 +193,7 @@ export default function AnnotateLayer({
               disabled={busy || !text.trim()}
               onClick={submit}
             >
-              {busy ? "发送中…" : "圈出去"}
+              {busy ? "发送中…" : "发送"}
             </button>
           </div>
         </div>

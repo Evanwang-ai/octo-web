@@ -113,6 +113,20 @@ function staticFixtures(spaceId: string, me: string): InboxItem[] {
   ];
 }
 
+// 合成事件的正文池(按回路 index 轮取,避免同屏多条同句复读;确定性)。
+const PROGRESS_BODIES = [
+  "进展同步:主链路已跑通,剩余边界情况正在收尾。",
+  "数据核对完成,正在整理结论与图表。",
+  "初稿已出,等一轮内部核对后提交。",
+  "接口联调通过,还差两个用例待补。",
+  "阶段目标完成,下一步开始整合产出。",
+];
+const BLOCKED_REASONS = [
+  "缺少数据源访问凭证,需要你补充授权",
+  "需求描述有歧义,需要你确认口径后继续",
+  "外部接口连续超时,需要人工确认后重试",
+];
+
 // 从真实回路合成事件:按状态派发语义一致的通知型,actor 取创建者/执行人真 uid(头像可解析)。
 function synthesize(matters: Matter[], spaceId: string, me: string): InboxItem[] {
   const out: InboxItem[] = [];
@@ -169,7 +183,7 @@ function synthesize(matters: Matter[], spaceId: string, me: string): InboxItem[]
           severity: "action_required",
           actor_type: "agent",
           actor_id: bot || memberOf(m),
-          details: { error: "执行受阻,需要人工补充上下文" },
+          details: { error: BLOCKED_REASONS[i % BLOCKED_REASONS.length] },
           read: false,
         }, age);
         break;
@@ -189,7 +203,7 @@ function synthesize(matters: Matter[], spaceId: string, me: string): InboxItem[]
           severity: "attention",
           actor_type: "member",
           actor_id: memberOf(m),
-          body: "进展同步:主链路已跑通,剩余边界情况明天收尾。",
+          body: PROGRESS_BODIES[i % PROGRESS_BODIES.length],
           read,
         }, age);
         push(m, {
@@ -229,7 +243,7 @@ function synthesize(matters: Matter[], spaceId: string, me: string): InboxItem[]
           severity: "attention",
           actor_type: "member",
           actor_id: m.creator_id,
-          body: "这条思路你看下,适合发车吗?",
+          body: "这条思路你看下,要发送吗?",
           read,
         }, age);
     }

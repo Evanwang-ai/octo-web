@@ -2,12 +2,12 @@
  * [INPUT]: hooks/useMemberList(@提及候选);api/todoApi 的 addTimelineEntry/addFeedback/
  *          uploadMatterAttachment;utils/toast;./icons 无。
  * [OUTPUT]: 对外默认导出 MatterComposer —— 详情页 composer(欠账族②,vanilla 轻路径)。
- * [POS]: dmworktodo/ui/MatterListView 的详情发车条,MatterDetailView 挂载。
+ * [POS]: dmworktodo/ui/MatterListView 的详情发送条,MatterDetailView 挂载。
  *        真相源=vanilla L7542-7654(mention picker 分组/附件挑完即传随下条发送)+
  *        L7667-7699(发送双路语义:@人或 review 态 ⇒ feedback 敲铃[target_uid=首个提及,
  *        review 态服务端自动退回修改];带附件走 timeline 落档;两者兼有则双发各司其职)。
  *        分组降级:vanilla 四组(参与人/我的Bot/其他Bot/成员),React 侧成员数据无 bot 归属,
- *        降为三组(本单参与人/Bot/其他成员),归属组随接线补(欠账注记)。
+ *        降为三组(本单参与人/worker/其他成员),归属组随接线补(欠账注记)。
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -65,7 +65,7 @@ export default function MatterComposer({
 
   const { members } = useMemberList({});
 
-  // 分组(vanilla buildMentionList 降级三组):本单参与人 / Bot / 其他成员。
+  // 分组(vanilla buildMentionList 降级三组):本单参与人 / worker / 其他成员。
   const groups = useMemo(() => {
     const q = mpQuery.trim().toLowerCase();
     const participants = new Set(
@@ -80,7 +80,7 @@ export default function MatterComposer({
     );
     return [
       { label: "本单参与人", items: all.filter((m) => participants.has(m.uid)) },
-      { label: "Bot", items: all.filter((m) => !participants.has(m.uid) && m.isBot) },
+      { label: "worker", items: all.filter((m) => !participants.has(m.uid) && m.isBot) },
       { label: "其他成员", items: all.filter((m) => !participants.has(m.uid) && !m.isBot) },
     ].filter((g) => g.items.length > 0);
   }, [members, mpQuery, matter]);
@@ -117,7 +117,7 @@ export default function MatterComposer({
         ...prev,
         ...uploaded.map((a) => ({ ...a, mime_type: a.mime_type || undefined })),
       ]);
-      Toast.success("传好了,随下一条发送一起带上");
+      Toast.success("附件已上传");
     } catch (e) {
       if (mountedRef.current) Toast.error((e as Error).message || "上传失败");
     } finally {
@@ -129,11 +129,11 @@ export default function MatterComposer({
     const text = draft.trim();
     const hasAtts = atts.length > 0;
     if (uploading) {
-      Toast.error("附件还在上传,稍等一下");
+      Toast.error("附件上传中");
       return;
     }
     if ((!text && !hasAtts) || sending) {
-      if (!text && !hasAtts) Toast.error("写点什么再发");
+      if (!text && !hasAtts) Toast.error("内容不能为空");
       return;
     }
     setSending(true);
@@ -166,8 +166,8 @@ export default function MatterComposer({
           const who = mentions.length ? mentions[0].name : "";
           Toast.success(
             flipped
-              ? `已退回修改${who ? ` — 已通知 ${who}` : ""}`
-              : `记下了${who ? ` — 已通知 ${who}` : ""}`,
+              ? `已退回修改${who ? ` · 已通知 ${who}` : ""}`
+              : `已发送${who ? ` · 已通知 ${who}` : ""}`,
           );
         } catch {
           if (mountedRef.current) Toast.error("动态已发,但通知对方失败");
@@ -250,8 +250,8 @@ export default function MatterComposer({
           aria-label="添加进展"
           placeholder={
             (matter.status as string) === "review"
-              ? "说一句 — 审核中,@人或直接发都会退回修改"
-              : "说一句 — 会记进这单的动态;@人会通知对方"
+              ? "添加修改意见"
+              : "添加进展或评论"
           }
           value={draft}
           onChange={(e) => {

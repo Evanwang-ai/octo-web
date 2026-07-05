@@ -6,16 +6,16 @@
  * [OUTPUT]: 默认导出 MatterDetailView(原生回路详情:标题/状态/blocker banner/review banner[通过=done·需要修改=feedback打回]/
  *          Brief[markdown 渲染 + input_attachments 附件卡(migration 017 真字段,bridge/types stale 本地增广)]/
  *          计划(mode)/子任务(计划图 PlanGraph[有子任务时]+派子任务)/迭代(iterations 轮次)/
- *          进度(activities)/动态(timeline,content markdown 渲染 + 附件卡)/产出/发车 composer/
+ *          进度(activities)/动态(timeline,content markdown 渲染 + 附件卡)/产出/发送 composer/
  *          Inspector[状态·优先级·项目 可编辑]。附件卡=TlAttachments 共用件:guarded URL 新开标签,
  *          原生详情无 wk:file-preview 监听不走预览事件,未过安全校验渲染死卡)。
  * [POS]: dmworktodo/ui/MatterListView 的详情视图,被 MatterRouteHost 以 view="detail" 挂载;
- *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读(空态"没定"/"暂无"恒渲染)。
+ *        真相源 vanilla feat/loop paintMatter/paintInspector;领队/协作者对齐 vanilla 只读(空态"未指定"恒渲染)。
  *        Inspector 2026-07-03 对齐 vanilla:状态进程卡 handoffInfo(=controlLine L7901-7914,backlog 分支为刻意修正)、
  *        状态改走 ContextMenus statusMenu(替裸 select)、props 分组线、srcLabel(UUID→来源会话)、
  *        MODE_LABEL=vanilla MODE_NAME、子任务空态"等待领队配置"。
  *        欠账(vanilla 有此处无):经验 panel(done/cancelled 5 分支)、满意度弹层(review+发起人→done)、
- *        状态项副文案、附件预览 overlay、agent 战绩名片、迭代经验总结行、role 拓扑图、右栏响应式收起/抽屉。
+ *        状态项副文案、附件预览 overlay、agent 成员卡片、迭代经验总结行、role 拓扑图、右栏响应式收起/抽屉。
  *        兄弟:index/rowMenus/icons。
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
@@ -130,7 +130,7 @@ function handoffInfo(
       return {
         cls: "is-block",
         label: "需要协助",
-        main: `需要协助:${m.block_reason_text || "没说原因"}`,
+        main: m.block_reason_text ? `需要协助:${m.block_reason_text}` : "需要协助",
       };
     case "cancelled":
       return { cls: "is-cancel", label: "已取消", main: "已取消" };
@@ -138,10 +138,10 @@ function handoffInfo(
       return {
         cls: "",
         label: "进行中",
-        main: doer ? <>已 @ {doer} · 进行中</> : "进行中",
+        main: doer ? <>{doer} 处理中</> : "进行中",
       };
     case "backlog":
-      return { cls: "", label: "草稿", main: "等待发车 · 发车后开始执行" };
+      return { cls: "", label: "草稿", main: "发送后开始执行" };
     default:
       return {
         cls: "",
@@ -189,7 +189,7 @@ function actHuman(a: MatterActivity): string {
     case "child_created":
       return "派发子任务";
     case "feedback_added":
-      return "圈了一笔";
+      return "提出了修改意见";
     case "status_changed":
       return d.from || d.to ? `状态 ${st(d.from)} → ${st(d.to)}` : "更新了状态";
     case "priority_changed":
@@ -225,8 +225,13 @@ function actHuman(a: MatterActivity): string {
     case "channel_unlinked":
       return "取消关联频道";
     default:
-      // vanilla actHuman 默认分支:summary 族动作归一为人话,其余兜底"更新了"(勿漏裸 action)。
-      if (String(a.action).includes("summary")) return "总结了这次的经验";
+      // vanilla actHuman 默认分支:summary 族按动作细分人话,其余兜底"更新了"(勿漏裸 action)。
+      if (String(a.action).includes("summary")) {
+        const act = String(a.action);
+        if (act.includes("distill")) return "发起了经验总结";
+        if (act.includes("authorize") || act.includes("confirm")) return "确认了经验";
+        return "总结了经验";
+      }
       return "更新了";
   }
 }
@@ -325,7 +330,7 @@ function PropAvatar({
         className={`mdv-prop-val${onOpenCard ? " is-clickable" : ""}`}
         role={onOpenCard ? "button" : undefined}
         tabIndex={onOpenCard ? 0 : undefined}
-        title={onOpenCard ? "看战绩名片" : undefined}
+        title={onOpenCard ? "查看成员卡片" : undefined}
         onClick={onOpenCard ? () => onOpenCard(uid) : undefined}
         onKeyDown={
           onOpenCard
@@ -375,9 +380,9 @@ export default function MatterDetailView({
   const [subOpen, setSubOpen] = useState(false);
   const [subTitle, setSubTitle] = useState("");
   const [subBusy, setSubBusy] = useState(false);
-  // review 决策:需要修改(圈一笔=feedback,后端自动打回 review→in_progress)
+  // review 决策:需要修改(批注=feedback,后端自动打回 review→in_progress)
   const [reviseOpen, setReviseOpen] = useState(false);
-  // 满意度弹层(vanilla showSatisfactionModal L8437):review 通过前问一句"有什么做得好的想记住吗"。
+  // 满意度弹层(vanilla showSatisfactionModal L8437):review 通过前可补充一句评价(选填)。
   const [satOpen, setSatOpen] = useState(false);
   const [satText, setSatText] = useState("");
   const [satBusy, setSatBusy] = useState(false);
@@ -388,7 +393,7 @@ export default function MatterDetailView({
   const [inspOpen, setInspOpen] = useState<boolean>(
     () => !window.matchMedia("(max-width: 1180px)").matches,
   );
-  // 战绩名片(欠账 §9-⑤):Inspector 头像行点击打开。
+  // 成员卡片(欠账 §9-⑤):Inspector 头像行点击打开。
   const [agentCardUid, setAgentCardUid] = useState<string | null>(null);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -617,7 +622,7 @@ export default function MatterDetailView({
     try {
       await sendBack(matterId);
       if (mountedRef.current)
-        Toast.success(`发回去了 — ${matter?.source_name || "来源会话"}里马上能看到`);
+        Toast.success(`已发回 ${matter?.source_name || "来源会话"}`);
     } catch {
       if (mountedRef.current) Toast.error("发回失败");
     } finally {
@@ -625,7 +630,7 @@ export default function MatterDetailView({
     }
   };
 
-  // 需要修改(圈一笔):POST /feedback,后端在 review 态自动打回 review→in_progress + 门铃。
+  // 需要修改(批注):POST /feedback,后端在 review 态自动打回 review→in_progress + 门铃。
   const sendRevision = async () => {
     const content = reviseNote.trim();
     if (!content || reviseBusy) return;
@@ -767,7 +772,7 @@ export default function MatterDetailView({
                   className="mdv-revise-input"
                   rows={2}
                   aria-label="修改意见"
-                  placeholder="要改哪里?发出去 = 打回给领队重做(会记一笔 feedback)"
+                  placeholder="修改意见"
                   value={reviseNote}
                   onChange={(e) => setReviseNote(e.target.value)}
                 />
@@ -816,7 +821,7 @@ export default function MatterDetailView({
               className="mdv-sub-add"
               onClick={() => setSubOpen((v) => !v)}
             >
-              + 派一个子任务
+              + 子任务
             </button>
           </div>
           {subOpen && (
@@ -826,7 +831,7 @@ export default function MatterDetailView({
                 autoFocus
                 maxLength={200}
                 aria-label="子任务名称"
-                placeholder="这个子任务要办成什么"
+                placeholder="子任务标题"
                 value={subTitle}
                 onChange={(e) => setSubTitle(e.target.value)}
                 onKeyDown={(e) => {
@@ -845,7 +850,7 @@ export default function MatterDetailView({
                 onClick={createSub}
                 disabled={subBusy || !subTitle.trim()}
               >
-                {subBusy ? "派出中…" : "派出去"}
+                {subBusy ? "创建中…" : "创建"}
               </button>
             </div>
           )}
@@ -959,7 +964,7 @@ export default function MatterDetailView({
           </div>
         )}
 
-        {/* 动态 = timeline(发车 composer 写入的进展/讨论) */}
+        {/* 动态 = timeline(发送 composer 写入的进展/讨论) */}
         <div className="mdv-section">
           <div className="mdv-section-head">
             动态<span className="mdv-section-count">{timeline.length} 条</span>
@@ -1023,7 +1028,7 @@ export default function MatterDetailView({
             matter={matter}
             onSent={() => {
               reloadTimeline();
-              reloadActivities(); // feedback 会落一条「圈了一笔」活动
+              reloadActivities(); // feedback 会落一条「提出了修改意见」活动
               // feedback 可能翻状态(review→in_progress);走代际守护,旧响应不盖新写(codex 双审)。
               const gen = ++writeGenRef.current;
               getMatter(matterId).then((m) => applyIfLatest(gen, m as MatterDetailFull));
@@ -1104,13 +1109,13 @@ export default function MatterDetailView({
             </button>
           </div>
           <PropAvatar label="发起人" uid={matter.creator_id} onOpenCard={setAgentCardUid} />
-          {/* 领队/协作者:恒渲染,空态"没定"/"暂无"(vanilla L8159/8179——字段不因空而消失) */}
+          {/* 领队/协作者:恒渲染,空态"未指定"(vanilla L8159/8179——字段不因空而消失) */}
           {matter.leader_uid ? (
             <PropAvatar label="领队" uid={matter.leader_uid} onOpenCard={setAgentCardUid} />
           ) : (
             <div className="mdv-prop">
               <span className="mdv-prop-label">领队</span>
-              <span className="mdv-prop-val mdv-none">没定</span>
+              <span className="mdv-prop-val mdv-none">未指定</span>
             </div>
           )}
           {(matter.assignees || []).length > 0 ? (
@@ -1125,7 +1130,7 @@ export default function MatterDetailView({
           ) : (
             <div className="mdv-prop">
               <span className="mdv-prop-label">协作者</span>
-              <span className="mdv-prop-val mdv-none">暂无</span>
+              <span className="mdv-prop-val mdv-none">未指定</span>
             </div>
           )}
           <div className="mdv-props-divider" aria-hidden="true" />
@@ -1181,12 +1186,12 @@ export default function MatterDetailView({
         />
       </aside>
 
-      {/* 战绩名片(欠账 §9-⑤ openAgentCard) */}
+      {/* 成员卡片(欠账 §9-⑤ openAgentCard) */}
       {agentCardUid && (
         <AgentCardModal uid={agentCardUid} onClose={() => setAgentCardUid(null)} />
       )}
 
-      {/* 选中文字批注(欠账 §9-③ annotFab):动态卡内选中→圈一笔→timeline+feedback 双写 */}
+      {/* 选中文字批注(欠账 §9-③ annotFab):动态卡内选中→批注→timeline+feedback 双写 */}
       <AnnotateLayer
         matterId={matterId}
         onDone={() => {
@@ -1202,11 +1207,11 @@ export default function MatterDetailView({
         <div className="mdv-sat-overlay" onMouseDown={() => !satBusy && setSatOpen(false)}>
           <div className="mdv-sat" role="dialog" aria-label="确认完成" onMouseDown={(e) => e.stopPropagation()}>
             <div className="mdv-sat-title">确认完成</div>
-            <div className="mdv-sat-hint">有什么做得好的想记住吗?(选填)</div>
+            <div className="mdv-sat-hint">补充一句评价(选填)</div>
             <textarea
               className="mdv-sat-input"
               rows={3}
-              placeholder="比如:数据分析很全面,格式规范,响应及时"
+              placeholder="评价(选填)"
               value={satText}
               autoFocus
               onChange={(e) => setSatText(e.target.value)}
@@ -1218,7 +1223,7 @@ export default function MatterDetailView({
                 disabled={satBusy}
                 onClick={() => submitSatisfaction("")}
               >
-                跳过,直接完成
+                跳过
               </button>
               <button
                 type="button"
@@ -1226,7 +1231,7 @@ export default function MatterDetailView({
                 disabled={satBusy}
                 onClick={() => submitSatisfaction(satText.trim())}
               >
-                {satBusy ? "记录中…" : satText.trim() ? "记下并完成" : "完成"}
+                {satBusy ? "记录中…" : "完成"}
               </button>
             </div>
           </div>

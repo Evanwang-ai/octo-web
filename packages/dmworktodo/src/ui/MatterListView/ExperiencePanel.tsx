@@ -130,13 +130,13 @@ export default function ExperiencePanel({
   const fireDistill = async () => {
     const bot = distillBot || bots[0]?.uid;
     if (!bot) {
-      Toast.error("还没有可用的 Bot");
+      Toast.error("暂无可用的 worker");
       return;
     }
     setBusy(true);
     try {
       await distillRequest(matterId, bot);
-      Toast.success("已通知总结,稍后回来看");
+      Toast.success("已发起总结");
       setDistillOpen(false);
       await reload();
       onChanged?.();
@@ -189,7 +189,6 @@ export default function ExperiencePanel({
       <>
         <div className="mdv-exp-status is-pending">● 待确认</div>
         <div className="mdv-exp-content"><MarkdownContent content={shown} /></div>
-        <div className="mdv-exp-meta">点击「生效」后可选择适用范围</div>
         {truncated && (
           <button type="button" className="mdv-exp-toggle" onClick={() => setExpanded((v) => !v)}>
             {expanded ? "▴ 收起" : "▾ 展开全部"}
@@ -230,12 +229,12 @@ export default function ExperiencePanel({
         </>
       ) : (
         <>
-          <div className="mdv-exp-status">为了下次做得更好，点评一下？</div>
+          <div className="mdv-exp-status">点评本次任务(选填)</div>
           <textarea
             className="mdv-exp-review"
             rows={2}
             maxLength={4000}
-            placeholder="写几句对这次任务的评价…"
+            placeholder="评价"
             value={review}
             onChange={(e) => setReview(e.target.value)}
           />
@@ -275,7 +274,7 @@ export default function ExperiencePanel({
       {body}
       {distillOpen && (
         <div className="mdv-exp-distill">
-          <div className="mdv-exp-meta">由哪个 Bot 总结这次的经验？</div>
+          <div className="mdv-exp-meta">由哪个 worker 总结这次的经验？</div>
           <select
             className="mdv-exp-scope"
             value={distillBot || bots[0]?.uid || ""}

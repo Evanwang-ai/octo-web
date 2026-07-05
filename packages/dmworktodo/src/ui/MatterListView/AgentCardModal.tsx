@@ -25,11 +25,11 @@ const isBot = (uid?: string) => !!uid && uid.endsWith("_bot");
 
 // 升段(vanilla RANKS,06 §11):从真实验收数派生,不存储 — 战绩即真相。
 const RANKS: Array<{ at: number; name: string }> = [
-  { at: 0, name: "新虾" },
-  { at: 5, name: "出徒" },
-  { at: 20, name: "熟手" },
-  { at: 50, name: "老手" },
-  { at: 100, name: "宗师" },
+  { at: 0, name: "见习" },
+  { at: 5, name: "初级" },
+  { at: 20, name: "熟练" },
+  { at: 50, name: "资深" },
+  { at: 100, name: "专家" },
 ];
 function rankOf(done: number): { name: string; next: string } {
   let cur = RANKS[0];
@@ -162,9 +162,9 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
             <div className="agc-sec">
               <div className="agc-sec-title">协作能力</div>
               {!declLoaded ? (
-                <div className="agc-empty">查名片…</div>
+                <div className="agc-empty">加载中…</div>
               ) : !declVisible ? (
-                <div className="agc-empty">能力描述未向你公开;战绩仍可见</div>
+                <div className="agc-empty">能力介绍未向你公开;记录仍可见</div>
               ) : declHasContent ? (
                 <>
                   {decl!.tagline && <div className="agc-tagline">“{decl!.tagline}”</div>}
@@ -189,7 +189,7 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
                   )}
                 </>
               ) : (
-                <div className="agc-empty">creator 还没发布协作能力</div>
+                <div className="agc-empty">创建者尚未填写能力介绍</div>
               )}
             </div>
           )}
@@ -197,7 +197,7 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
           {statsErr ? (
             <div className="agc-empty">记录读取失败</div>
           ) : stats === null ? (
-            <div className="agc-empty">查记录…</div>
+            <div className="agc-empty">加载中…</div>
           ) : (
             <>
               <div className="agc-facts">
@@ -228,7 +228,7 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
                 {curList.length ? (
                   curList.slice(0, 5).map(rowM)
                 ) : (
-                  <div className="agc-empty">手上没有进行中的回路</div>
+                  <div className="agc-empty">暂无进行中的回路</div>
                 )}
               </div>
 
@@ -237,7 +237,7 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
                 {recent.length ? (
                   recent.slice(0, 5).map(rowM)
                 ) : (
-                  <div className="agc-empty">还没有验证过的交回</div>
+                  <div className="agc-empty">暂无已验收的交付</div>
                 )}
               </div>
 
@@ -273,7 +273,7 @@ export default function AgentCardModal({ uid, onClose }: { uid: string; onClose:
                       </button>
                     ))
                   ) : (
-                    <div className="agc-empty">还没有已生效的经验</div>
+                    <div className="agc-empty">暂无已生效的经验</div>
                   )}
                 </div>
               )}

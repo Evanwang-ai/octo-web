@@ -3,7 +3,7 @@
  * [OUTPUT]: 对外默认导出 SkillsView —— 技能列表 + 新建/导入弹窗(⭐Wave A-5 part2)。
  * [POS]: dmworktodo/ui/MatterListView 的技能列表,MatterRouteHost view="skills" 挂载。
  *        结构镜像 multica skills-page(表格:名/挂载/创建者列简化为 名+描述/挂载 worker/更新)
- *        + create-skill-dialog 三模式 chooser(手动/URL 导入="从市场安装"入口/本机扫描=禁用
+ *        + create-skill-dialog 三模式 chooser(手动/URL 导入="从市集安装"入口/本机扫描=禁用
  *        等设备接线)。挂载列从 agent.skills 内嵌摘要反查(跨域同 id)。
  * [PROTOCOL]: 变更时更新此头部,然后检查 CLAUDE.md
  */
@@ -76,7 +76,7 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
             className={`skl-vt${viewMode === "table" ? " is-active" : ""}`}
             onClick={() => setViewMode("table")}
           >
-            密表
+            列表
           </button>
           <button
             type="button"
@@ -91,7 +91,7 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
         {skills === null ? (
           <div className="skl-empty">加载中…</div>
         ) : skills.length === 0 ? (
-          <div className="skl-empty">还没有技能 —— 新建或从市场导入一个。</div>
+          <div className="skl-empty">暂无技能</div>
         ) : viewMode === "cards" ? (
           <div className="skl-cards">
             {skills.map((s) => {
@@ -174,7 +174,7 @@ export default function SkillsView({ onOpenDetail }: { onOpenDetail: (id: string
                   <span className="skl-method-desc">从空白 SKILL.md 开始写</span>
                 </button>
                 <button type="button" className="skl-method" onClick={() => setMethod("url")}>
-                  <span className="skl-method-name">从市场安装</span>
+                  <span className="skl-method-name">从市集安装</span>
                   <span className="skl-method-desc">粘贴 ClawHub / GitHub 链接导入</span>
                 </button>
                 <button type="button" className="skl-method" disabled title="设备接入上线后开放">

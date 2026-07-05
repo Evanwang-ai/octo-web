@@ -221,7 +221,7 @@ export default function CardsView() {
       {loading && <div className="cv-state">加载中…</div>}
       {!loading && groups.length === 0 && (
         <div className="cv-state">
-          {query ? "没有匹配的经验" : "还没有经验记录 · 完成回路后,从反馈中总结可复用的行为规则"}
+          {query ? "没有匹配的经验" : "暂无经验"}
         </div>
       )}
 

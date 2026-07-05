@@ -146,7 +146,7 @@ export default function AutomationDetailView({
           </div>
           <div className="avd-prop">
             <span className="avd-prop-k">下次运行</span>
-            <span className="avd-prop-v">{on ? fmtTime(sched.next_run_at) : "已停用"}</span>
+            <span className="avd-prop-v">{on ? fmtTime(sched.next_run_at) : "—"}</span>
           </div>
           <div className="avd-prop">
             <span className="avd-prop-k">执行方</span>
@@ -173,7 +173,7 @@ export default function AutomationDetailView({
         </div>
 
         <section className="wkd-card avd-runbook">
-          <div className="wkd-card-title">RUNBOOK</div>
+          <div className="wkd-card-title">任务说明</div>
           <pre className="avd-pre">{sched.runbook || "(空)"}</pre>
         </section>
 

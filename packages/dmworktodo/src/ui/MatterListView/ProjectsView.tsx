@@ -162,7 +162,7 @@ export default function ProjectsView({
 
       {loading && <div className="pv-state">加载中…</div>}
       {!loading && shown.length === 0 && (
-        <div className="pv-state">还没有项目 · 建一个文件夹,新回路就能归进去</div>
+        <div className="pv-state">暂无项目</div>
       )}
 
       {!loading && shown.length > 0 && (

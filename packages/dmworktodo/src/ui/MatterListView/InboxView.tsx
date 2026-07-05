@@ -53,8 +53,8 @@ const TYPE_LABEL: Record<string, string> = {
   agent_blocked: "worker 需要协助",
   agent_completed: "worker 已完成工作",
   reaction_added: "添加了回应",
-  quick_create_done: "快速建单已完成",
-  quick_create_failed: "快速建单失败",
+  quick_create_done: "回路已创建",
+  quick_create_failed: "回路创建失败",
   system_welcome: "系统消息",
 };
 
@@ -292,7 +292,7 @@ export default function InboxView() {
     ) : items.length === 0 ? (
       <div className="ibx-empty">
         <InboxGlyph size={30} />
-        <span>收件箱空空如也</span>
+        <span>没有新通知</span>
       </div>
     ) : (
       <div className="ibx-rows" role="list">

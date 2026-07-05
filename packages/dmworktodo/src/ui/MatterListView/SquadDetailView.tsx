@@ -229,7 +229,7 @@ export default function SquadDetailView({
                       }}
                     >
                       <option value="agent">worker</option>
-                      <option value="member">组队成员</option>
+                      <option value="member">空间成员</option>
                     </select>
                     {addType === "agent" ? (
                       <select className="sqd-input" value={addId} onChange={(e) => setAddId(e.target.value)}>
@@ -245,7 +245,7 @@ export default function SquadDetailView({
                     ) : (
                       <input
                         className="sqd-input"
-                        placeholder="成员 uid(欠账:换正式选人器)"
+                        placeholder="成员 ID"
                         value={addId}
                         onChange={(e) => setAddId(e.target.value)}
                       />
@@ -437,11 +437,11 @@ export default function SquadDetailView({
                     保存
                   </button>
                 </div>
-                <p className="sqd-hint">给整个小队的协作规约:分工、交接、纪律。领队接单时注入上下文。</p>
+                <p className="sqd-hint">小队协作规约,领队执行时注入</p>
                 <textarea
                   className="sqd-textarea"
                   rows={14}
-                  placeholder={"例如:先写失败用例再动手;一切数字可溯源…"}
+                  placeholder="协作规约"
                   value={insDraft}
                   onChange={(e) => {
                     setInsDraft(e.target.value);
