@@ -16,6 +16,7 @@ import ChatMatterPanel from "./panel/ChatTodoPanel";
 import MatterDetailPanel from "./panel/MatterDetailPanel";
 import MatterLinkMenu from "./ui/MatterLinkMenu";
 import SmartCreateModal from "./ui/SmartCreateModal";
+import MatterCreateModal from "./ui/MatterListView/MatterCreateModal"; // 邮件式新建回路(vanilla 直译),纯新建入口专用
 import MatterRouteHost from "./ui/MatterListView/MatterRouteHost"; // matter-react: 原生列表宿主(绞杀式·替代 iframe 列表)
 import {
   createMatter,
@@ -504,6 +505,39 @@ function GlobalMatterModal() {
     WKApp.mittBus.emit("wk:exit-multiple-mode");
   };
 
+  // 双轨:从输入框触发(有预填文本+clearOnConfirm)保持 SmartCreateModal 的"发送并创建"流;
+  // 纯"新建回路"入口走邮件式 MatterCreateModal(vanilla buildNewMatterModal 直译,Wave 3)。
+  const sendFlow = !!payload.clearOnConfirm && !!payload.prefillTitle;
+  if (!sendFlow) {
+    return (
+      <MatterCreateModal
+        open={open}
+        prefillTitle={payload.prefillTitle}
+        prefillAssigneeUids={payload.prefillAssigneeUids}
+        prefillProjectId={payload.projectId}
+        channel={
+          payload.channelId
+            ? {
+                channelId: payload.channelId,
+                channelType: payload.channelType,
+                name: payload.channelName,
+              }
+            : undefined
+        }
+        onClose={handleClose}
+        onDirtyClose={handleDirtyClose}
+        onCreated={(detail, asDraft) => {
+          if (detail?.id) {
+            WKApp.mittBus.emit("wk:matter-updated", { matterId: detail.id });
+          }
+          Toast.success(asDraft ? "已保存草稿" : "已发送");
+          setOpen(false);
+          WKApp.mittBus.emit("wk:exit-multiple-mode");
+        }}
+      />
+    );
+  }
+
   return (
     <SmartCreateModal
       visible={open}
@@ -514,8 +548,7 @@ function GlobalMatterModal() {
       prefillTitle={payload.prefillTitle}
       prefillAssigneeUids={payload.prefillAssigneeUids}
       prefillProjectId={payload.projectId}
-      allowDraft
-      sendOnConfirm={!!payload.clearOnConfirm && !!payload.prefillTitle}
+      sendOnConfirm
       channel={
         payload.channelId
           ? {

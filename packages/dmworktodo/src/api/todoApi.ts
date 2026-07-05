@@ -195,6 +195,34 @@ export async function createMatter(
   return post<MatterDetail>("/matters", req);
 }
 
+/** 邮件式新建回路(vanilla buildNewMatterModal/submitCreate 直译)。
+ *  专用类型,不动共享 CreateMatterReq(守铁律③);字段对齐后端 createMatterReq
+ *  (vanilla index.html L9494-9537 实发字段为真相源)。 */
+export interface CreateLoopReq {
+  title: string;
+  status: "backlog" | "open";
+  description?: string;
+  /** 追踪目标(vanilla 折叠区 nmGoal)。 */
+  brief_output_spec?: string;
+  project_id?: string;
+  deadline?: string;
+  leader_uid?: string;
+  assignee_ids?: string[];
+  mode?: string;
+  /** JSON 字符串:critic{generator,verifier,max_rounds}/pipeline{steps}/roundtable·swarm{participants}。 */
+  mode_config?: string;
+  priority?: number;
+  input_attachments?: {
+    file_url: string;
+    file_name: string;
+    file_size: number;
+    mime_type: string | null;
+  }[];
+}
+export async function createLoop(req: CreateLoopReq): Promise<MatterDetail> {
+  return post<MatterDetail>("/matters", req);
+}
+
 export async function updateMatter(
   matterId: string,
   req: UpdateMatterReq,

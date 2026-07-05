@@ -19,6 +19,10 @@ interface MemberPickerControlledProps {
   disabled?: boolean;
   /** 只列人类(过滤 bot);项目成员/协作者选人用,bot 走独立 owned-bot 流(保主人主权)。 */
   humansOnly?: boolean;
+  /** 只列 bot(领队/执行方槽位用);与 humansOnly 互斥,botsOnly 优先。 */
+  botsOnly?: boolean;
+  /** 单选槽位:选中即替换已选并收起下拉(仅 controlled 模式生效)。 */
+  single?: boolean;
 }
 
 interface MemberPickerDirectProps {
@@ -139,6 +143,8 @@ function MemberOption({
 export default function MemberPicker(props: MemberPickerProps) {
   const { t } = useI18n();
   const { channel, placeholder = t("todo.member.searchPlaceholder"), disabled = false, humansOnly = false } = props;
+  const botsOnly = props.mode === 'controlled' ? (props.botsOnly ?? false) : false;
+  const single = props.mode === 'controlled' ? (props.single ?? false) : false;
 
     // 受控模式 vs 直连模式，用两个独立变量避免条件表达式作依赖
   const controlledValue = props.mode === 'controlled' ? props.value : undefined;
@@ -168,9 +174,15 @@ export default function MemberPicker(props: MemberPickerProps) {
   });
 
   // humansOnly:项目成员/协作者选人时过滤掉 bot(bot 走独立 owned-bot 流,保主人主权)。
+  // botsOnly:领队/执行方槽位只列 bot。
   const shownMembers = useMemo(
-    () => (humansOnly ? members.filter((m) => !m.isBot) : members),
-    [humansOnly, members],
+    () =>
+      botsOnly
+        ? members.filter((m) => m.isBot)
+        : humansOnly
+          ? members.filter((m) => !m.isBot)
+          : members,
+    [botsOnly, humansOnly, members],
   );
 
   // 搜索防抖 300ms
@@ -243,15 +255,21 @@ export default function MemberPicker(props: MemberPickerProps) {
       if (selectedUids.includes(uid)) return;
 
       if (props.mode === 'controlled') {
-        updateControlled([...selectedUids, uid]);
+        if (single) {
+          // 单选槽位:替换已选并收起下拉
+          updateControlled([uid]);
+          setShowDropdown(false);
+        } else {
+          updateControlled([...selectedUids, uid]);
+        }
       } else {
         updateDirect(uid, 'add');
       }
 
-      // 选中后不关闭下拉，继续展示
+      // 多选时选中后不关闭下拉，继续展示
       setInputValue('');
     },
-    [selectedUids, props.mode, updateControlled, updateDirect]
+    [selectedUids, props.mode, single, updateControlled, updateDirect]
   );
 
   // 移除成员
