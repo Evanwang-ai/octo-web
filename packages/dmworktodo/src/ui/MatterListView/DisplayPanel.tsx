@@ -143,24 +143,45 @@ export default function DisplayPanel({
           })}
         </div>
 
-        {/* 重置(分组/排序/属性/看板 回默认,不动筛选) */}
-        <div className="mlv-pop-sep" />
-        <button
-          type="button"
-          className="mlv-pop-reset"
-          onClick={() =>
-            onChange({
-              groupBy: VIEW_SPEC_DEFAULTS.groupBy,
-              orderBy: VIEW_SPEC_DEFAULTS.orderBy,
-              orderDir: VIEW_SPEC_DEFAULTS.orderDir,
-              displayProps: { ...VIEW_SPEC_DEFAULTS.displayProps },
-              board: { ...VIEW_SPEC_DEFAULTS.board },
-            })
-          }
-        >
-          重置为默认
-        </button>
+        {/* 重置(布局/分组/排序/属性/看板 回默认,不动筛选)——仅 spec 偏离默认时出现(Linear 条件性 footer) */}
+        {!specIsDefault(spec) && (
+          <>
+            <div className="mlv-pop-sep" />
+            <button
+              type="button"
+              className="mlv-pop-reset"
+              onClick={() =>
+                onChange({
+                  layout: VIEW_SPEC_DEFAULTS.layout,
+                  groupBy: VIEW_SPEC_DEFAULTS.groupBy,
+                  orderBy: VIEW_SPEC_DEFAULTS.orderBy,
+                  orderDir: VIEW_SPEC_DEFAULTS.orderDir,
+                  displayProps: { ...VIEW_SPEC_DEFAULTS.displayProps },
+                  board: { ...VIEW_SPEC_DEFAULTS.board },
+                })
+              }
+            >
+              重置为默认
+            </button>
+          </>
+        )}
       </div>
     </>
+  );
+}
+
+// 本面板管辖的字段(不含 filters)是否全在默认位。displayProps 的缺省键=true,与显式 true 等价。
+function specIsDefault(spec: ViewSpec): boolean {
+  const propsEq = DISPLAY_PROPS.every(
+    (p) => (spec.displayProps[p.k] !== false) === (VIEW_SPEC_DEFAULTS.displayProps[p.k] !== false),
+  );
+  return (
+    spec.layout === VIEW_SPEC_DEFAULTS.layout &&
+    spec.groupBy === VIEW_SPEC_DEFAULTS.groupBy &&
+    spec.orderBy === VIEW_SPEC_DEFAULTS.orderBy &&
+    spec.orderDir === VIEW_SPEC_DEFAULTS.orderDir &&
+    propsEq &&
+    spec.board.density === VIEW_SPEC_DEFAULTS.board.density &&
+    spec.board.hideEmpty === VIEW_SPEC_DEFAULTS.board.hideEmpty
   );
 }

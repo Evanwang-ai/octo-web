@@ -255,6 +255,18 @@ function BoardCard({
             <PriorityIcon level={m.priority ?? 0} size={14} />
           </button>
         )}
+        {/* 状态 chip 在看板同样生效(按状态分列时列已表意,按优先级等分列时它是唯一状态源) */}
+        {props.status !== false && (
+          <button
+            type="button"
+            className="mlv-icon-btn"
+            title="改状态"
+            aria-label="状态"
+            onClick={(e) => on.statusMenu(e, m)}
+          >
+            <StatusIcon status={m.status} size={14} />
+          </button>
+        )}
         {props.id !== false && <span className="mlv-card-id">M-{m.seq_no}</span>}
         <span className="mlv-flex" />
         {props.startDate !== false && (
@@ -263,6 +275,9 @@ function BoardCard({
       </div>
       <div className="mlv-card-title">{m.title || "无标题"}</div>
       <div className="mlv-card-foot">
+        {props.source !== false && m.source_name && (
+          <span className="mlv-card-src">{m.source_name}</span>
+        )}
         {props.project !== false && project && <span className="mlv-card-proj">{project}</span>}
         <span className="mlv-flex" />
         {props.assignee !== false && displayed && (
@@ -562,38 +577,9 @@ export default function MatterListView({
           ))}
         </div>
         <div className="mlv-tools">
-          <div className="mlv-seg" role="group" aria-label="视图切换">
-            <button
-              type="button"
-              className={`mlv-seg-btn${!isBoard ? " is-active" : ""}`}
-              onClick={() => patchSpec({ layout: "list" })}
-              title="列表"
-              aria-label="列表视图"
-              aria-pressed={!isBoard}
-            >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M5.5 4h7M5.5 8h7M5.5 12h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                <circle cx="3" cy="4" r="1" fill="currentColor" />
-                <circle cx="3" cy="8" r="1" fill="currentColor" />
-                <circle cx="3" cy="12" r="1" fill="currentColor" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className={`mlv-seg-btn${isBoard ? " is-active" : ""}`}
-              onClick={() => patchSpec({ layout: "board" })}
-              title="看板"
-              aria-label="看板视图"
-              aria-pressed={isBoard}
-            >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <rect x="2" y="3" width="3.4" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
-                <rect x="6.3" y="3" width="3.4" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" />
-                <rect x="10.6" y="3" width="3.4" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
-              </svg>
-            </button>
-          </div>
-          <span className="mlv-count">{shownCount} 个回路</span>
+          {/* Linear 规范:工具栏只有 筛选/显示 两入口;列表↔看板切换只活在显示弹层顶端
+              (原外部图标分段器与弹层内 tab 双写同一 layout=纯冗余,2026-07-05 删);
+              总计数不进工具栏(分组头已各自带计数)。 */}
           <span className="mlv-pop-anchor">
             <button
               type="button"
