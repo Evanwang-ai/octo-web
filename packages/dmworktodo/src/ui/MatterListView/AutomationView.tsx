@@ -140,61 +140,92 @@ export default function AutomationView({ onOpenDetail }: { onOpenDetail: (id: st
 
       {loading && <div className="av-state">加载中…</div>}
       {!loading && schedules.length === 0 && (
-        <div className="av-state">暂无自动化</div>
+        <div className="av-empty">
+          <svg className="av-empty-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          <div className="av-empty-t">暂无自动化</div>
+          <button className="av-new" type="button" onClick={() => setEditing("new")}>
+            <span className="av-new-plus">+</span>新建自动化
+          </button>
+        </div>
       )}
 
       {!loading && schedules.length > 0 && (
         <div className="av-list">
-          {/* 行=Listview 语法:40px 单行——开关/标题/runbook 首行内联/右缘(健康点串·cron·执行方·下次) */}
-          {schedules.map((s) => {
-            const on = s.enabled === 1 || s.enabled === true;
-            return (
-              <div key={s.id} className={`av-row${on ? "" : " is-off"}`}>
-                <button
-                  type="button"
-                  className={`av-switch${on ? " is-on" : ""}`}
-                  role="switch"
-                  aria-checked={on}
-                  aria-label="启用"
-                  disabled={pending.has(s.id)}
-                  onClick={() => toggle(s)}
-                >
-                  <span className="av-switch-knob" />
-                </button>
-                <div
-                  className="av-row-body"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onOpenDetail(s.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onOpenDetail(s.id);
-                    }
-                  }}
-                >
-                  <span className="av-title">{s.title || "未命名自动化"}</span>
-                  {s.runbook && <span className="av-runbook">{s.runbook.split("\n")[0]}</span>}
-                  {(runsMap[s.id]?.length ?? 0) > 0 && (
-                    <span className="av-dots" title="最近 8 次运行">
-                      {runsMap[s.id].slice(0, 8).reverse().map((r) => (
-                        <span key={r.id} className={`av-hdot ${r.status === "failed" ? "is-bad" : "is-ok"}`} />
-                      ))}
+          {/* 行=Listview 语法:40px 单行——开关/标题/[已停用 chip]/副标题(cron 人话·去向)/右缘(健康点串·执行方·下次)。
+              runbook 原文只在详情页——命令/路径等实现细节不进浏览层;停用行沉底,双组并存才出组头。 */}
+          {(() => {
+            const isOn = (s: Schedule) => s.enabled === 1 || s.enabled === true;
+            const enabledRows = schedules.filter(isOn);
+            const disabledRows = schedules.filter((s) => !isOn(s));
+            const row = (s: Schedule) => {
+              const on = isOn(s);
+              return (
+                <div key={s.id} className={`av-row${on ? "" : " is-off"}`}>
+                  <button
+                    type="button"
+                    className={`av-switch${on ? " is-on" : ""}`}
+                    role="switch"
+                    aria-checked={on}
+                    aria-label="启用"
+                    disabled={pending.has(s.id)}
+                    onClick={() => toggle(s)}
+                  >
+                    <span className="av-switch-knob" />
+                  </button>
+                  <div
+                    className="av-row-body"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenDetail(s.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onOpenDetail(s.id);
+                      }
+                    }}
+                  >
+                    <span className="av-title">{s.title || "未命名自动化"}</span>
+                    {!on && <span className="av-off-chip">已停用</span>}
+                    <span className="av-sub">{`${cronHuman(s.cron_expr)} · ${target(s)}`}</span>
+                    {(runsMap[s.id]?.length ?? 0) > 0 && (
+                      <span className="av-dots" title="最近 8 次运行">
+                        {runsMap[s.id].slice(0, 8).reverse().map((r) => (
+                          <span key={r.id} className={`av-hdot ${r.status === "failed" ? "is-bad" : "is-ok"}`} />
+                        ))}
+                      </span>
+                    )}
+                    <span className="av-exec">
+                      <UserName uid={s.executor_uid} />
+                      {isBot(s.executor_uid) && <span className="av-ai">AI</span>}
                     </span>
-                  )}
-                  <span className="av-target">{target(s)}</span>
-                  <span className="av-cron">{cronHuman(s.cron_expr)}</span>
-                  <span className="av-exec">
-                    <UserName uid={s.executor_uid} />
-                    {isBot(s.executor_uid) && <span className="av-ai">AI</span>}
-                  </span>
-                  <span className="av-next">
-                    {on ? (s.next_run_at ? `下次 ${relFuture(s.next_run_at)}` : "") : "已停用"}
-                  </span>
+                    {on && s.next_run_at && (
+                      <span className="av-next">{`下次 ${relFuture(s.next_run_at)}`}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              );
+            };
+            const showHeads = enabledRows.length > 0 && disabledRows.length > 0;
+            return (
+              <>
+                {showHeads && (
+                  <div className="av-group-head">
+                    启用中<span className="av-group-count">{enabledRows.length}</span>
+                  </div>
+                )}
+                {enabledRows.map(row)}
+                {showHeads && (
+                  <div className="av-group-head">
+                    已停用<span className="av-group-count">{disabledRows.length}</span>
+                  </div>
+                )}
+                {disabledRows.map(row)}
+              </>
             );
-          })}
+          })()}
         </div>
       )}
 

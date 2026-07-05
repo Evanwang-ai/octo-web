@@ -53,11 +53,46 @@
   font-size: 13px;
 }
 
+/* 空态:居中卡(图标+词+主操作),不再是左上角一行灰字 */
+.av-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px 96px;
+}
+.av-empty-ic {
+  width: 28px;
+  height: 28px;
+  color: var(--wk-text-disabled);
+}
+.av-empty-t {
+  font-size: 13px;
+  color: var(--wk-text-tertiary);
+}
+
 .av-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding: 4px 24px 32px;
+}
+
+/* 组头(S8 语法⑥:一个词+计数;仅启用/停用双组并存时出现) */
+.av-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wk-text-tertiary);
+}
+.av-group-count {
+  color: var(--wk-text-disabled);
+  font-weight: 400;
 }
 
 /* ── 行(Listview .mlv-row 公式,S8:开关/标题/runbook 内联/右缘元数据)── */
@@ -78,9 +113,9 @@
   background: var(--wk-brand-tint-06);
 }
 
-.av-row.is-off .av-title,
-.av-row.is-off .av-runbook {
-  color: var(--wk-text-disabled);
+/* 停用行:整行(含右缘元数据)统一降透明,不再只灰标题 */
+.av-row.is-off .av-row-body {
+  opacity: 0.55;
 }
 
 .av-row-body {
@@ -104,7 +139,8 @@
   max-width: 40%;
 }
 
-.av-runbook {
+/* 副标题=cron 人话 · 去向(自解释句,替 runbook 原文/右缘 cron·去向双列) */
+.av-sub {
   flex: 1 1 auto;
   min-width: 0;
   font-size: 12px;
@@ -114,26 +150,26 @@
   text-overflow: ellipsis;
 }
 
+.av-off-chip {
+  flex: none;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--wk-border-default);
+  color: var(--wk-text-tertiary);
+  white-space: nowrap;
+}
+
 .av-dots {
   flex: none;
   display: inline-flex;
   gap: 3px;
 }
 
-.av-cron {
-  flex: none;
-  min-width: 110px;
-  text-align: right;
-  font-size: 12px;
-  color: var(--wk-text-secondary);
-  white-space: nowrap;
-}
-
 .av-exec {
   flex: none;
-  min-width: 90px;
   display: inline-flex;
-  justify-content: flex-end;
   align-items: center;
   gap: 4px;
   font-size: 12px;
@@ -210,23 +246,8 @@
 }
 
 
-/* 输出去向(F2:发到群/项目名/回路列表) */
-.av-target {
-  flex: none;
-  min-width: 84px;
-  text-align: right;
-  font-size: 12px;
-  color: var(--wk-text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-
-@media (max-width: 960px) {
-  .av-cron,
-  .av-exec,
-  .av-target {
+@media (max-width: 720px) {
+  .av-exec {
     display: none;
   }
 }

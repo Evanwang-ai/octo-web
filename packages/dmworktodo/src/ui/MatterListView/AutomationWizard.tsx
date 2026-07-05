@@ -90,6 +90,8 @@ export default function AutomationWizard({
 
   const stepOk = (i: number) =>
     i === 0 ? !!title.trim() : i === 1 ? !!cronExpr.trim() : !!executorUid;
+  const stepHint = (i: number) =>
+    i === 0 ? "先填写名称" : i === 1 ? "先填写 cron 表达式" : "先选择执行 worker";
 
   const save = async () => {
     if (busy) return;
@@ -133,8 +135,9 @@ export default function AutomationWizard({
                 type="button"
                 className={`awz-step${step === i ? " is-active" : ""}${step > i ? " is-done" : ""}`}
                 onClick={() => {
-                  // 允许回跳;前跳需逐步校验
+                  // 允许回跳;前跳需逐步校验——校验不过给反馈,不静默吞点击
                   if (i < step || (i === step + 1 && stepOk(step))) setStep(i);
+                  else if (i > step) Toast.error(stepHint(step));
                 }}
               >
                 <span className="awz-step-n">{step > i ? "✓" : i + 1}</span>
@@ -161,7 +164,7 @@ export default function AutomationWizard({
                 <span>任务说明</span>
                 <textarea
                   className="awz-textarea"
-                  rows={7}
+                  rows={5}
                   placeholder="每次运行要执行的任务"
                   value={runbook}
                   onChange={(e) => setRunbook(e.target.value)}
@@ -275,7 +278,7 @@ export default function AutomationWizard({
         </div>
 
         <div className="awz-foot">
-          <button type="button" className="awz-ghost" onClick={onClose}>
+          <button type="button" className="awz-text" onClick={onClose}>
             取消
           </button>
           <span className="awz-foot-spacer" />
@@ -289,12 +292,19 @@ export default function AutomationWizard({
               type="button"
               className="awz-primary"
               disabled={!stepOk(step)}
+              title={stepOk(step) ? undefined : stepHint(step)}
               onClick={() => setStep(step + 1)}
             >
               下一步
             </button>
           ) : (
-            <button type="button" className="awz-primary" disabled={!stepOk(2) || busy} onClick={save}>
+            <button
+              type="button"
+              className="awz-primary"
+              disabled={!stepOk(2) || busy}
+              title={stepOk(2) ? undefined : stepHint(2)}
+              onClick={save}
+            >
               {busy ? "保存中…" : isNew ? "创建自动化" : "保存"}
             </button>
           )}
