@@ -15,30 +15,6 @@
   overflow-y: auto;
 }
 
-/* 列表页头(Listview 族,S8);详情面包屑另用 .mkt-crumbbar */
-.mkt-head {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 22px 28px 8px;
-}
-
-.mkt-title {
-  font-size: 22px;
-  font-weight: 650;
-  line-height: 1.2;
-  color: var(--wk-text-primary);
-}
-
-.mkt-toolbar {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 24px 8px;
-}
-
 .mkt-back {
   border: none;
   background: transparent;
@@ -57,132 +33,312 @@
   font-size: 12px;
 }
 
-/* ── 首页:tab 分类(mlv-tab 族)+ Notion 市集卡网格(1248 容器)── */
-.mkt-main {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  width: 100%;
+/* ═══ 首页(2026-07-05 整屏重构):Notion Marketplace 五层 ═══
+   层1 中心化 tab → 层2 hero(标题+插画) → 层3 精选卡行 → 层4 类目 chip 条 → 层5 列表行 */
+
+/* 层1:中心化一级导航 */
+.mkt-nav {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 18px 24px 14px;
 }
 
-.mkt-main > .mkt-section,
-.mkt-main > .mkt-empty {
-  max-width: 1248px;
-  margin: 0 auto;
-  padding: 8px 28px 0;
-  box-sizing: border-box;
-}
-
-.mkt-cat {
-  height: 28px;
-  padding: 0 10px;
+.mkt-nav-tab {
   border: none;
   background: transparent;
-  border-radius: var(--wk-r-md, 8px);
-  font-size: 13px;
-  font-weight: 550;
+  padding: 4px 2px;
+  font-size: 14px;
   color: var(--wk-text-tertiary);
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: color 0.12s;
 }
 
-.mkt-cat:hover {
-  background: var(--wk-brand-tint-06);
+.mkt-nav-tab:hover {
   color: var(--wk-text-secondary);
 }
 
-.mkt-cat.is-active {
+.mkt-nav-tab.is-active {
   color: var(--wk-text-primary);
   font-weight: 600;
 }
 
-.mkt-section {
-  margin-bottom: 28px;
+/* 容器:1048 居中(Notion 市集正文宽) */
+.mkt-container {
+  width: 100%;
+  max-width: 1048px;
+  margin: 0 auto;
+  padding: 0 32px 64px;
+  box-sizing: border-box;
 }
 
-.mkt-section-title {
+/* 层2:hero(左标题右插画;过滤/搜索中让位) */
+.mkth {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 28px 4px 32px;
+}
+
+.mkth-title {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--wk-text-primary);
+}
+
+.mkth-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--wk-text-secondary);
+}
+
+.mkth-art {
+  flex: 0 0 auto;
+  width: 240px;
+  height: 130px;
+  color: var(--wk-text-secondary);
+}
+
+@media (max-width: 820px) {
+  .mkth-art {
+    display: none;
+  }
+}
+
+/* 层3:精选卡行 */
+.mkt-sec-head {
   font-size: 12px;
   font-weight: 500;
   color: var(--wk-text-tertiary);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.mkt-grid {
+.mkt-feat {
+  margin-bottom: 32px;
+}
+
+.mkt-feat-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
-  gap: 24px 24px;
-  margin-bottom: 36px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
 }
 
-/* 卡=Notion 市集配方:大视觉区是卡的主体,文字只是脚注 */
-.mkt-card {
+.mkt-feat-card {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 16px 18px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  background: var(--wk-bg-surface);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.mkt-feat-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  transform: translateY(-1px);
+}
+
+.mkt-feat-icon {
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.mkt-feat-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wk-text-primary);
+}
+
+.mkt-feat-meta {
+  font-size: 11.5px;
+  color: var(--wk-text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 层4:类目 chip 过滤条 + 搜索 + 排序 */
+.mkt-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mkt-chips {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.mkt-chip {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.mkt-chip:hover {
+  background: var(--wk-brand-tint-06);
+}
+
+.mkt-chip.is-on {
+  background: var(--wk-brand-primary);
+  border-color: transparent;
+  color: var(--wk-text-on-brand, #fff);
+}
+
+.mkt-search {
+  flex: 0 0 180px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface);
+  font-size: 12.5px;
+  color: var(--wk-text-primary);
+  outline: none;
+}
+
+.mkt-search:focus {
+  border-color: var(--wk-color-info);
+}
+
+.mkt-sort {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface);
+  font-size: 12.5px;
+  color: var(--wk-text-secondary);
+  outline: none;
+}
+
+/* 层5:全量列表行(hairline 容器,56px 双行) */
+.mkt-list {
+  border: 1px solid var(--wk-border-default);
+  border-radius: 12px;
+  background: var(--wk-bg-surface);
+  overflow: hidden;
+}
+
+.mkt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 16px;
   border: none;
+  border-bottom: 1px solid var(--wk-border-default);
   background: transparent;
   text-align: left;
   cursor: pointer;
   font: inherit;
   color: inherit;
+  box-sizing: border-box;
+  transition: background 0.1s;
 }
 
-.mkt-card-visual {
-  height: 150px;
-  border-radius: 10px;
-  border: 1px solid var(--wk-border-default);
-  display: flex;
+.mkt-row:last-child {
+  border-bottom: none;
+}
+
+.mkt-row:hover {
+  background: var(--wk-brand-tint-04, var(--wk-bg-hover));
+}
+
+.mkt-row-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: box-shadow 0.15s;
+  border-radius: 8px;
+  border: 1px solid var(--wk-border-default);
+  background: var(--wk-bg-base);
+  font-size: 17px;
+  line-height: 1;
 }
 
-.mkt-card-visual.is-skill {
-  background: var(--wk-brand-tint-03);
-  color: var(--wk-text-tertiary);
-}
-
-.mkt-card:hover .mkt-card-visual {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
-}
-
-.mkt-card-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+.mkt-row-main {
+  flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.mkt-card-name {
-  flex: none;
+.mkt-row-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--wk-text-primary);
+  min-width: 0;
+}
+
+.mkt-row-desc {
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.mkt-card-author {
-  flex: 1 1 auto;
-  min-width: 0;
+.mkt-row-kind {
+  flex: 0 0 auto;
   font-size: 11.5px;
   color: var(--wk-text-disabled);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.mkt-card-installs {
-  flex: none;
-  font-size: 11px;
-  color: var(--wk-text-disabled);
+.mkt-row-installs {
+  flex: 0 0 72px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--wk-text-tertiary);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mkt-row-price {
+  flex: 0 0 48px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--wk-text-secondary);
+  white-space: nowrap;
+}
+
+.mkt-verified {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
 }
 
 .mkt-installed {
@@ -194,39 +350,18 @@
   background: color-mix(in srgb, var(--wk-color-success) 12%, transparent);
 }
 
-.mkt-card-desc {
-  margin-top: 3px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--wk-text-tertiary);
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.mkt-skill-ic {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--wk-bg-hover);
-  color: var(--wk-text-secondary);
-  flex-shrink: 0;
-}
-
-.mkt-skill-ic.is-big {
-  width: 48px;
-  height: 48px;
-}
-
 .mkt-empty {
   padding: 60px;
   text-align: center;
   font-size: 13px;
   color: var(--wk-text-tertiary);
+}
+
+@media (max-width: 720px) {
+  .mkt-row-kind,
+  .mkt-row-installs {
+    display: none;
+  }
 }
 
 /* ── 详情:左 onboarding 步骤 + 右信息栏(Notion connector 配方)── */

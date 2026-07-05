@@ -333,7 +333,17 @@ export interface AgentTemplateSkillRef {
   source_url?: string;
 }
 
-export interface AgentTemplateSummary {
+// 市集条目共享展示元数据(Notion Marketplace 五层结构的行/卡消费,2026-07-05):
+// icon=emoji(仓库无插画资产,mock 期 emoji;接线换 logo URL);price=null|0→免费;
+// verified=作者认证徽章(结构化,替代从 author 字符串猜);featured=精选行策展位。
+export interface MarketListingMeta {
+  icon?: string;
+  price?: number | null;
+  verified?: boolean;
+  featured?: boolean;
+}
+
+export interface AgentTemplateSummary extends MarketListingMeta {
   slug: string;
   name: string;
   description: string;
@@ -349,10 +359,11 @@ export interface AgentTemplate extends AgentTemplateSummary {
 }
 
 // 市集货架技能(展示形状;真实来源=importSkill URL 导入,货架仅 mock 演示)。
-export interface MarketSkill {
+export interface MarketSkill extends MarketListingMeta {
   slug: string;
   name: string;
   description: string;
+  category?: string;
   author: string;
   installs: number;
   source_url: string;

@@ -15,6 +15,10 @@ const TEMPLATES: AgentTemplate[] = [
   {
     slug: "quarterly-analyst",
     name: "季度数据分析师",
+    icon: "📊",
+    verified: true,
+    featured: true,
+    price: null,
     description: "接经营数据需求:取数、口径校验、出看板,数字可溯源。",
     category: "数据",
     author: "Octo 官方",
@@ -30,6 +34,10 @@ const TEMPLATES: AgentTemplate[] = [
   {
     slug: "code-reviewer",
     name: "代码评审官",
+    icon: "🔍",
+    verified: true,
+    featured: true,
+    price: null,
     description: "按团队规约做二遍评审,输出分级 findings,不放过边界。",
     category: "工程",
     author: "Octo 官方",
@@ -42,6 +50,9 @@ const TEMPLATES: AgentTemplate[] = [
   {
     slug: "meeting-scribe",
     name: "会议纪要官",
+    icon: "📝",
+    featured: true,
+    price: null,
     description: "会议转录进来,三行结论先行的结构化纪要出去。",
     category: "协作",
     author: "社区 · 妙啊",
@@ -56,6 +67,9 @@ const MARKET_SKILLS: MarketSkill[] = [
   {
     slug: "sql-guard",
     name: "SQL 守门员",
+    icon: "🛡️",
+    category: "数据",
+    price: null,
     description: "跑任何查询前先 EXPLAIN,禁全表扫描,给成本预估。",
     author: "社区 · 数仓组",
     installs: 430,
@@ -65,6 +79,9 @@ const MARKET_SKILLS: MarketSkill[] = [
   {
     slug: "release-notes",
     name: "发布纪要",
+    icon: "📦",
+    category: "工程",
+    price: null,
     description: "从合并记录自动生成对外发布纪要,分 新增/修复/破坏性。",
     author: "社区 · 前端组",
     installs: 289,
@@ -74,6 +91,10 @@ const MARKET_SKILLS: MarketSkill[] = [
   {
     slug: "risk-radar",
     name: "风险雷达",
+    icon: "📡",
+    category: "协作",
+    verified: true,
+    price: null,
     description: "长任务开工前列风险清单:时间/并发/规模/对抗/缝合五轴。",
     author: "Octo 官方",
     installs: 655,
