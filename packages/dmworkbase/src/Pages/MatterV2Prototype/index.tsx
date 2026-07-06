@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useState } from "react"
 import {
     Archive,
-    BarChart3,
+    BookOpen,
     Bot,
     Briefcase,
     CheckCircle2,
@@ -12,73 +12,22 @@ import {
     Edit3,
     Expand,
     Link,
-    Inbox,
     MoreHorizontal,
     Paperclip,
     Pin,
     Search,
-    Settings,
     Sparkles,
     Trash2,
     UserPlus,
     Users,
 } from "lucide-react"
 import WKApp from "../../App"
+import { SKILLS, SkillsListSurface, ImportSkillModal, SkillDetailSurface } from "../SkillsPrototype"
 import "./index.css"
 
-type MatterView = "inbox" | "issues" | "coworkers" | "squads" | "settings"
-
-interface MatterThread {
-    id: string
-    title: string
-    subtitle: string
-    time: string
-    status: "review" | "open" | "done"
-    unread?: boolean
-}
-
-const INBOX_THREADS: MatterThread[] = [
-    {
-        id: "oct-2",
-        title: "询问当前 agent 身份和模型",
-        subtitle: "我是这个 Multica workspace ...",
-        time: "1 小时",
-        status: "open",
-        unread: true,
-    },
-    {
-        id: "oct-3",
-        title: "回答运行环境询问：workspa...",
-        subtitle: "状态设为 In Review",
-        time: "4 小时",
-        status: "review",
-    },
-]
-
-const ISSUE_THREADS: MatterThread[] = [
-    {
-        id: "iss-18",
-        title: "整理 runtime V2 设备详情交互",
-        subtitle: "补充 Agent 绑定与费用栏位",
-        time: "今天",
-        status: "review",
-        unread: true,
-    },
-    {
-        id: "iss-12",
-        title: "Bot 创建弹窗字段梳理",
-        subtitle: "确认 visibility / runtime / skills",
-        time: "昨天",
-        status: "open",
-    },
-    {
-        id: "iss-7",
-        title: "MatterV2 三栏信息架构",
-        subtitle: "收件箱与 Issues 使用同一详情 surface",
-        time: "2 天前",
-        status: "done",
-    },
-]
+// T1 换皮(蓝图 §1.2):单模块 sidebar——砍 搜索/收件箱/用量/设置/workspace 下拉,
+// 并入 技能 节点;CoWorker 中文定名「AI 队友」。收件箱砍除后 review 入口=我的 issue(T5 补四 tabs)。
+type MatterView = "issues" | "myissues" | "coworkers" | "squads" | "skills"
 
 const SQUADS = [
     {
@@ -101,34 +50,16 @@ const COWORKERS = [
 ]
 
 export default function MatterV2Prototype() {
-    const [activeView, setActiveView] = useState<MatterView>("inbox")
-    const [activeThreadId, setActiveThreadId] = useState(INBOX_THREADS[0].id)
-    const [workspaceOpen, setWorkspaceOpen] = useState(false)
-    const [workspaceName, setWorkspaceName] = useState("OctoLoop")
-    const [workspaces, setWorkspaces] = useState(["工作空间 1", "工作空间 2", "工作空间 3"])
-    const [creatingWorkspace, setCreatingWorkspace] = useState(false)
-    const [newWorkspaceName, setNewWorkspaceName] = useState("")
-    const [newWorkspaceMembers, setNewWorkspaceMembers] = useState("lvsijia, Prototyper")
-    const [newWorkspaceTeam, setNewWorkspaceTeam] = useState("Product Prototype Team")
+    const [activeView, setActiveView] = useState<MatterView>("issues")
     const [createIssueOpen, setCreateIssueOpen] = useState(false)
-
-    const threads = activeView === "inbox" ? INBOX_THREADS : ISSUE_THREADS
-    const activeThread = threads.find((thread) => thread.id === activeThreadId) ?? threads[0]
 
     function setView(nextView: MatterView) {
         setActiveView(nextView)
-        if (nextView === "settings") return
-        const first = nextView === "inbox" ? INBOX_THREADS[0] : ISSUE_THREADS[0]
-        setActiveThreadId(first.id)
     }
 
-    function showSurface(thread = activeThread, view = activeView) {
-        if (view === "settings") {
-            WKApp.routeRight.replaceToRoot(<MatterMembersSettings />)
-            return
-        }
-        if (view === "issues") {
-            WKApp.routeRight.replaceToRoot(<MatterIssuesBoard />)
+    function showSurface(view = activeView) {
+        if (view === "myissues") {
+            WKApp.routeRight.replaceToRoot(<MatterIssuesBoard title="我的 issue" />)
             return
         }
         if (view === "coworkers") {
@@ -139,19 +70,16 @@ export default function MatterV2Prototype() {
             WKApp.routeRight.replaceToRoot(<MatterSquadsList />)
             return
         }
-        WKApp.routeRight.replaceToRoot(
-            <MatterV2Surface
-                view={view}
-                threads={INBOX_THREADS}
-                activeThreadId={thread.id}
-                onSelectThread={setActiveThreadId}
-            />
-        )
+        if (view === "skills") {
+            WKApp.routeRight.replaceToRoot(<MatterSkillsHost />)
+            return
+        }
+        WKApp.routeRight.replaceToRoot(<MatterIssuesBoard />)
     }
 
     useEffect(() => {
         showSurface()
-    }, [activeView, activeThreadId])
+    }, [activeView])
 
     useEffect(() => {
         const handleActivated = (payload: { menuId?: string }) => {
@@ -159,117 +87,24 @@ export default function MatterV2Prototype() {
         }
         WKApp.mittBus.on("wk:nav-menu-activated" as any, handleActivated as any)
         return () => WKApp.mittBus.off("wk:nav-menu-activated" as any, handleActivated as any)
-    }, [activeView, activeThreadId])
+    }, [activeView])
 
     return (
         <aside className="wk-matter-v2-sidebar" aria-label="MatterV2 sidebar">
+            {/* 空间名只读(切换/创建等 D2 拍板) */}
             <header className="wk-matter-v2-sidebar__workspace">
-                <button
-                    type="button"
-                    className="wk-matter-v2-sidebar__workspace-btn"
-                    aria-haspopup="menu"
-                    aria-expanded={workspaceOpen}
-                    onClick={() => setWorkspaceOpen((open) => !open)}
-                >
-                    <span className="wk-matter-v2-sidebar__mark">{workspaceName.charAt(0)}</span>
-                    <strong>{workspaceName}</strong>
-                    <ChevronDown size={15} />
-                </button>
-                {workspaceOpen && (
-                    <div className="wk-matter-v2-sidebar__workspace-menu" role="menu">
-                        {!creatingWorkspace ? (
-                            <>
-                                {workspaces.map((name) => (
-                                    <button
-                                        key={name}
-                                        type="button"
-                                        role="menuitem"
-                                        onClick={() => {
-                                            setWorkspaceName(name)
-                                            setWorkspaceOpen(false)
-                                        }}
-                                    >
-                                        <span className="wk-matter-v2-sidebar__mark">{name.slice(-1)}</span>
-                                        <strong>{name}</strong>
-                                    </button>
-                                ))}
-                                <div className="wk-matter-v2-sidebar__workspace-divider" />
-                                <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                        setCreatingWorkspace(true)
-                                        setNewWorkspaceName("")
-                                        setNewWorkspaceMembers("lvsijia, Prototyper")
-                                        setNewWorkspaceTeam("Product Prototype Team")
-                                    }}
-                                >
-                                    <span className="wk-matter-v2-sidebar__mark">＋</span>
-                                    <strong>创建工作区</strong>
-                                </button>
-                            </>
-                        ) : (
-                            <form
-                                className="wk-matter-v2-sidebar__workspace-create"
-                                onSubmit={(event) => {
-                                    event.preventDefault()
-                                    const name = newWorkspaceName.trim() || `工作空间 ${workspaces.length + 1}`
-                                    setWorkspaces((items) => [...items, name])
-                                    setWorkspaceName(name)
-                                    setCreatingWorkspace(false)
-                                    setWorkspaceOpen(false)
-                                }}
-                            >
-                                <label>
-                                    <span>新工作区名称</span>
-                                    <input
-                                        autoFocus
-                                        value={newWorkspaceName}
-                                        onChange={(event) => setNewWorkspaceName(event.target.value)}
-                                        placeholder={`工作空间 ${workspaces.length + 1}`}
-                                    />
-                                </label>
-                                <div className="wk-matter-v2-sidebar__workspace-meta">
-                                    <span>Meta 信息</span>
-                                    <label>
-                                        <small>初始 Members</small>
-                                        <input
-                                            value={newWorkspaceMembers}
-                                            onChange={(event) => setNewWorkspaceMembers(event.target.value)}
-                                            placeholder="lvsijia, Prototyper"
-                                        />
-                                    </label>
-                                    <label>
-                                        <small>初始团队</small>
-                                        <input
-                                            value={newWorkspaceTeam}
-                                            onChange={(event) => setNewWorkspaceTeam(event.target.value)}
-                                            placeholder="Product Prototype Team"
-                                        />
-                                    </label>
-                                    <p>仅用于原型展示，不会发送邀请或创建真实团队。</p>
-                                </div>
-                                <div>
-                                    <button type="button" onClick={() => setCreatingWorkspace(false)}>取消</button>
-                                    <button type="submit">创建</button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                )}
+                <div className="wk-matter-v2-sidebar__workspace-btn" role="presentation">
+                    <span className="wk-matter-v2-sidebar__mark">O</span>
+                    <strong>OctoLoop</strong>
+                </div>
             </header>
 
             <div className="wk-matter-v2-sidebar__quick">
-                <button type="button"><Search size={16} />搜索...<kbd>⌘K</kbd></button>
                 <button type="button" onClick={() => setCreateIssueOpen(true)}><Edit3 size={16} />新建 issue<kbd>C</kbd></button>
             </div>
 
             <nav className="wk-matter-v2-sidebar__nav">
-                <button type="button" className={activeView === "inbox" ? "is-active" : ""} onClick={() => setView("inbox")}>
-                    <Inbox size={16} />
-                    收件箱
-                </button>
-                <button type="button">
+                <button type="button" className={activeView === "myissues" ? "is-active" : ""} onClick={() => setView("myissues")}>
                     <Circle size={16} />
                     我的 issue
                 </button>
@@ -285,16 +120,15 @@ export default function MatterV2Prototype() {
                 <button type="button"><Sparkles size={16} />自动化</button>
                 <button type="button" className={activeView === "coworkers" ? "is-active" : ""} onClick={() => setView("coworkers")}>
                     <Bot size={16} />
-                    CoWorker
+                    AI 队友
                 </button>
                 <button type="button" className={activeView === "squads" ? "is-active" : ""} onClick={() => setView("squads")}>
                     <Users size={16} />
                     小队
                 </button>
-                <button type="button"><BarChart3 size={16} />用量</button>
-                <button type="button" className={activeView === "settings" ? "is-active" : ""} onClick={() => setView("settings")}>
-                    <Settings size={16} />
-                    设置
+                <button type="button" className={activeView === "skills" ? "is-active" : ""} onClick={() => setView("skills")}>
+                    <BookOpen size={16} />
+                    技能
                 </button>
             </div>
 
@@ -304,6 +138,33 @@ export default function MatterV2Prototype() {
 }
 
 export { MatterV2Prototype }
+
+// 技能节点宿主:复用 SkillsPrototype 的 surfaces(列表/详情/导入),Skill 库长期迁「我的」(User 级)
+function MatterSkillsHost() {
+    const [query, setQuery] = useState("")
+    const [importOpen, setImportOpen] = useState(false)
+
+    const normalizedQuery = query.trim().toLowerCase()
+    const visibleSkills = SKILLS.filter(
+        (skill) =>
+            !normalizedQuery
+            || skill.title.toLowerCase().includes(normalizedQuery)
+            || skill.description.toLowerCase().includes(normalizedQuery),
+    )
+
+    return (
+        <>
+            <SkillsListSurface
+                skills={visibleSkills}
+                query={query}
+                onQueryChange={setQuery}
+                onOpenImport={() => setImportOpen(true)}
+                onOpenSkill={(skill) => WKApp.routeRight.replaceToRoot(<SkillDetailSurface skill={skill} />)}
+            />
+            {importOpen && <ImportSkillModal onClose={() => setImportOpen(false)} />}
+        </>
+    )
+}
 
 const BOARD_COLUMNS = [
     { id: "backlog", label: "待规划", count: 0, tone: "neutral", cards: [] },
@@ -351,7 +212,7 @@ const BOARD_COLUMNS = [
     { id: "done", label: "已完成", count: 0, tone: "blue", cards: [] },
 ] as const
 
-function MatterIssuesBoard() {
+function MatterIssuesBoard({ title = "Issues" }: { title?: string }) {
     const [createIssueOpen, setCreateIssueOpen] = useState(false)
 
     return (
@@ -359,7 +220,7 @@ function MatterIssuesBoard() {
             <header className="wk-matter-board__head">
                 <div className="wk-matter-board__title">
                     <ClipboardList size={17} />
-                    <strong>Issues</strong>
+                    <strong>{title}</strong>
                 </div>
             </header>
 
@@ -488,16 +349,16 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
 
 function MatterCoWorkersList() {
     return (
-        <section className="wk-matter-coworkers" aria-label="MatterV2 CoWorker list">
+        <section className="wk-matter-coworkers" aria-label="AI 队友列表">
             <header className="wk-matter-coworkers__head">
                 <div className="wk-matter-coworkers__title">
                     <Bot size={17} />
-                    <strong>CoWorker</strong>
+                    <strong>AI 队友</strong>
                     <span>{COWORKERS.length}</span>
                     <p>能领取 issue、留下评论、推进状态的 AI 队友。</p>
                     <a href="#coworker-learn">了解更多 →</a>
                 </div>
-                <button type="button" className="wk-matter-coworkers__create"><PlusIcon />新建 CoWorker</button>
+                <button type="button" className="wk-matter-coworkers__create"><PlusIcon />新建 AI 队友</button>
             </header>
 
             <div className="wk-matter-coworkers__toolbar">
@@ -512,9 +373,9 @@ function MatterCoWorkersList() {
                 </div>
             </div>
 
-            <div className="wk-matter-coworkers__table" role="table" aria-label="CoWorker 列表">
+            <div className="wk-matter-coworkers__table" role="table" aria-label="AI 队友列表">
                 <div className="wk-matter-coworkers__row wk-matter-coworkers__head-row" role="row">
-                    <div role="columnheader">CoWorker</div>
+                    <div role="columnheader">AI 队友</div>
                     <div role="columnheader">状态</div>
                     <div role="columnheader">Owner</div>
                     <div role="columnheader">运行时</div>
@@ -554,10 +415,10 @@ function MatterCoWorkerDetail({
     const tabs = ["动态", "Tasks", "指令", "Skills", "环境变量", "自定义参数", "MCP"]
 
     return (
-        <section className="wk-matter-coworker-detail" aria-label="CoWorker detail">
+        <section className="wk-matter-coworker-detail" aria-label="AI 队友详情">
             <header className="wk-matter-coworker-detail__top">
                 <div className="wk-matter-coworker-detail__crumb">
-                    <span>CoWorker</span>
+                    <span>AI 队友</span>
                     <ChevronRight size={13} />
                     <strong>{coworker.name}</strong>
                     <em><i />在线</em>
@@ -601,7 +462,7 @@ function MatterCoWorkerDetail({
                     <div className="wk-matter-coworker-detail__cards">
                         <section>
                             <strong>当前 <span>无进行中的工作</span></strong>
-                            <p>这个 CoWorker 当前没有在跑任何 task。</p>
+                            <p>这个 AI 队友当前没有在跑任何 task。</p>
                         </section>
                         <section className="wk-matter-coworker-detail__metric">
                             <span>近 30 天　表现</span>
@@ -611,7 +472,7 @@ function MatterCoWorkerDetail({
                         </section>
                         <section>
                             <strong>最近工作 <span>还没有完成的 task</span></strong>
-                            <p>这个 CoWorker 还没有完成过任何 task。</p>
+                            <p>这个 AI 队友还没有完成过任何 task。</p>
                         </section>
                     </div>
                 </main>
@@ -798,7 +659,7 @@ function MatterSquadDetail({
                                     <p>该小队有 {squad.members.length} 名成员</p>
                                 </div>
                                 <div>
-                                    <button type="button"><PlusIcon />创建智能体</button>
+                                    <button type="button"><PlusIcon />创建 AI 队友</button>
                                     <button type="button"><PlusIcon />添加成员</button>
                                 </div>
                             </header>
@@ -830,51 +691,6 @@ function MatterSquadDetail({
 
 function PlusIcon() {
     return <span aria-hidden="true">＋</span>
-}
-
-function MatterMembersSettings() {
-    return (
-        <section className="wk-matter-settings" aria-label="MatterV2 members settings">
-            <aside className="wk-matter-settings__nav">
-                <h2>设置</h2>
-                <div className="wk-matter-settings__group">
-                    <span>OctoLoop</span>
-                    <button type="button" className="is-active">
-                        <Users size={16} />
-                        成员
-                    </button>
-                </div>
-            </aside>
-
-            <main className="wk-matter-settings__main">
-                <header className="wk-matter-settings__title">
-                    <Users size={17} />
-                    <strong>成员（1）</strong>
-                </header>
-
-                <section className="wk-matter-settings__invite">
-                    <div className="wk-matter-settings__invite-title">
-                        <span>＋</span>
-                        <strong>邀请成员</strong>
-                    </div>
-                    <div className="wk-matter-settings__invite-row">
-                        <input placeholder="user@company.com" />
-                        <button type="button" className="wk-matter-settings__role">成员⌄</button>
-                        <button type="button" className="wk-matter-settings__invite-btn">邀请</button>
-                    </div>
-                </section>
-
-                <section className="wk-matter-settings__member">
-                    <span className="wk-matter-settings__avatar">L</span>
-                    <div>
-                        <strong>lvsijia</strong>
-                        <small>lvsijia@mininglamp.com</small>
-                    </div>
-                    <span className="wk-matter-settings__owner">♛ 所有者</span>
-                </section>
-            </main>
-        </section>
-    )
 }
 
 function MatterIssueDetail({
@@ -1003,117 +819,6 @@ function MatterIssueDetail({
                 </aside>
             </main>
         </section>
-    )
-}
-
-function MatterV2Surface({
-    view,
-    threads,
-    activeThreadId,
-    onSelectThread,
-}: {
-    view: MatterView
-    threads: MatterThread[]
-    activeThreadId: string
-    onSelectThread: (threadId: string) => void
-}) {
-    const activeThread = useMemo(
-        () => threads.find((thread) => thread.id === activeThreadId) ?? threads[0],
-        [threads, activeThreadId],
-    )
-
-    return (
-        <section className="wk-matter-v2-shell" aria-label="MatterV2 prototype">
-            <aside className="wk-matter-v2-picker" aria-label="二级选择器">
-                <header className="wk-matter-v2-picker__head">
-                    <strong>{view === "inbox" ? "收件箱" : "Issues"}</strong>
-                    <MoreHorizontal size={16} />
-                </header>
-                <div className="wk-matter-v2-picker__list">
-                    {threads.map((thread) => (
-                        <button
-                            key={thread.id}
-                            type="button"
-                            className={thread.id === activeThread.id ? "is-active" : ""}
-                            onClick={() => onSelectThread(thread.id)}
-                        >
-                            <span className="wk-matter-v2-picker__bot"><Bot size={14} /></span>
-                            <span className="wk-matter-v2-picker__copy">
-                                <strong>{thread.title}</strong>
-                                <small>
-                                    {thread.subtitle}
-                                    {thread.status === "review" && <em> In Review</em>}
-                                </small>
-                            </span>
-                            <span className="wk-matter-v2-picker__time">{thread.time}</span>
-                            {thread.unread && <span className="wk-matter-v2-picker__signal" />}
-                        </button>
-                    ))}
-                </div>
-            </aside>
-
-            <MatterDetail thread={activeThread} view={view} />
-        </section>
-    )
-}
-
-function MatterDetail({ thread, view }: { thread: MatterThread; view: MatterView }) {
-    const isInbox = view === "inbox"
-
-    return (
-        <article className="wk-matter-v2-detail" aria-label="MatterV2 detail">
-            <header className="wk-matter-v2-detail__top">
-                <div className="wk-matter-v2-detail__crumb">
-                    <span>📁 Octo-Runtime</span>
-                    <ChevronRight size={14} />
-                    <strong>{isInbox ? "OCT-2 询问当前 agent 身份和模型" : thread.title}</strong>
-                </div>
-                <div className="wk-matter-v2-detail__tools">
-                    <CheckCircle2 size={17} />
-                    <Pin size={17} />
-                    <MoreHorizontal size={17} />
-                </div>
-            </header>
-
-            <main className="wk-matter-v2-detail__body">
-                <div className="wk-matter-v2-detail__activity">⌄ 2 条动态</div>
-                <MessageCard
-                    author="Prototyper"
-                    time="4 小时前"
-                    body={[
-                        "我是这个 Multica workspace 里的本地 coding agent。",
-                        "Agent 身份： Prototyper",
-                        "Agent ID： 22bbe9c3-d580-4405-9f2e-c0e3d36e5743",
-                        "模型： Codex，基于 GPT-5",
-                    ]}
-                />
-                <div className="wk-matter-v2-detail__activity">› 2 条动态</div>
-                <MessageCard
-                    author="lvsijia"
-                    time="1 小时前"
-                    body={["@CC-Protoper 继续干一下"]}
-                    user
-                    highlighted
-                />
-                <MessageCard
-                    author="CC-Protoper"
-                    time="1 小时前"
-                    body={[
-                        "我是这个 Multica workspace 里的本地 coding agent。",
-                        "Agent 身份： CC-Protoper",
-                        "Agent ID： be653103-b7cc-4d4f-931a-8530c287d65c",
-                        "模型： Claude Code，基于 Anthropic Claude Opus 4.7",
-                    ]}
-                    shaded
-                />
-                <div className="wk-matter-v2-detail__activity">⌄ 1 条动态</div>
-                <div className="wk-matter-v2-detail__event">
-                    <Archive size={14} />
-                    <span>CC-Protoper 完成了 task（1 次）</span>
-                    <time>1 小时前</time>
-                </div>
-            </main>
-        </article>
     )
 }
 

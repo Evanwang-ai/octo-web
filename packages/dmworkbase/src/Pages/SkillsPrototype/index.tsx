@@ -111,6 +111,8 @@ export default function SkillsPrototype() {
 }
 
 export { SkillsPrototype }
+// T1 换皮:OctoLoop 单模块并入技能节点,复用本页 surfaces(蓝图 §1.2)
+export { SKILLS, SkillsListSurface, ImportSkillModal, SkillDetailSurface }
 
 function SkillsListSurface({
     skills,

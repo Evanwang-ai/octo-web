@@ -1,4 +1,4 @@
-import { AgentsPrototype, ChatPage, EndpointCategory, MatterV2Prototype, SkillsPrototype, WKApp, Menus, shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace, RuntimesPage, RuntimeV2Prototype, t } from '@octo/base';
+import { ChatPage, EndpointCategory, MatterV2Prototype, WKApp, Menus, shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace, RuntimesPage, t } from '@octo/base';
 import { ContactsList } from '@octo/contacts';
 import React, { useEffect } from 'react';
 // lucide icons replaced with filled SVGs per Figma
@@ -10,9 +10,7 @@ import { ChatIcon } from '../Components/Icons/ChatIcon';
 import { ContactsIcon } from '../Components/Icons/ContactsIcon';
 import { RuntimesIcon } from '../Components/Icons/RuntimesIcon';
 import { SummaryIcon } from '../Components/Icons/SummaryIcon';
-import { AgentsIcon } from '../Components/Icons/AgentsIcon';
 import { MatterV2Icon } from '../Components/Icons/MatterV2Icon';
-import { SkillsIcon } from '../Components/Icons/SkillsIcon';
 import { Toast } from '@douyinfe/semi-ui';
 import { clearDeprecatedFriendApplyReddotOnce } from './friendApplyReddotCleanup';
 
@@ -162,18 +160,6 @@ async function registerMenus() {
     return new Menus("runtimes", "/runtimes", t("app.nav.runtimes"), <RuntimesIcon />, <RuntimesIcon />)
   }, 7000)
 
-  WKApp.menus.register("runtimes-v2", () => {
-    return new Menus("runtimes-v2", "/runtimes-v2", "运行时 V2", <RuntimesIcon />, <RuntimesIcon />)
-  }, 7100)
-
-  WKApp.menus.register("agents-prototype", () => {
-    return new Menus("agents-prototype", "/agents-prototype", "智能体", <AgentsIcon />, <AgentsIcon />)
-  }, 7200)
-
-  WKApp.menus.register("skills-prototype", () => {
-    return new Menus("skills-prototype", "/skills-prototype", "Skills", <SkillsIcon />, <SkillsIcon />)
-  }, 7300)
-
   WKApp.menus.register("summary", (_context) => {
     const m = new Menus("summary", "/summary", t("app.nav.summary"), <SummaryIcon />, <SummaryIcon />)
     if (_summaryBadgeCount > 0) {
@@ -203,18 +189,6 @@ async function registerMenus() {
 
   WKApp.route.register("/runtimes", () => {
     return <RuntimesPage />
-  })
-
-  WKApp.route.register("/runtimes-v2", () => {
-    return <RuntimeV2Prototype />
-  })
-
-  WKApp.route.register("/agents-prototype", () => {
-    return <AgentsPrototype />
-  })
-
-  WKApp.route.register("/skills-prototype", () => {
-    return <SkillsPrototype />
   })
 
 }
