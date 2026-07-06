@@ -30,7 +30,7 @@ import "./index.css"
 
 // T1 换皮(蓝图 §1.2):单模块 sidebar——砍 搜索/收件箱/用量/设置/workspace 下拉,
 // 并入 技能 节点;CoWorker 中文定名「AI 队友」。收件箱砍除后 review 入口=我的 issue(T5 补四 tabs)。
-type MatterView = "issues" | "myissues" | "coworkers" | "squads" | "skills"
+type MatterView = "issues" | "myissues" | "projects" | "coworkers" | "squads" | "skills"
 
 const SQUADS = [
     {
@@ -141,6 +141,10 @@ export default function MatterV2Prototype() {
             )
             return
         }
+        if (view === "projects") {
+            WKApp.routeRight.replaceToRoot(<MatterProjectsList />)
+            return
+        }
         if (view === "coworkers") {
             WKApp.routeRight.replaceToRoot(<MatterCoWorkersList />)
             return
@@ -196,7 +200,10 @@ export default function MatterV2Prototype() {
                     <ClipboardList size={16} />
                     Issues
                 </button>
-                <button type="button"><Briefcase size={16} />项目</button>
+                <button type="button" className={activeView === "projects" ? "is-active" : ""} onClick={() => setView("projects")}>
+                    <Briefcase size={16} />
+                    项目
+                </button>
                 <button type="button"><Sparkles size={16} />自动化</button>
                 <button type="button" className={activeView === "coworkers" ? "is-active" : ""} onClick={() => setView("coworkers")}>
                     <Bot size={16} />
@@ -615,6 +622,59 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                 </footer>
             </section>
         </div>
+    )
+}
+
+// T8:项目列表对齐真身(名称 emoji/状态/优先级/进度圆环 x·y/负责人/创建时间 + 工具行)。
+const PROJECTS_ROWS = [
+    { icon: "📁", name: "Octo-Runtime", status: "计划中", pri: "— 无优先级", done: 2, total: 4, owner: "lvsijia", created: "22 天前" },
+    { icon: "📘", name: "OctoLoop 产品手册", status: "计划中", pri: "— 无优先级", done: 5, total: 7, owner: "lvsijia", created: "1 个月前" },
+    { icon: "🧪", name: "接线演练场", status: "计划中", pri: "— 无优先级", done: 1, total: 3, owner: "", created: "1 个月前" },
+    { icon: "🧭", name: "OctoLoop 上手指南", status: "计划中", pri: "— 无优先级", done: 7, total: 7, owner: "lvsijia", created: "1 个月前" },
+]
+
+function MatterProjectsList() {
+    return (
+        <section className="wk-mv2-projects" aria-label="项目列表">
+            <header className="wk-mv2-projects__head">
+                <div className="wk-mv2-projects__title">
+                    <Briefcase size={17} />
+                    <strong>项目</strong>
+                    <span>{PROJECTS_ROWS.length}</span>
+                </div>
+                <button type="button" className="wk-mv2-projects__create"><PlusIcon />新建项目</button>
+            </header>
+
+            <div className="wk-mv2-projects__toolbar">
+                <label className="wk-mv2-projects__search"><Search size={14} /><input placeholder="搜索项目..." /></label>
+                <div className="wk-mv2-projects__actions">
+                    <button type="button">筛选</button>
+                    <button type="button">↓ 创建时间</button>
+                    <button type="button">表格</button>
+                </div>
+            </div>
+
+            <div className="wk-mv2-projects__table" role="table" aria-label="项目列表">
+                <div className="wk-mv2-projects__row wk-mv2-projects__headrow" role="row">
+                    <div role="columnheader">名称</div>
+                    <div role="columnheader">状态</div>
+                    <div role="columnheader">优先级</div>
+                    <div role="columnheader">进度</div>
+                    <div role="columnheader">负责人</div>
+                    <div role="columnheader">创建时间 ↓</div>
+                </div>
+                {PROJECTS_ROWS.map((p) => (
+                    <button key={p.name} type="button" className="wk-mv2-projects__row wk-mv2-projects__item" role="row">
+                        <div className="wk-mv2-projects__name" role="cell"><i>{p.icon}</i>{p.name}</div>
+                        <div className="wk-mv2-projects__muted" role="cell">{p.status}</div>
+                        <div className="wk-mv2-projects__muted" role="cell">{p.pri}</div>
+                        <div role="cell"><ProgressRing done={p.done} total={p.total} /></div>
+                        <div className="wk-mv2-projects__muted" role="cell">{p.owner ? <><i className="wk-mv2-projects__avatar">L</i>{p.owner}</> : "—"}</div>
+                        <div className="wk-mv2-projects__muted" role="cell">{p.created}</div>
+                    </button>
+                ))}
+            </div>
+        </section>
     )
 }
 

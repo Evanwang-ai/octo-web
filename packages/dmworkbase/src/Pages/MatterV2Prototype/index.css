@@ -3322,3 +3322,161 @@
   padding: 2px 4px 0;
   letter-spacing: 0.04em;
 }
+
+/* ── T8 项目列表(对齐真身:进度圆环列) ─────────────── */
+.wk-mv2-projects {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+}
+
+.wk-mv2-projects__head {
+  min-height: 48px;
+  border-bottom: 1px solid var(--wk-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.wk-mv2-projects__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.wk-mv2-projects__title span {
+  color: var(--wk-text-tertiary);
+}
+
+.wk-mv2-projects__create {
+  height: 32px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.wk-mv2-projects__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+}
+
+.wk-mv2-projects__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  width: min(260px, 100%);
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--wk-text-tertiary);
+}
+
+.wk-mv2-projects__search input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+}
+
+.wk-mv2-projects__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wk-mv2-projects__actions button {
+  height: 32px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.wk-mv2-projects__table {
+  min-width: 860px;
+  padding: 0 20px 20px;
+}
+
+.wk-mv2-projects__row {
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(280px, 1.6fr) minmax(90px, 0.5fr) minmax(110px, 0.6fr) minmax(90px, 0.5fr) minmax(130px, 0.7fr) minmax(110px, 0.6fr);
+  gap: 16px;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.wk-mv2-projects__headrow {
+  min-height: 36px;
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+}
+
+.wk-mv2-projects__item {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--wk-text-primary);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.wk-mv2-projects__item:hover {
+  background: var(--wk-bg-elevated);
+}
+
+.wk-mv2-projects__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.wk-mv2-projects__name i {
+  font-style: normal;
+}
+
+.wk-mv2-projects__muted {
+  color: var(--wk-text-tertiary);
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wk-mv2-projects__avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--wk-bg-elevated);
+  color: var(--wk-text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+  font-size: 10px;
+}
