@@ -34,14 +34,24 @@ type MatterView = "issues" | "myissues" | "coworkers" | "squads" | "skills"
 
 const SQUADS = [
     {
-        id: "squad-1111",
-        name: "1111",
-        leader: "Prototyper",
-        members: ["Prototyper", "CC-Protoper", "的方法"],
+        id: "squad-onboard",
+        name: "OctoLoop Onboarding Squad",
+        leader: "Prototyper-Codex-MBOT",
+        members: ["Prototyper-Codex-MBOT", "Analyser-CC-MBOT", "Documenter-Worker"],
         creator: "lvsijia",
         created: "2 小时前",
         updated: "2 小时前",
-        description: "添加描述",
+        description: "Prototyper + Analyser + Documenter：上手指南与演示链路打磨小队。",
+    },
+    {
+        id: "squad-triage",
+        name: "Issue 分诊小队",
+        leader: "Triager-Worker",
+        members: ["Triager-Worker", "Analyser-CC-MBOT"],
+        creator: "lvsijia",
+        created: "3 天前",
+        updated: "昨天",
+        description: "Triager + Analyser：新 issue 补上下文、定优先级、派人。",
     },
 ]
 
@@ -764,6 +774,10 @@ function MatterCoWorkerDetail({
 
 function MatterSquadsList() {
     const [createOpen, setCreateOpen] = useState(false)
+    const [filterOpen, setFilterOpen] = useState(false)
+    const [filterSub, setFilterSub] = useState<"leader" | "creator" | null>(null)
+
+    const leaders = [...new Set(SQUADS.map((s) => s.leader))]
 
     return (
         <section className="wk-matter-squads" aria-label="MatterV2 squads list">
@@ -781,11 +795,39 @@ function MatterSquadsList() {
 
             <div className="wk-matter-squads__toolbar">
                 <div className="wk-matter-squads__tabs">
-                    <button type="button" className="is-active">我的 <span>1</span></button>
-                    <button type="button">全部 <span>1</span></button>
+                    <button type="button" className="is-active">我的 <span>{SQUADS.length}</span></button>
+                    <button type="button">全部 <span>{SQUADS.length}</span></button>
                 </div>
                 <div className="wk-matter-squads__actions">
-                    <button type="button">筛选</button>
+                    <div className="wk-mv2-filterwrap">
+                        <button type="button" aria-haspopup="menu" aria-expanded={filterOpen} onClick={() => { setFilterOpen((v) => !v); setFilterSub(null) }}>筛选</button>
+                        {filterOpen && (
+                            <div className="wk-mv2-menu" role="menu">
+                                <button type="button" role="menuitem" onClick={() => setFilterSub((s) => (s === "leader" ? null : "leader"))}>
+                                    <Bot size={13} />队长<em>›</em>
+                                </button>
+                                <button type="button" role="menuitem" onClick={() => setFilterSub((s) => (s === "creator" ? null : "creator"))}>
+                                    <Users size={13} />创建者<em>›</em>
+                                </button>
+                                {filterSub === "leader" && (
+                                    <div className="wk-mv2-menu is-sub" role="menu">
+                                        {leaders.map((l) => (
+                                            <button key={l} type="button" role="menuitem" onClick={() => setFilterOpen(false)}>
+                                                <Bot size={13} />{l}<small>{SQUADS.filter((s) => s.leader === l).length}</small>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                {filterSub === "creator" && (
+                                    <div className="wk-mv2-menu is-sub" role="menu">
+                                        <button type="button" role="menuitem" onClick={() => setFilterOpen(false)}>
+                                            <Users size={13} />lvsijia<small>{SQUADS.length}</small>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     <button type="button">小队 ↑</button>
                 </div>
             </div>
@@ -807,7 +849,10 @@ function MatterSquadsList() {
                     >
                         <div className="wk-matter-squads__name" role="cell">
                             <span><Users size={16} /></span>
-                            <strong>{squad.name}</strong>
+                            <div className="wk-matter-squads__nd">
+                                <strong>{squad.name}</strong>
+                                <small>{squad.description}</small>
+                            </div>
                         </div>
                         <div className="wk-matter-squads__leader" role="cell"><Bot size={14} />{squad.leader}</div>
                         <div className="wk-matter-squads__members" role="cell">
@@ -865,21 +910,20 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                             选择一个 Leader Agent
                             <ChevronDown size={15} />
                         </button>
-                        <label>
-                            <Search size={15} />
-                            <input placeholder="搜索 Agent 或成员..." />
-                        </label>
-                        <div className="wk-matter-squad-modal__agents">
-                            <strong>我的 AGENT</strong>
-                            {["Prototyper", "CC-Protoper", "的方法"].map((agent) => (
-                                <button key={agent} type="button">
-                                    <Bot size={15} />
-                                    {agent}
-                                </button>
-                            ))}
-                        </div>
+                        <span className="wk-matter-squad-modal__label2">附加成员 (可选)</span>
+                        <p>Leader 可以委派子任务的成员。也可稍后再加。</p>
+                        <button type="button">
+                            <UserPlus size={16} />
+                            添加 Agent 或工作区成员
+                            <ChevronDown size={15} />
+                        </button>
                     </section>
                 </main>
+
+                <footer className="wk-matter-squad-modal__foot">
+                    <button type="button" onClick={onClose}>取消</button>
+                    <button type="button" className="wk-matter-squad-modal__submit" disabled>创建 Squad</button>
+                </footer>
             </section>
         </div>
     )

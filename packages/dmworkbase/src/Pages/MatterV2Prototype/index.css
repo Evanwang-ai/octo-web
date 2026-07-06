@@ -3107,3 +3107,112 @@
   opacity: 0.45;
   cursor: not-allowed !important;
 }
+
+/* ── T4 小队:描述副行/筛选级联/附加成员+弹窗底栏 ────── */
+.wk-matter-squads__nd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.wk-matter-squads__nd small {
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.wk-mv2-filterwrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.wk-mv2-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 150px;
+  background: var(--wk-bg-surface);
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(31, 35, 41, 0.12);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-mv2-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+  height: auto !important;
+}
+
+.wk-mv2-menu button:hover {
+  background: var(--wk-bg-hover) !important;
+}
+
+.wk-mv2-menu button em {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--wk-text-tertiary);
+}
+
+.wk-mv2-menu button small {
+  margin-left: auto;
+  color: var(--wk-text-tertiary);
+}
+
+.wk-mv2-menu.is-sub {
+  top: 4px;
+  right: calc(100% + 4px);
+  min-width: 210px;
+}
+
+.wk-matter-squad-modal__label2 {
+  display: block;
+  margin-top: 14px;
+}
+
+.wk-matter-squad-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--wk-border-default);
+}
+
+.wk-matter-squad-modal__foot button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--wk-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wk-matter-squad-modal__submit {
+  background: #1f2329 !important;
+  color: #fff !important;
+}
+
+.wk-matter-squad-modal__submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
