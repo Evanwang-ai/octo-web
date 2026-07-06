@@ -11,7 +11,6 @@ import {
     ClipboardList,
     Edit3,
     Expand,
-    Link,
     MoreHorizontal,
     Paperclip,
     Pin,
@@ -90,6 +89,7 @@ export default function MatterV2Prototype() {
     }, [activeView])
 
     return (
+        <>
         <aside className="wk-matter-v2-sidebar" aria-label="MatterV2 sidebar">
             {/* 空间名只读(切换/创建等 D2 拍板) */}
             <header className="wk-matter-v2-sidebar__workspace">
@@ -132,8 +132,10 @@ export default function MatterV2Prototype() {
                 </button>
             </div>
 
-            {createIssueOpen && <MatterCreateIssueModal onClose={() => setCreateIssueOpen(false)} />}
         </aside>
+        {/* 弹窗必须在 aside 外:sidebar 的 button{width:100%} 会泄漏进弹窗(原型遗留 bug) */}
+        {createIssueOpen && <MatterCreateIssueModal onClose={() => setCreateIssueOpen(false)} />}
+        </>
     )
 }
 
@@ -281,9 +283,17 @@ function MatterIssuesBoard({ title = "Issues" }: { title?: string }) {
     )
 }
 
+// T2 建单双模式(照 Multica 真身 0701 实拍):手动 ⇄ AI 队友互切;
+// 手动=标题/描述+提示行+chips(⋯菜单:开始日期/父issue/子issue);AI 队友=创建者行+意图框+项目下拉+⌘↵。
+const CREATE_ISSUE_AGENT = "Prototyper-Codex-MBOT"
+const CREATE_ISSUE_PROJECTS = ["Octo-Runtime", "OctoLoop 产品手册", "接线演练场"]
+
 function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
-    const [agentMode, setAgentMode] = useState(false)
+    const [mode, setMode] = useState<"manual" | "agent">("manual")
     const [keepCreating, setKeepCreating] = useState(false)
+    const [moreOpen, setMoreOpen] = useState(false)
+    const [projectOpen, setProjectOpen] = useState(false)
+    const [project, setProject] = useState("")
 
     return (
         <div className="wk-matter-create-issue" role="presentation" onMouseDown={onClose}>
@@ -298,7 +308,7 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                     <div className="wk-matter-create-issue__crumb">
                         <span>OctoLoop</span>
                         <ChevronRight size={13} />
-                        <strong>手动创建</strong>
+                        <strong>{mode === "manual" ? "手动创建" : "通过 AI 队友创建"}</strong>
                     </div>
                     <div className="wk-matter-create-issue__tools">
                         <button type="button" aria-label="展开"><Expand size={16} /></button>
@@ -306,40 +316,90 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                     </div>
                 </header>
 
-                <main className="wk-matter-create-issue__body">
-                    <input className="wk-matter-create-issue__title" placeholder="issue 标题" autoFocus />
-                    <textarea className="wk-matter-create-issue__desc" placeholder="添加描述..." />
-                </main>
+                {mode === "manual" ? (
+                    <>
+                        <main className="wk-matter-create-issue__body">
+                            <input className="wk-matter-create-issue__title" placeholder="issue 标题" autoFocus />
+                            <textarea className="wk-matter-create-issue__desc" placeholder="添加描述..." />
+                        </main>
 
-                <div className="wk-matter-create-issue__chips">
-                    <button type="button"><Circle size={14} />待办</button>
-                    <button type="button">— 无优先级</button>
-                    <button type="button"><span>L</span>lvsijia</button>
-                    <button type="button">截止日期</button>
-                    <button type="button">📁 Octo-Runtime</button>
-                    <button type="button"><MoreHorizontal size={15} /></button>
-                </div>
+                        <div className="wk-matter-create-issue__hint">
+                            <Bot size={13} />
+                            创建后 {CREATE_ISSUE_AGENT} 会立即开始工作。
+                        </div>
+
+                        <div className="wk-matter-create-issue__chips">
+                            <button type="button"><Circle size={14} />待办</button>
+                            <button type="button">— 无优先级</button>
+                            <button type="button"><Bot size={14} />{CREATE_ISSUE_AGENT}</button>
+                            <button type="button">截止日期</button>
+                            <button type="button">📁 Octo-Runtime</button>
+                            <button type="button" aria-haspopup="menu" aria-expanded={moreOpen} onClick={() => setMoreOpen((v) => !v)}>
+                                <MoreHorizontal size={15} />
+                            </button>
+                            {moreOpen && (
+                                <div className="wk-matter-create-issue__more" role="menu">
+                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>📅 设置开始日期...</button>
+                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↑ 设置父 issue...</button>
+                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↓ 添加子 issue...</button>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="wk-matter-create-issue__creator">
+                            <span>创建者</span>
+                            <em><Bot size={13} /></em>
+                            <strong>{CREATE_ISSUE_AGENT}</strong>
+                        </div>
+                        <main className="wk-matter-create-issue__body">
+                            <textarea
+                                className="wk-matter-create-issue__intent"
+                                autoFocus
+                                placeholder='告诉 AI 队友要做什么,例如:"让 Bohan 修一下 Web 项目里收件箱加载慢的问题"'
+                            />
+                        </main>
+
+                        <div className="wk-matter-create-issue__chips">
+                            <button type="button" aria-haspopup="menu" aria-expanded={projectOpen} onClick={() => setProjectOpen((v) => !v)}>
+                                <Briefcase size={14} />{project || "无项目"}
+                            </button>
+                            {projectOpen && (
+                                <div className="wk-matter-create-issue__more is-up" role="menu">
+                                    {CREATE_ISSUE_PROJECTS.map((p) => (
+                                        <button key={p} type="button" role="menuitem" onClick={() => { setProject(p); setProjectOpen(false) }}>
+                                            📁 {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
 
                 <footer className="wk-matter-create-issue__foot">
                     <button type="button" aria-label="添加附件"><Paperclip size={17} /></button>
-                    <button type="button" aria-label="添加链接"><Link size={17} /></button>
                     <div className="wk-matter-create-issue__actions">
-                        <button
-                            type="button"
-                            className={agentMode ? "is-active" : ""}
-                            onClick={() => setAgentMode((value) => !value)}
-                        >
-                            ↔ 切换到智能体
+                        <button type="button" onClick={() => setMode((m) => (m === "manual" ? "agent" : "manual"))}>
+                            ⇄ {mode === "manual" ? "切换到 AI 队友" : "切换到手动"}
                         </button>
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={keepCreating}
-                                onChange={(event) => setKeepCreating(event.target.checked)}
-                            />
+                        <div className="wk-matter-create-issue__keep">
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={keepCreating}
+                                aria-label="继续创建"
+                                className={`wk-toggle${keepCreating ? " is-on" : ""}`}
+                                onClick={() => setKeepCreating((v) => !v)}
+                            >
+                                <i />
+                            </button>
                             <span>继续创建</span>
-                        </label>
-                        <button type="button" className="wk-matter-create-issue__submit" onClick={onClose}>创建 issue</button>
+                        </div>
+                        <button type="button" className="wk-matter-create-issue__submit" onClick={onClose}>
+                            {mode === "manual" ? "创建 issue" : "创建 (⌘↵)"}
+                        </button>
                     </div>
                 </footer>
             </section>
