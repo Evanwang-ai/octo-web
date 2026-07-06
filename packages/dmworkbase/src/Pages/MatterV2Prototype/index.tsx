@@ -11,9 +11,12 @@ import {
     ClipboardList,
     Edit3,
     Expand,
+    Eye,
+    Lock,
     MoreHorizontal,
     Paperclip,
     Pin,
+    Save,
     Search,
     Sparkles,
     Trash2,
@@ -22,6 +25,7 @@ import {
 } from "lucide-react"
 import WKApp from "../../App"
 import { SKILLS, SkillsListSurface, ImportSkillModal, SkillDetailSurface } from "../SkillsPrototype"
+import { CreateAgentModal } from "../AgentsPrototype"
 import "./index.css"
 
 // T1 换皮(蓝图 §1.2):单模块 sidebar——砍 搜索/收件箱/用量/设置/workspace 下拉,
@@ -42,11 +46,75 @@ const SQUADS = [
 ]
 
 const COWORKERS = [
-    { id: "cw-prototyper", name: "Prototyper-Codex-MBOT", runtime: "Codex (kaka-mbp)", owner: "lvsijia", lastActive: "今天", runs: 5, archived: false },
-    { id: "cw-analyser", name: "Analyser-CC-MBOT", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "3 天前", runs: 5, archived: false },
-    { id: "cw-documenter", name: "Documenter-Worker", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "3 天前", runs: 5, archived: false },
-    { id: "cw-triager", name: "Triager-Worker", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "30 天内无活动", runs: 0, archived: true },
+    { id: "cw-prototyper", name: "Prototyper-Codex-MBOT", desc: "把杂乱请求整理成清晰 issue,推进状态并给出下一步。", runtime: "Codex (kaka-mbp)", owner: "lvsijia", lastActive: "今天", runs: 5, archived: false, visibility: "personal", concurrency: 2 },
+    { id: "cw-analyser", name: "Analyser-CC-MBOT", desc: "读 PDF 与上下文做独立分析,先结论后论据。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "3 天前", runs: 5, archived: false, visibility: "workspace", concurrency: 6 },
+    { id: "cw-documenter", name: "Documenter-Worker", desc: "把讨论沉淀为文档与交付说明。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "3 天前", runs: 5, archived: false, visibility: "workspace", concurrency: 4 },
+    { id: "cw-triager", name: "Triager-Worker", desc: "新 issue 分诊:补上下文、定优先级、派人。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "30 天内无活动", runs: 0, archived: true, visibility: "workspace", concurrency: 1 },
 ]
+
+// ── 共享:按状态分组的 issue 列表(T3 Tasks tab / T5 列表视图共用)──
+const ISSUE_ROWS = [
+    { key: "OCT-1", title: "test", project: "Octo-Runtime", status: "待办", pri: "none" },
+    { key: "OCT-2", title: "询问当前 agent 身份和模型", project: "Octo-Runtime", status: "审核中", pri: "mid" },
+    { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", project: "Octo-Runtime", status: "审核中", pri: "mid" },
+    { key: "OCT-4", title: "整理 OctoLoop 上手指南", project: "OctoLoop 产品手册", status: "已完成", pri: "mid" },
+    { key: "OCT-5", title: "附件测试：仅 PDF → Runtime 抽取文字", project: "接线演练场", status: "已完成", pri: "urgent" },
+    { key: "OCT-6", title: "等待上游接口：回调闭环验证", project: "接线演练场", status: "已阻塞", pri: "mid" },
+] as const
+
+const ISSUE_STATUSES = [
+    { label: "待规划", tone: "backlog" },
+    { label: "待办", tone: "todo" },
+    { label: "进行中", tone: "doing" },
+    { label: "审核中", tone: "review" },
+    { label: "已完成", tone: "done" },
+    { label: "已阻塞", tone: "blocked" },
+] as const
+
+function PriorityIcon({ pri }: { pri: "none" | "mid" | "urgent" }) {
+    if (pri === "none") return <span className="wk-mv2-pri is-none" aria-label="无优先级">—</span>
+    return (
+        <svg className={`wk-mv2-pri${pri === "urgent" ? " is-urgent" : ""}`} width="14" height="12" viewBox="0 0 14 12" aria-hidden>
+            <rect x="1" y="7" width="3" height="4" rx="1" />
+            <rect x="5.5" y="4" width="3" height="7" rx="1" />
+            <rect x="10" y="1" width="3" height="10" rx="1" opacity={pri === "urgent" ? 1 : 0.35} />
+        </svg>
+    )
+}
+
+function IssueGroupList({ rows }: { rows: ReadonlyArray<typeof ISSUE_ROWS[number]> }) {
+    return (
+        <div className="wk-mv2-grouplist">
+            {ISSUE_STATUSES.map((st) => {
+                const group = rows.filter((r) => r.status === st.label)
+                return (
+                    <section key={st.label}>
+                        <header className={`wk-mv2-grouplist__head is-${st.tone}`}>
+                            <input type="checkbox" aria-label={`选择 ${st.label} 组`} />
+                            <ChevronDown size={13} />
+                            <i className="wk-mv2-status-dot" />
+                            <strong>{st.label}</strong>
+                            <small>{group.length}</small>
+                        </header>
+                        {group.length === 0 ? (
+                            <div className="wk-mv2-grouplist__empty">无 issue</div>
+                        ) : (
+                            group.map((r) => (
+                                <button key={r.key} type="button" className="wk-mv2-grouplist__row">
+                                    <PriorityIcon pri={r.pri} />
+                                    <span className="wk-mv2-grouplist__key">{r.key}</span>
+                                    <span className="wk-mv2-grouplist__title">{r.title}</span>
+                                    <span className="wk-mv2-grouplist__proj">📁 {r.project}</span>
+                                    <span className="wk-mv2-grouplist__bot"><Bot size={13} /></span>
+                                </button>
+                            ))
+                        )}
+                    </section>
+                )
+            })}
+        </div>
+    )
+}
 
 export default function MatterV2Prototype() {
     const [activeView, setActiveView] = useState<MatterView>("issues")
@@ -408,6 +476,8 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
 }
 
 function MatterCoWorkersList() {
+    const [createOpen, setCreateOpen] = useState(false)
+
     return (
         <section className="wk-matter-coworkers" aria-label="AI 队友列表">
             <header className="wk-matter-coworkers__head">
@@ -418,7 +488,7 @@ function MatterCoWorkersList() {
                     <p>能领取 issue、留下评论、推进状态的 AI 队友。</p>
                     <a href="#coworker-learn">了解更多 →</a>
                 </div>
-                <button type="button" className="wk-matter-coworkers__create"><PlusIcon />新建 AI 队友</button>
+                <button type="button" className="wk-matter-coworkers__create" onClick={() => setCreateOpen(true)}><PlusIcon />新建 AI 队友</button>
             </header>
 
             <div className="wk-matter-coworkers__toolbar">
@@ -452,8 +522,14 @@ function MatterCoWorkersList() {
                     >
                         <div className="wk-matter-coworkers__name" role="cell">
                             <span><Bot size={16} /><i /></span>
-                            <strong>{coworker.name}</strong>
-                            <em>你</em>
+                            <div className="wk-matter-coworkers__nd">
+                                <strong>
+                                    {coworker.name}
+                                    {coworker.visibility === "personal" && <Lock size={12} aria-label="Personal" />}
+                                    <em>你</em>
+                                </strong>
+                                <small>{coworker.desc}</small>
+                            </div>
                         </div>
                         <div className="wk-matter-coworkers__status" role="cell"><i />在线</div>
                         <div className="wk-matter-coworkers__owner" role="cell"><span>L</span>{coworker.owner}</div>
@@ -463,7 +539,67 @@ function MatterCoWorkersList() {
                     </button>
                 ))}
             </div>
+
+            {createOpen && <CreateAgentModal onClose={() => setCreateOpen(false)} />}
         </section>
+    )
+}
+
+// T3:五 tab(动态/Tasks/指令/Skills/Connectors[MCP+CLI]);Properties 先按真身字段,后续换 Agent Card。
+const CW_TABS = [
+    { key: "activity", label: "动态" },
+    { key: "tasks", label: "Tasks" },
+    { key: "instructions", label: "指令" },
+    { key: "skills", label: "Skills" },
+    { key: "connectors", label: "Connectors" },
+] as const
+type CwTab = typeof CW_TABS[number]["key"]
+
+const CW_SKILLS = ["lark-base", "lark-doc", "lark-drive", "lark-event", "lark-markdown", "lark-openapi-explorer", "lark-sheets", "lark-skill-maker", "lark-wiki"]
+
+function AddSkillModal({ onClose }: { onClose: () => void }) {
+    const options = [
+        { name: "MCA-Agent假设挑战", desc: "专门挑战 agent 输出中的隐含假设、范围膨胀…" },
+        { name: "MCA-Agent验收", desc: "把 agent 产出转译为可执行验收清单…" },
+        { name: "MCA-产品决策评审", desc: "逐项评审产品议题,明确现状、方案、工作量…" },
+        { name: "MCA-信息组织", desc: "把零散材料整理成结构、层级、索引…" },
+        { name: "grill-me", desc: "A relentless interview to sharpen a plan or design." },
+    ]
+    const [picked, setPicked] = useState<string[]>([])
+
+    return (
+        <div className="wk-cw-addskill" role="presentation" onMouseDown={onClose}>
+            <section className="wk-cw-addskill__dialog" role="dialog" aria-modal="true" aria-label="添加 skill" onMouseDown={(e) => e.stopPropagation()}>
+                <header>
+                    <div>
+                        <h2>添加 skill</h2>
+                        <p>选择一个工作区 skill 分配给该 AI 队友。</p>
+                    </div>
+                    <button type="button" aria-label="关闭" onClick={onClose}>×</button>
+                </header>
+                <label className="wk-cw-addskill__search">
+                    <Search size={14} />
+                    <input placeholder="搜索 skill..." />
+                </label>
+                <div className="wk-cw-addskill__list">
+                    {options.map((opt) => (
+                        <label key={opt.name}>
+                            <input
+                                type="checkbox"
+                                checked={picked.includes(opt.name)}
+                                onChange={() => setPicked((p) => (p.includes(opt.name) ? p.filter((n) => n !== opt.name) : [...p, opt.name]))}
+                            />
+                            <strong>{opt.name}</strong>
+                            <small>{opt.desc}</small>
+                        </label>
+                    ))}
+                </div>
+                <footer>
+                    <button type="button" onClick={onClose}>取消</button>
+                    <button type="button" className="wk-cw-addskill__submit" disabled={picked.length === 0} onClick={onClose}>添加</button>
+                </footer>
+            </section>
+        </div>
     )
 }
 
@@ -472,7 +608,8 @@ function MatterCoWorkerDetail({
 }: {
     coworker: typeof COWORKERS[number]
 }) {
-    const tabs = ["动态", "Tasks", "指令", "Skills", "环境变量", "自定义参数", "MCP"]
+    const [page, setPage] = useState<CwTab>("activity")
+    const [addSkillOpen, setAddSkillOpen] = useState(false)
 
     return (
         <section className="wk-matter-coworker-detail" aria-label="AI 队友详情">
@@ -491,15 +628,16 @@ function MatterCoWorkerDetail({
                     <div className="wk-matter-coworker-detail__identity">
                         <span><Bot size={28} /></span>
                         <h2>{coworker.name}</h2>
-                        <p>暂无描述</p>
+                        <p>{coworker.desc}</p>
                         <em><i />在线</em>
                     </div>
                     <dl>
                         <dt>属性</dt>
                         <div><span>运行时</span><strong>{coworker.runtime}<i /></strong></div>
                         <div><span>模型</span><strong>gpt-5.5</strong></div>
-                        <div><span>可见性</span><strong>Workspace</strong></div>
-                        <div><span>并发</span><strong>6</strong></div>
+                        <div><span>思考</span><strong>跟随 CLI 配置</strong></div>
+                        <div><span>可见性</span><strong>{coworker.visibility === "personal" ? <><Lock size={12} /> Personal</> : "Workspace"}</strong></div>
+                        <div><span>并发</span><strong>{coworker.concurrency}</strong></div>
                     </dl>
                     <dl>
                         <dt>详情</dt>
@@ -508,35 +646,118 @@ function MatterCoWorkerDetail({
                         <div><span>更新时间</span><strong>1 小时前</strong></div>
                     </dl>
                     <div className="wk-matter-coworker-detail__skills">
-                        <strong>SKILLS <span>9</span></strong>
-                        <p>{["lark-base", "lark-doc", "lark-drive", "lark-event", "lark-markdown", "lark-openapi-explorer", "lark-sheets", "lark-skill-maker", "lark-wiki"].map((skill) => <em key={skill}>{skill}</em>)}<button type="button">+ 附加</button></p>
+                        <strong>SKILLS <span>{CW_SKILLS.length}</span></strong>
+                        <p>{CW_SKILLS.map((skill) => <em key={skill}>{skill}</em>)}<button type="button" onClick={() => setAddSkillOpen(true)}>+ 附加</button></p>
                     </div>
                 </aside>
 
                 <main className="wk-matter-coworker-detail__main">
                     <nav className="wk-matter-coworker-detail__tabs">
-                        {tabs.map((tab, index) => (
-                            <button key={tab} type="button" className={index === 0 ? "is-active" : ""}>{tab}</button>
+                        {CW_TABS.map((tab) => (
+                            <button key={tab.key} type="button" className={page === tab.key ? "is-active" : ""} onClick={() => setPage(tab.key)}>{tab.label}</button>
                         ))}
                     </nav>
-                    <div className="wk-matter-coworker-detail__cards">
-                        <section>
-                            <strong>当前 <span>无进行中的工作</span></strong>
-                            <p>这个 AI 队友当前没有在跑任何 task。</p>
-                        </section>
-                        <section className="wk-matter-coworker-detail__metric">
-                            <span>近 30 天　表现</span>
-                            <strong>{coworker.runs}</strong>
-                            <p>100% 成功 · 平均 12s</p>
-                            <i />
-                        </section>
-                        <section>
-                            <strong>最近工作 <span>还没有完成的 task</span></strong>
-                            <p>这个 AI 队友还没有完成过任何 task。</p>
-                        </section>
-                    </div>
+
+                    {page === "activity" && (
+                        <div className="wk-matter-coworker-detail__cards">
+                            <section>
+                                <strong>当前 <span>无进行中的工作</span></strong>
+                                <p>这个 AI 队友当前没有在跑任何 task。</p>
+                            </section>
+                            <section className="wk-matter-coworker-detail__metric">
+                                <span>近 30 天　表现</span>
+                                <strong>{coworker.runs}</strong>
+                                <p>100% 成功 · 平均 12s</p>
+                                <i />
+                            </section>
+                            <section>
+                                <strong>最近工作 <span>还没有完成的 task</span></strong>
+                                <p>这个 AI 队友还没有完成过任何 task。</p>
+                            </section>
+                        </div>
+                    )}
+
+                    {page === "tasks" && (
+                        <div className="wk-cw-tasks">
+                            <div className="wk-cw-tasks__toolbar">
+                                <label className="wk-cw-tasks__search"><Search size={14} /><input placeholder="搜索 issue..." /></label>
+                                <div className="wk-cw-tasks__chips">
+                                    <button type="button" className="is-active">已分配</button>
+                                    <button type="button">已创建</button>
+                                </div>
+                                <div className="wk-cw-tasks__actions">
+                                    <button type="button">筛选</button>
+                                    <button type="button">手动</button>
+                                </div>
+                            </div>
+                            <IssueGroupList rows={ISSUE_ROWS} />
+                        </div>
+                    )}
+
+                    {page === "instructions" && (
+                        <div className="wk-cw-pane">
+                            <p className="wk-cw-help">定义这个 AI 队友的身份和工作风格。会注入到每个 task 的上下文。支持 Markdown。</p>
+                            <textarea
+                                className="wk-cw-editor"
+                                spellCheck={false}
+                                defaultValue={`你是 ${coworker.name},负责把杂乱请求整理成清晰的 issue、评论和下一步动作。\n\n# 工作风格\n- 回复简洁、行动导向。\n- 只在缺失信息会改变结论时提一个澄清问题。\n\n# 范围\n把 workspace 上下文、issue 状态、运行时可用性当作输入。`}
+                            />
+                            <div className="wk-cw-savebar"><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                        </div>
+                    )}
+
+                    {page === "skills" && (
+                        <div className="wk-cw-pane">
+                            <div className="wk-cw-skillshead">
+                                <p className="wk-cw-help">分配给该 AI 队友的工作区 skill。本地运行时 skill 会自动可用。</p>
+                                <button type="button" className="wk-cw-addbtn" onClick={() => setAddSkillOpen(true)}>+ 添加 skill</button>
+                            </div>
+                            <div className="wk-cw-skillgrid">
+                                {CW_SKILLS.map((skill) => (
+                                    <span key={skill} className="wk-cw-skillchip">{skill}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {page === "connectors" && (
+                        <div className="wk-cw-pane wk-cw-connectors">
+                            <section>
+                                <h4>MCP</h4>
+                                <p className="wk-cw-help">转发给运行时 CLI 的 MCP 服务器配置。原样保存,可能包含密钥——只有 AI 队友所有者和工作区管理员可以读取。留空则回退到 CLI 自身的默认设置。</p>
+                                <textarea
+                                    className="wk-cw-editor is-json"
+                                    spellCheck={false}
+                                    defaultValue={`{\n  "mcpServers": {\n    "fetch": {\n      "command": "uvx",\n      "args": ["mcp-server-fetch"]\n    }\n  }\n}`}
+                                />
+                            </section>
+                            <section>
+                                <h4>CLI · 环境变量</h4>
+                                <p className="wk-cw-help">在 AI 队友进程启动时注入(例如 <code>ANTHROPIC_API_KEY</code>、<code>ANTHROPIC_BASE_URL</code>)。</p>
+                                <div className="wk-cw-kv">
+                                    <input placeholder="KEY" />
+                                    <input placeholder="值" type="password" />
+                                    <button type="button" aria-label="显示值"><Eye size={14} /></button>
+                                    <button type="button" aria-label="删除"><Trash2 size={14} /></button>
+                                </div>
+                                <button type="button" className="wk-cw-addbtn">+ 添加</button>
+                            </section>
+                            <section>
+                                <h4>CLI · 自定义参数</h4>
+                                <p className="wk-cw-help">启动命令追加的额外 CLI 参数。多 token 的参数可以共用一行——传给 CLI 前会按空白拆分。</p>
+                                <div className="wk-cw-kv is-one">
+                                    <input placeholder="--flag 值" />
+                                    <button type="button" aria-label="删除"><Trash2 size={14} /></button>
+                                </div>
+                                <button type="button" className="wk-cw-addbtn">+ 添加</button>
+                            </section>
+                            <div className="wk-cw-savebar"><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                        </div>
+                    )}
                 </main>
             </div>
+
+            {addSkillOpen && <AddSkillModal onClose={() => setAddSkillOpen(false)} />}
         </section>
     )
 }

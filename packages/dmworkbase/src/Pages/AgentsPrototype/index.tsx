@@ -124,6 +124,8 @@ export default function AgentsPrototype() {
 }
 
 export { AgentsPrototype }
+// T3:创建弹窗(可见性双卡)被 OctoLoop 的 AI 队友节点复用
+export { CreateAgentModal }
 
 function AgentsListSurface({
     agents,
@@ -324,13 +326,13 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
                 className="wk-agent-modal__dialog"
                 role="dialog"
                 aria-modal="true"
-                aria-label="创建 Bot"
+                aria-label="创建 AI 队友"
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <header className="wk-agent-modal__head">
                     <div>
-                        <h2>创建 Bot</h2>
-                        <p>为工作区创建一个新的 AI Bot。</p>
+                        <h2>创建 AI 队友</h2>
+                        <p>为工作区创建一个新的 AI 队友。</p>
                     </div>
                     <button type="button" onClick={onClose} aria-label="关闭">
                         <X size={18} />
@@ -345,11 +347,11 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
                     <div className="wk-agent-modal__form">
                         <label>
                             <span>名称</span>
-                            <input autoFocus placeholder="例如：深度研究 Bot" />
+                            <input autoFocus placeholder="例如：深度研究搭档" />
                         </label>
                         <label>
                             <span>描述</span>
-                            <input placeholder="这个 Bot 做什么？" />
+                            <input placeholder="这个 AI 队友做什么？" />
                             <small>0 / 255</small>
                         </label>
                     </div>

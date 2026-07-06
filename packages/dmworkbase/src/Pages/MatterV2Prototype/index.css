@@ -2586,3 +2586,524 @@
 .wk-matter-create-issue__keep span {
   white-space: nowrap;
 }
+
+/* ── T3 AI 队友:列表副行 ─────────────────────────────── */
+.wk-matter-coworkers__nd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+
+.wk-matter-coworkers__nd strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wk-matter-coworkers__nd strong svg {
+  color: var(--wk-text-tertiary);
+  flex-shrink: 0;
+}
+
+.wk-matter-coworkers__nd small {
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+
+/* ── T3/T5 共享:按状态分组的 issue 列表 ─────────────── */
+.wk-mv2-grouplist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wk-mv2-grouplist__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  background: var(--wk-bg-elevated);
+  border-radius: 6px;
+  color: var(--wk-text-primary);
+  font-size: 13px;
+}
+
+.wk-mv2-grouplist__head input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+}
+
+.wk-mv2-grouplist__head svg {
+  color: var(--wk-text-tertiary);
+}
+
+.wk-mv2-grouplist__head small {
+  color: var(--wk-text-tertiary);
+}
+
+.wk-mv2-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #a8adb7;
+  flex-shrink: 0;
+}
+
+.wk-mv2-grouplist__head.is-backlog .wk-mv2-status-dot { background: transparent; border: 1.5px dashed #a8adb7; }
+.wk-mv2-grouplist__head.is-todo .wk-mv2-status-dot { background: transparent; border: 1.5px solid #a8adb7; }
+.wk-mv2-grouplist__head.is-doing .wk-mv2-status-dot { background: #d99e21; }
+.wk-mv2-grouplist__head.is-review .wk-mv2-status-dot { background: #2ea44f; }
+.wk-mv2-grouplist__head.is-done .wk-mv2-status-dot { background: #2f6fed; }
+.wk-mv2-grouplist__head.is-blocked .wk-mv2-status-dot { background: #d1453b; }
+
+.wk-mv2-grouplist__empty {
+  padding: 8px 34px;
+  color: var(--wk-text-tertiary);
+  font-size: 12.5px;
+}
+
+.wk-mv2-grouplist__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  text-align: left;
+  width: 100%;
+}
+
+.wk-mv2-grouplist__row:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-mv2-pri {
+  width: 14px;
+  color: var(--wk-text-tertiary);
+  flex-shrink: 0;
+}
+
+.wk-mv2-pri rect {
+  fill: #d99e21;
+}
+
+.wk-mv2-pri.is-urgent rect {
+  fill: #d1453b;
+}
+
+.wk-mv2-grouplist__key {
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  flex-shrink: 0;
+  min-width: 44px;
+}
+
+.wk-mv2-grouplist__title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-mv2-grouplist__proj {
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.wk-mv2-grouplist__bot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--wk-bg-elevated);
+  color: var(--wk-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ── T3 AI 队友详情:tab 面板 ─────────────────────────── */
+.wk-cw-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 720px;
+}
+
+.wk-cw-help {
+  margin: 0;
+  color: var(--wk-text-tertiary);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.wk-cw-help code {
+  background: var(--wk-bg-elevated);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11.5px;
+}
+
+.wk-cw-editor {
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--wk-text-primary);
+  background: var(--wk-bg-surface);
+  resize: vertical;
+}
+
+.wk-cw-editor.is-json {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  min-height: 160px;
+}
+
+.wk-cw-savebar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wk-cw-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f2329;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wk-cw-skillshead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wk-cw-addbtn {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+.wk-cw-addbtn:hover {
+  background: var(--wk-bg-elevated);
+}
+
+.wk-cw-skillgrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wk-cw-skillchip {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-secondary);
+  font-size: 12px;
+}
+
+.wk-cw-connectors section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--wk-border-default);
+}
+
+.wk-cw-connectors section:last-of-type {
+  border-bottom: 0;
+}
+
+.wk-cw-connectors h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+}
+
+.wk-cw-kv {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 28px 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.wk-cw-kv.is-one {
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.wk-cw-kv input {
+  height: 30px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+}
+
+.wk-cw-kv button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--wk-icon-default);
+  cursor: pointer;
+}
+
+.wk-cw-kv button:hover {
+  background: var(--wk-bg-hover);
+}
+
+/* Tasks tab 工具条 */
+.wk-cw-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wk-cw-tasks__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wk-cw-tasks__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-tertiary);
+  flex: 0 0 220px;
+}
+
+.wk-cw-tasks__search input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 12.5px;
+  width: 100%;
+  color: var(--wk-text-primary);
+}
+
+.wk-cw-tasks__chips {
+  display: flex;
+  gap: 6px;
+}
+
+.wk-cw-tasks__chips button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.wk-cw-tasks__chips button.is-active {
+  background: var(--wk-bg-elevated);
+  color: var(--wk-text-primary);
+  font-weight: 600;
+}
+
+.wk-cw-tasks__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.wk-cw-tasks__actions button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+/* 添加 skill 弹窗 */
+.wk-cw-addskill {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 18, 23, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wk-cw-addskill__dialog {
+  width: 340px;
+  background: var(--wk-bg-surface);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(15, 18, 23, 0.22);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wk-cw-addskill__dialog header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.wk-cw-addskill__dialog h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.wk-cw-addskill__dialog header p {
+  margin: 4px 0 0;
+  color: var(--wk-text-tertiary);
+  font-size: 12.5px;
+}
+
+.wk-cw-addskill__dialog header button {
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  color: var(--wk-text-tertiary);
+  cursor: pointer;
+}
+
+.wk-cw-addskill__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--wk-text-tertiary);
+}
+
+.wk-cw-addskill__search input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 13px;
+  color: var(--wk-text-primary);
+}
+
+.wk-cw-addskill__list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.wk-cw-addskill__list label {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  padding: 8px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-items: center;
+}
+
+.wk-cw-addskill__list label:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-cw-addskill__list input {
+  grid-row: 1 / span 2;
+}
+
+.wk-cw-addskill__list strong {
+  font-size: 13px;
+  color: var(--wk-text-primary);
+}
+
+.wk-cw-addskill__list small {
+  grid-column: 2;
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-cw-addskill__dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.wk-cw-addskill__dialog footer button {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--wk-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wk-cw-addskill__submit {
+  background: #1f2329 !important;
+  color: #fff !important;
+}
+
+.wk-cw-addskill__submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
