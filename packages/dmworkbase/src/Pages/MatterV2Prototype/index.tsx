@@ -136,7 +136,9 @@ export default function MatterV2Prototype() {
 
     function showSurface(view = activeView) {
         if (view === "myissues") {
-            WKApp.routeRight.replaceToRoot(<MatterIssuesBoard title="我的 issue" />)
+            WKApp.routeRight.replaceToRoot(
+                <MatterIssuesBoard title="我的 issue" tabs={["全部", "已分配", "我创建的", "我的智能体和小队"]} defaultTab={1} />
+            )
             return
         }
         if (view === "coworkers") {
@@ -246,54 +248,102 @@ function MatterSkillsHost() {
     )
 }
 
-const BOARD_COLUMNS = [
-    { id: "backlog", label: "待规划", count: 0, tone: "neutral", cards: [] },
+// T5:看板对齐真身——6 列(已阻塞淡红/进行中淡黄/审核中淡绿)、卡片(优先级/进度环/小队形态)、
+// 筛选 7 维、显示面板(卡片属性 8 开关,真正驱动卡片渲染)、视图切换(看板/列表;泳道 V1 不做)。
+interface BoardCard {
+    key: string
+    title: string
+    desc: string
+    project: string
+    agent: string
+    agentType: "bot" | "squad" | "none"
+    updated: string
+    pri: "none" | "mid" | "urgent"
+    progress?: { done: number; total: number }
+}
+
+const BOARD_COLUMNS: Array<{ id: string; label: string; tone: string; cards: BoardCard[] }> = [
+    { id: "backlog", label: "待规划", tone: "backlog", cards: [] },
     {
         id: "todo",
         label: "待办",
-        count: 1,
-        tone: "neutral",
+        tone: "todo",
         cards: [
-            {
-                key: "OCT-1",
-                title: "test",
-                desc: "",
-                project: "Octo-Runtime",
-                agent: "未分配",
-                updated: "",
-            },
+            { key: "OCT-1", title: "test", desc: "", project: "Octo-Runtime", agent: "未分配", agentType: "none", updated: "", pri: "none" },
         ],
     },
-    { id: "doing", label: "进行中", count: 0, tone: "warm", cards: [] },
+    {
+        id: "doing",
+        label: "进行中",
+        tone: "warm",
+        cards: [
+            { key: "OCT-7", title: "打磨 OctoLoop 演示脚本：一句话派单全链路", desc: "从建单到回报,把演示脚本走顺。", project: "OctoLoop 产品手册", agent: "OctoLoop Onboarding Squad", agentType: "squad", updated: "更新于 1 小时前", pri: "mid", progress: { done: 3, total: 5 } },
+        ],
+    },
     {
         id: "review",
         label: "审核中",
-        count: 2,
         tone: "green",
         cards: [
-            {
-                key: "OCT-3",
-                title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态",
-                desc: "User request 请回答以下关于当前运行环...",
-                project: "Octo-Runtime",
-                agent: "CC-Protoper",
-                updated: "更新于 4 小时前",
-            },
-            {
-                key: "OCT-2",
-                title: "询问当前 agent 身份和模型",
-                desc: "User request 你是什么agents 什么模型",
-                project: "Octo-Runtime",
-                agent: "Prototyper",
-                updated: "更新于 4 小时前",
-            },
+            { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", desc: "User request 请回答以下关于当前运行环...", project: "Octo-Runtime", agent: "CC-Protoper", agentType: "bot", updated: "更新于 4 小时前", pri: "mid" },
+            { key: "OCT-2", title: "询问当前 agent 身份和模型", desc: "User request 你是什么agents 什么模型", project: "Octo-Runtime", agent: "Prototyper", agentType: "bot", updated: "更新于 4 小时前", pri: "mid" },
         ],
     },
-    { id: "done", label: "已完成", count: 0, tone: "blue", cards: [] },
-] as const
+    {
+        id: "done",
+        label: "已完成",
+        tone: "done",
+        cards: [
+            { key: "OCT-4", title: "整理 OctoLoop 上手指南", desc: "七条上手 issue 的正文与截图。", project: "OctoLoop 产品手册", agent: "Documenter-Worker", agentType: "bot", updated: "更新于 昨天", pri: "mid", progress: { done: 4, total: 4 } },
+            { key: "OCT-5", title: "附件测试：仅 PDF → Runtime 抽取文字", desc: "", project: "接线演练场", agent: "Analyser-CC-MBOT", agentType: "bot", updated: "更新于 3 天前", pri: "urgent" },
+        ],
+    },
+    {
+        id: "blocked",
+        label: "已阻塞",
+        tone: "red",
+        cards: [
+            { key: "OCT-6", title: "等待上游接口：回调闭环验证", desc: "上游 webhook 就绪后解除。", project: "接线演练场", agent: "Analyser-CC-MBOT", agentType: "bot", updated: "更新于 2 天前", pri: "mid" },
+        ],
+    },
+]
 
-function MatterIssuesBoard({ title = "Issues" }: { title?: string }) {
+function ProgressRing({ done, total }: { done: number; total: number }) {
+    const r = 5
+    const c = 2 * Math.PI * r
+    const frac = total === 0 ? 0 : done / total
+    return (
+        <span className="wk-mv2-ring" title={`子 issue ${done}/${total}`}>
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+                <circle cx="7" cy="7" r={r} fill="none" stroke="var(--wk-border-default)" strokeWidth="2" />
+                <circle cx="7" cy="7" r={r} fill="none" stroke={frac >= 1 ? "#2f6fed" : "#2ea44f"} strokeWidth="2" strokeDasharray={`${c * frac} ${c}`} transform="rotate(-90 7 7)" strokeLinecap="round" />
+            </svg>
+            {done}/{total}
+        </span>
+    )
+}
+
+const CARD_PROPS = ["优先级", "描述", "负责人", "开始日期", "截止日期", "项目", "标签", "子 issue 进度"]
+
+function MatterIssuesBoard({
+    title = "Issues",
+    tabs = ["全部", "成员", "智能体"],
+    defaultTab = 0,
+}: {
+    title?: string
+    tabs?: string[]
+    defaultTab?: number
+}) {
     const [createIssueOpen, setCreateIssueOpen] = useState(false)
+    const [activeTab, setActiveTab] = useState(defaultTab)
+    const [view, setView] = useState<"board" | "list">("board")
+    const [filterOpen, setFilterOpen] = useState(false)
+    const [dateSub, setDateSub] = useState(false)
+    const [displayOpen, setDisplayOpen] = useState(false)
+    const [viewOpen, setViewOpen] = useState(false)
+    const [cardProps, setCardProps] = useState<string[]>([...CARD_PROPS])
+
+    const toggleProp = (p: string) => setCardProps((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]))
 
     return (
         <section className="wk-matter-board" aria-label="MatterV2 Issues kanban">
@@ -306,55 +356,138 @@ function MatterIssuesBoard({ title = "Issues" }: { title?: string }) {
 
             <div className="wk-matter-board__toolbar">
                 <div className="wk-matter-board__tabs">
-                    <button type="button" className="is-active">全部</button>
-                    <button type="button">成员</button>
-                    <button type="button">智能体</button>
+                    {tabs.map((t, i) => (
+                        <button key={t} type="button" className={i === activeTab ? "is-active" : ""} onClick={() => setActiveTab(i)}>{t}</button>
+                    ))}
                 </div>
                 <div className="wk-matter-board__actions">
                     <button type="button">0 工作中</button>
-                    <button type="button">筛选</button>
-                    <button type="button">手动</button>
-                    <button type="button">看板</button>
-                </div>
-            </div>
 
-            <div className="wk-matter-board__columns">
-                {BOARD_COLUMNS.map((column) => (
-                    <section key={column.id} className={`wk-matter-board__column wk-matter-board__column--${column.tone}`}>
-                        <header>
-                            <span className="wk-matter-board__status-dot" />
-                            <strong>{column.label}</strong>
-                            <small>{column.count}</small>
-                            <MoreHorizontal size={15} />
-                            <button type="button" onClick={() => setCreateIssueOpen(true)}>+</button>
-                        </header>
+                    <div className="wk-mv2-filterwrap">
+                        <button type="button" aria-haspopup="menu" aria-expanded={filterOpen} onClick={() => { setFilterOpen((v) => !v); setDateSub(false); setDisplayOpen(false); setViewOpen(false) }}>筛选</button>
+                        {filterOpen && (
+                            <div className="wk-mv2-menu" role="menu">
+                                <button type="button" role="menuitem"><Circle size={13} />状态<em>›</em></button>
+                                <button type="button" role="menuitem"><PriorityIcon pri="mid" />优先级<em>›</em></button>
+                                <button type="button" role="menuitem" onClick={() => setDateSub((v) => !v)}>📅 日期<em>›</em></button>
+                                <button type="button" role="menuitem"><Users size={13} />负责人<em>›</em></button>
+                                <button type="button" role="menuitem"><Edit3 size={13} />创建者<em>›</em></button>
+                                <button type="button" role="menuitem"><Briefcase size={13} />项目<em>›</em></button>
+                                <button type="button" role="menuitem">🏷 标签<em>›</em></button>
+                                {dateSub && (
+                                    <div className="wk-mv2-menu is-sub" role="menu">
+                                        <span className="wk-mv2-panel__label">字段</span>
+                                        <button type="button" role="menuitem">创建时间<em>✓</em></button>
+                                        <button type="button" role="menuitem">更新时间</button>
+                                        <hr />
+                                        <button type="button" role="menuitem">今天</button>
+                                        <button type="button" role="menuitem">最近 3 天</button>
+                                        <button type="button" role="menuitem">最近 7 天</button>
+                                        <button type="button" role="menuitem">自定义日期或范围</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                        {column.cards.length === 0 ? (
-                            <div className="wk-matter-board__empty">无 issue</div>
-                        ) : (
-                            <div className="wk-matter-board__cards">
-                                {column.cards.map((card) => (
-                                    <button
-                                        key={card.key}
-                                        type="button"
-                                        className="wk-matter-board__card"
-                                        onClick={() => WKApp.routeRight.replaceToRoot(<MatterIssueDetail issue={card} />)}
-                                    >
-                                        <div className="wk-matter-board__card-key">— {card.key}</div>
-                                        <h3>{card.title}</h3>
-                                        {card.desc && <p>{card.desc}</p>}
-                                        <span className="wk-matter-board__project">📁 {card.project}</span>
-                                        <footer>
-                                            <span>{card.agent}</span>
-                                            {card.updated && <time>{card.updated}</time>}
-                                        </footer>
-                                    </button>
+                    <div className="wk-mv2-filterwrap">
+                        <button type="button" aria-haspopup="menu" aria-expanded={displayOpen} onClick={() => { setDisplayOpen((v) => !v); setFilterOpen(false); setViewOpen(false) }}>手动</button>
+                        {displayOpen && (
+                            <div className="wk-mv2-panel" role="menu">
+                                <div className="wk-mv2-panel__row">
+                                    <span>分组</span>
+                                    <select defaultValue="状态"><option>状态</option><option>项目</option><option>负责人</option></select>
+                                </div>
+                                <div className="wk-mv2-panel__row">
+                                    <span>排序</span>
+                                    <select defaultValue="手动"><option>手动</option><option>更新时间</option><option>创建时间</option></select>
+                                </div>
+                                <hr />
+                                <span className="wk-mv2-panel__label">卡片属性</span>
+                                {CARD_PROPS.map((p) => (
+                                    <div key={p} className="wk-mv2-panel__row">
+                                        <span>{p}</span>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={cardProps.includes(p)}
+                                            aria-label={p}
+                                            className={`wk-toggle${cardProps.includes(p) ? " is-on" : ""}`}
+                                            onClick={() => toggleProp(p)}
+                                        >
+                                            <i />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         )}
-                    </section>
-                ))}
+                    </div>
+
+                    <div className="wk-mv2-filterwrap">
+                        <button type="button" aria-haspopup="menu" aria-expanded={viewOpen} onClick={() => { setViewOpen((v) => !v); setFilterOpen(false); setDisplayOpen(false) }}>{view === "board" ? "看板" : "列表"}</button>
+                        {viewOpen && (
+                            <div className="wk-mv2-menu" role="menu">
+                                <span className="wk-mv2-panel__label">视图</span>
+                                <button type="button" role="menuitem" onClick={() => { setView("board"); setViewOpen(false) }}>▦ 看板{view === "board" && <em>✓</em>}</button>
+                                <button type="button" role="menuitem" onClick={() => { setView("list"); setViewOpen(false) }}>☰ 列表{view === "list" && <em>✓</em>}</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
+
+            {view === "list" ? (
+                <div className="wk-matter-board__listwrap">
+                    <IssueGroupList rows={ISSUE_ROWS} />
+                </div>
+            ) : (
+                <div className="wk-matter-board__columns">
+                    {BOARD_COLUMNS.map((column) => (
+                        <section key={column.id} className={`wk-matter-board__column wk-matter-board__column--${column.tone}`}>
+                            <header>
+                                <span className="wk-matter-board__status-dot" />
+                                <strong>{column.label}</strong>
+                                <small>{column.cards.length}</small>
+                                <MoreHorizontal size={15} />
+                                <button type="button" onClick={() => setCreateIssueOpen(true)}>+</button>
+                            </header>
+
+                            {column.cards.length === 0 ? (
+                                <div className="wk-matter-board__empty">无 issue</div>
+                            ) : (
+                                <div className="wk-matter-board__cards">
+                                    {column.cards.map((card) => (
+                                        <button
+                                            key={card.key}
+                                            type="button"
+                                            className="wk-matter-board__card"
+                                            onClick={() => WKApp.routeRight.replaceToRoot(<MatterIssueDetail issue={card} />)}
+                                        >
+                                            <div className="wk-matter-board__card-key">
+                                                {cardProps.includes("优先级") && <PriorityIcon pri={card.pri} />}
+                                                <span>{card.key}</span>
+                                            </div>
+                                            <h3>{card.title}</h3>
+                                            {cardProps.includes("描述") && card.desc && <p>{card.desc}</p>}
+                                            {cardProps.includes("项目") && <span className="wk-matter-board__project">📁 {card.project}</span>}
+                                            <footer>
+                                                {cardProps.includes("负责人") && (
+                                                    <span className="wk-matter-board__agent">
+                                                        {card.agentType === "squad" ? <Users size={12} /> : card.agentType === "bot" ? <Bot size={12} /> : null}
+                                                        {card.agent}
+                                                    </span>
+                                                )}
+                                                {cardProps.includes("子 issue 进度") && card.progress && <ProgressRing done={card.progress.done} total={card.progress.total} />}
+                                                {card.updated && <time>{card.updated}</time>}
+                                            </footer>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    ))}
+                </div>
+            )}
 
             {createIssueOpen && <MatterCreateIssueModal onClose={() => setCreateIssueOpen(false)} />}
         </section>
