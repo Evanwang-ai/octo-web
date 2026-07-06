@@ -753,3 +753,214 @@
         border-top: 1px solid var(--wk-border-default);
     }
 }
+
+/* ── T7 三路创建 + 详情文件栏(对齐真身) ─────────────── */
+.wk-skill-import-modal__head.is-root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.wk-skill-import-modal__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 20px 20px;
+}
+
+.wk-skill-import-modal__options > button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 10px;
+  background: var(--wk-bg-surface);
+  cursor: pointer;
+  text-align: left;
+}
+
+.wk-skill-import-modal__options > button:hover {
+  border-color: var(--wk-text-tertiary);
+}
+
+.wk-skill-import-modal__options i {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--wk-bg-elevated);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+  color: var(--wk-text-secondary);
+}
+
+.wk-skill-import-modal__options strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--wk-text-primary);
+}
+
+.wk-skill-import-modal__options small {
+  display: block;
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.wk-skill-import-modal__options em {
+  color: var(--wk-text-tertiary);
+  font-style: normal;
+}
+
+.wk-skill-import-modal__help {
+  color: var(--wk-text-tertiary);
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+.wk-skill-import-modal__desc {
+  min-height: 64px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  resize: vertical;
+  background: var(--wk-bg-surface);
+  color: var(--wk-text-primary);
+}
+
+.wk-skill-import-modal__runtime {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--wk-border-default);
+  border-radius: 8px;
+  background: var(--wk-bg-surface);
+  font-size: 13px;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+}
+
+.wk-skill-import-modal__runtime em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--wk-text-tertiary);
+  border: 1px solid var(--wk-border-default);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.wk-skill-import-modal__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wk-skill-import-modal__skeleton i {
+  height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--wk-bg-elevated) 25%, var(--wk-bg-base) 50%, var(--wk-bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: wk-skill-shimmer 1.4s infinite;
+}
+
+@keyframes wk-skill-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.wk-skill-import-modal__note {
+  margin: 0;
+  color: var(--wk-text-tertiary);
+  font-size: 11.5px;
+}
+
+.wk-skill-import-modal__hint {
+  margin-right: auto;
+  color: var(--wk-text-tertiary);
+  font-size: 12px;
+}
+
+.wk-skill-detail__delete {
+  border: 0;
+  background: transparent;
+  color: var(--wk-icon-default);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wk-skill-detail__delete:hover {
+  background: var(--wk-bg-hover);
+}
+
+.wk-skill-detail__files {
+  flex: 0 0 150px;
+  border-right: 1px solid var(--wk-border-default);
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wk-skill-detail__files header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--wk-text-tertiary);
+  font-size: 11.5px;
+  padding: 0 4px;
+}
+
+.wk-skill-detail__files header button {
+  border: 0;
+  background: transparent;
+  color: var(--wk-icon-default);
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.wk-skill-detail__files > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12.5px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--wk-text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.wk-skill-detail__files > button.is-active {
+  background: var(--wk-bg-elevated);
+}
+
+/* T7 修正:layout 原为两列 grid,文件栏加入后改三列 */
+.wk-skill-detail__layout {
+  grid-template-columns: 150px minmax(420px, 1fr) 188px;
+}
+
+@media (max-width: 960px) {
+  .wk-skill-detail__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .wk-skill-detail__files {
+    border-right: 0;
+    border-bottom: 1px solid var(--wk-border-default);
+  }
+}
