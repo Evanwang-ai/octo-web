@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import {
     ArrowDown,
     Bot,
+    Check,
     BookOpen,
     ChevronRight,
     Code2,
@@ -325,7 +326,15 @@ function SkillsListSurface({
 }
 
 // T7 三路创建 → P14 后:方式选择由 +New 菜单承担,本弹窗只承载各路的二级步骤。
+const RUNTIME_SKILLS = [
+    { name: "pdf-extract", path: "~/.claude/skills/pdf-extract", meta: "3 个文件 · 12 KB" },
+    { name: "web-research", path: "~/.claude/skills/web-research", meta: "5 个文件 · 41 KB" },
+    { name: "code-review", path: "~/.claude/skills/code-review", meta: "2 个文件 · 8 KB" },
+    { name: "sql-explain", path: "~/.claude/skills/sql-explain", meta: "4 个文件 · 19 KB" },
+]
+
 function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: () => void }) {
+    const [picked, setPicked] = useState<string | null>(null)
     return (
         <div className="wk-skill-import-modal" role="presentation" onMouseDown={onClose}>
             <section
@@ -419,14 +428,30 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
                                     <em>online</em>
                                 </button>
                             </label>
-                            <div className="wk-skill-import-modal__skeleton" aria-label="扫描中">
-                                <i /><i /><i />
+                            <div className="wk-skill-import-modal__rtlist" role="listbox" aria-label="运行时里的 skill">
+                                {RUNTIME_SKILLS.map((s) => (
+                                    <button
+                                        key={s.name}
+                                        type="button"
+                                        role="option"
+                                        aria-selected={picked === s.name}
+                                        className={`wk-skill-import-modal__rtskill${picked === s.name ? " is-picked" : ""}`}
+                                        onClick={() => setPicked(s.name)}
+                                    >
+                                        <span className="wk-skill-import-modal__rtskill-check">{picked === s.name ? <Check size={14} /> : <Folder size={14} />}</span>
+                                        <span className="wk-skill-import-modal__rtskill-main">
+                                            <strong>{s.name}</strong>
+                                            <small>{s.path}</small>
+                                        </span>
+                                        <span className="wk-skill-import-modal__rtskill-meta">{s.meta}</span>
+                                    </button>
+                                ))}
                             </div>
                             <p className="wk-skill-import-modal__note">导入时会忽略软链、不可读文件、超大文件以及超大目录。</p>
                         </div>
                         <footer className="wk-skill-import-modal__foot">
-                            <span className="wk-skill-import-modal__hint">请选择一个 skill 继续。</span>
-                            <button type="button" className="wk-skill-import-modal__submit" disabled>
+                            <span className="wk-skill-import-modal__hint">{picked ? `已选 ${picked}` : "请选择一个 skill 继续。"}</span>
+                            <button type="button" className="wk-skill-import-modal__submit" disabled={!picked} onClick={onClose}>
                                 <Download size={15} />
                                 导入到工作区
                             </button>
