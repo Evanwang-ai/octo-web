@@ -6627,3 +6627,20 @@
   opacity: 0.5;
   cursor: default;
 }
+/* #11:自动化详情右栏「属性/任务说明」→ 对齐 Loop 详情 Inspector(无卡框、发丝分区、tertiary 段标) */
+.wk-avd__rail .wk-avd__card {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+.wk-avd__rail .wk-avd__card + .wk-avd__card {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--wk-border-default, #e6e8eb);
+}
+.wk-avd__rail .wk-avd__card h4 {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--wk-text-tertiary, #8f959e);
+}
