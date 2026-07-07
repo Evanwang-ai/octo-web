@@ -2137,54 +2137,87 @@ function MatterIssueDetail({
 
             <main className="wk-matter-issue-detail__main">
                 <article className="wk-matter-issue-detail__content">
-                    <section className="wk-matter-issue-detail__request">
-                        <h1>User request</h1>
-                        {isRuntimeQuestion ? (
-                            <>
-                                <p>请回答以下关于当前运行环境的问题：</p>
-                                <ol>
-                                    <li>你的工作 workspace 的绝对路径是什么？</li>
-                                    <li>当前机器名称是什么？</li>
-                                    <li>执行的状态如何？</li>
-                                </ol>
-                            </>
-                        ) : (
-                            <>
-                                <p>{issue.desc || "请继续推进这个 Loop，并补充下一步处理建议。"}</p>
-                                <ol>
-                                    <li>确认当前任务目标。</li>
-                                    <li>补齐必要上下文。</li>
-                                    <li>给出可执行的下一步。</li>
-                                </ol>
-                            </>
-                        )}
-                        <div className="wk-matter-issue-detail__inline-actions">☺︎　📎</div>
-                        <button type="button" className="wk-matter-issue-detail__add">＋ 添加子 Loop</button>
+                    <h1 className="wk-matter-issue-detail__h1">{issue.title}</h1>
+                    <p className="wk-matter-issue-detail__desc">
+                        {isRuntimeQuestion
+                            ? "请回答以下关于当前运行环境的问题:workspace 的绝对路径、当前机器名称、以及执行状态是否正常。"
+                            : issue.desc || "请继续推进这个 Loop,补齐必要上下文,并给出可执行的下一步。"}
+                    </p>
+
+                    <button type="button" className="wk-matter-issue-detail__attach-card">
+                        <span className="wk-matter-issue-detail__attach-icon">📄</span>
+                        <span className="wk-matter-issue-detail__attach-main">
+                            <strong>需求上下文.pdf</strong>
+                            <small>207.11 KB</small>
+                        </span>
+                    </button>
+
+                    <div className="wk-matter-issue-detail__inline-actions"><span>☺︎</span><Paperclip size={15} /></div>
+
+                    <section className="wk-matter-issue-detail__block">
+                        <header className="wk-matter-issue-detail__blockhead">
+                            <ChevronDown size={14} />
+                            <strong>子 Loop</strong>
+                            <em>0 / 1</em>
+                            <div className="wk-matter-issue-detail__blockact"><Plus size={14} /><MoreHorizontal size={14} /></div>
+                        </header>
+                        <button type="button" className="wk-matter-issue-detail__subrow">
+                            <Circle size={14} />
+                            <span className="wk-matter-issue-detail__subkey">{issue.key}-1</span>
+                            <span className="wk-matter-issue-detail__subtitle">补齐运行环境细节并给出下一步</span>
+                            <PriorityIcon pri="mid" />
+                        </button>
+                    </section>
+
+                    <section className="wk-matter-issue-detail__block">
+                        <header className="wk-matter-issue-detail__blockhead">
+                            <ChevronDown size={14} />
+                            <strong>关联</strong>
+                            <div className="wk-matter-issue-detail__blockact"><Plus size={14} /></div>
+                        </header>
+                        <button type="button" className="wk-matter-issue-detail__linkrow">
+                            <span className="wk-matter-issue-detail__linkicon">🔗</span>
+                            <strong>Octo-Runtime 接线讨论串</strong>
+                            <span className="wk-matter-issue-detail__linkdesc">补上历史决策与联调上下文…</span>
+                            <time>32 分钟前</time>
+                        </button>
                     </section>
 
                     <section className="wk-matter-issue-detail__activity">
                         <header>
                             <h2>动态</h2>
-                            <span>取消订阅　🤖 L</span>
+                            <span className="wk-matter-issue-detail__unsub">取消订阅 · 🤖 {issue.agent === "未分配" ? "CC-Protoper" : issue.agent}</span>
                         </header>
-                        <div className="wk-matter-issue-detail__fold">› 2 条动态</div>
-                        <MessageCard
-                            author={issue.agent === "未分配" ? "Prototyper" : issue.agent}
-                            time={issue.updated || "4 小时前"}
-                            body={[
-                                "运行环境询问回答：",
-                                "1. Workspace 绝对路径： /Users/lvsijia/multica_workspaces/bfa7830c-929d-493d-9650-4f31d86e54ff/550c0581/workdir",
-                                "2. 机器名称： kaka-mbp（macOS / Darwin 25.5.0，arm64 架构，Apple Silicon）",
-                                "3. 执行状态：正常。CLI 认证有效，可以正常读写 Loop、评论及状态，环境健康无异常。",
-                            ]}
-                        />
-                        <div className="wk-matter-issue-detail__events">
-                            <div><CheckCircle2 size={15} />CC-Protoper 状态从 进行中 改为 审核中 <time>4 小时前</time></div>
-                            <div><Archive size={15} />CC-Protoper 完成了 task（1 次）<time>4 小时前</time></div>
+                        <div className="wk-matter-issue-detail__timeline">
+                            <div className="wk-matter-issue-detail__ev">
+                                <span className="wk-matter-issue-detail__evdot"><Circle size={12} /></span>
+                                <span>lvsijia 创建了这个 Loop</span>
+                                <time>32 分钟前</time>
+                            </div>
+                            <div className="wk-matter-issue-detail__ev">
+                                <span className="wk-matter-issue-detail__evdot"><Briefcase size={12} /></span>
+                                <span>加入项目 <b>{issue.project}</b></span>
+                                <time>18 分钟前</time>
+                            </div>
+                            <MessageCard
+                                author={issue.agent === "未分配" ? "CC-Protoper" : issue.agent}
+                                time={issue.updated || "4 小时前"}
+                                body={[
+                                    "运行环境询问回答:",
+                                    "1. Workspace 绝对路径: /Users/lvsijia/multica_workspaces/bfa7830c-929d/550c0581/workdir",
+                                    "2. 机器名称: kaka-mbp(macOS / Darwin 25.5.0,arm64,Apple Silicon)",
+                                    "3. 执行状态:正常。CLI 认证有效,可读写 Loop、评论及状态,环境健康。",
+                                ]}
+                            />
+                            <div className="wk-matter-issue-detail__ev">
+                                <span className="wk-matter-issue-detail__evdot"><CheckCircle2 size={12} /></span>
+                                <span>状态从 <b>进行中</b> 改为 <b>审核中</b></span>
+                                <time>4 小时前</time>
+                            </div>
                         </div>
                         <div className="wk-matter-issue-detail__comment">
                             <span>留下评论...</span>
-                            <span>📎</span>
+                            <Paperclip size={14} />
                             <button type="button">↑</button>
                         </div>
                     </section>
