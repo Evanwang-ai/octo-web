@@ -2013,38 +2013,22 @@ function MatterSquadsList() {
 function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
     const [name, setName] = useState("")
     const [desc, setDesc] = useState("")
-    const [members, setMembers] = useState<{ id: string; role: "leader" | "member" }[]>([])
-    const [query, setQuery] = useState("")
-    const [pickerOpen, setPickerOpen] = useState(false)
+    const [leaderId, setLeaderId] = useState<string | null>(null)
+    const [memberIds, setMemberIds] = useState<string[]>([])
+    const [leaderQuery, setLeaderQuery] = useState("")
+    const [leaderPickerOpen, setLeaderPickerOpen] = useState(false)
+    const [memberQuery, setMemberQuery] = useState("")
+    const [memberPickerOpen, setMemberPickerOpen] = useState(false)
 
     const roster = COWORKERS.filter((c) => !c.archived)
-    const addedIds = new Set(members.map((m) => m.id))
-    const candidates = roster.filter(
-        (c) => !addedIds.has(c.id) && c.name.toLowerCase().includes(query.trim().toLowerCase()),
-    )
     const byId = (id: string) => COWORKERS.find((c) => c.id === id)!
-    const leaderId = members.find((m) => m.role === "leader")?.id
-    const canCreate = name.trim().length > 0 && members.length > 0
-
-    function addMember(id: string) {
-        setMembers((cur) => [...cur, { id, role: cur.length === 0 ? "leader" : "member" }])
-        setQuery("")
-        setPickerOpen(false)
-    }
-    function removeMember(id: string) {
-        setMembers((cur) => {
-            const next = cur.filter((m) => m.id !== id)
-            if (next.length && !next.some((m) => m.role === "leader")) next[0] = { ...next[0], role: "leader" }
-            return next
-        })
-    }
-    function setRole(id: string, role: "leader" | "member") {
-        setMembers((cur) =>
-            role === "leader"
-                ? cur.map((m) => ({ ...m, role: m.id === id ? "leader" : "member" }))
-                : cur.map((m) => (m.id === id ? { ...m, role } : m)),
-        )
-    }
+    const leaderCandidates = roster.filter(
+        (c) => c.id !== leaderId && !memberIds.includes(c.id) && c.name.toLowerCase().includes(leaderQuery.trim().toLowerCase()),
+    )
+    const memberCandidates = roster.filter(
+        (c) => c.id !== leaderId && !memberIds.includes(c.id) && c.name.toLowerCase().includes(memberQuery.trim().toLowerCase()),
+    )
+    const canCreate = name.trim().length > 0 && !!leaderId
 
     return (
         <div className="wk-sqc" role="presentation" onMouseDown={onClose}>
@@ -2078,26 +2062,63 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                     </div>
 
                     <div className="wk-sqc__field">
-                        <span className="wk-sqc__label">成员<em>从你的 AI 队友里挑,一个设为领队</em></span>
+                        <span className="wk-sqc__label">领队<em>有且仅有一个,负责调度整支队</em></span>
+                        {leaderId ? (
+                            <div className="wk-sqc__leadercard">
+                                <AgentAvatar name={byId(leaderId).name} size={28} dot="online" />
+                                <span className="wk-sqc__m-main"><strong>{byId(leaderId).name}</strong><small>{byId(leaderId).runtime}</small></span>
+                                <span className="wk-sqc__leaderbadge">领队</span>
+                                <button type="button" className="wk-sqc__change" onClick={() => { setLeaderId(null); setLeaderPickerOpen(true) }}>更换</button>
+                            </div>
+                        ) : (
+                            <div className="wk-sqc__picker">
+                                <label className="wk-sqc__search">
+                                    <Search size={15} />
+                                    <input
+                                        value={leaderQuery}
+                                        onFocus={() => setLeaderPickerOpen(true)}
+                                        onClick={() => setLeaderPickerOpen(true)}
+                                        onChange={(e) => { setLeaderQuery(e.target.value); setLeaderPickerOpen(true) }}
+                                        placeholder="搜索并指定一名领队..."
+                                    />
+                                </label>
+                                {leaderPickerOpen && (
+                                    <div className="wk-sqc__menu" role="listbox">
+                                        {leaderCandidates.length === 0 ? (
+                                            <div className="wk-sqc__menu-empty">没有可选的 AI 队友</div>
+                                        ) : leaderCandidates.map((c) => (
+                                            <button key={c.id} type="button" className="wk-sqc__option" onClick={() => { setLeaderId(c.id); setLeaderPickerOpen(false); setLeaderQuery("") }}>
+                                                <AgentAvatar name={c.name} size={24} />
+                                                <span className="wk-sqc__opt-main"><strong>{c.name}</strong><small>{c.runtime}</small></span>
+                                                <Plus size={15} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
+                    <div className="wk-sqc__field">
+                        <span className="wk-sqc__label">队员<em>领队之外的其他 AI 队友(可选)</em></span>
                         <div className="wk-sqc__picker">
                             <label className="wk-sqc__search">
                                 <Search size={15} />
                                 <input
-                                    value={query}
-                                    onFocus={() => setPickerOpen(true)}
-                                    onClick={() => setPickerOpen(true)}
-                                    onChange={(e) => { setQuery(e.target.value); setPickerOpen(true) }}
-                                    placeholder="搜索并添加 AI 队友..."
+                                    value={memberQuery}
+                                    onFocus={() => setMemberPickerOpen(true)}
+                                    onClick={() => setMemberPickerOpen(true)}
+                                    onChange={(e) => { setMemberQuery(e.target.value); setMemberPickerOpen(true) }}
+                                    placeholder="搜索并添加队员..."
                                 />
                             </label>
-                            {pickerOpen && (
+                            {memberPickerOpen && (
                                 <div className="wk-sqc__menu" role="listbox">
-                                    {candidates.length === 0 ? (
+                                    {memberCandidates.length === 0 ? (
                                         <div className="wk-sqc__menu-empty">没有更多可加的 AI 队友</div>
-                                    ) : candidates.map((c) => (
-                                        <button key={c.id} type="button" className="wk-sqc__option" onClick={() => addMember(c.id)}>
-                                            <span className="wk-sqc__ava"><Bot size={15} /></span>
+                                    ) : memberCandidates.map((c) => (
+                                        <button key={c.id} type="button" className="wk-sqc__option" onClick={() => { setMemberIds((cur) => [...cur, c.id]); setMemberQuery(""); setMemberPickerOpen(false) }}>
+                                            <AgentAvatar name={c.name} size={24} />
                                             <span className="wk-sqc__opt-main"><strong>{c.name}</strong><small>{c.runtime}</small></span>
                                             <Plus size={15} />
                                         </button>
@@ -2105,26 +2126,16 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                                 </div>
                             )}
                         </div>
-
                         <div className="wk-sqc__members">
-                            {members.length === 0 ? (
-                                <div className="wk-sqc__empty">还没有成员 —— 在上面搜索并添加你的 AI 队友。</div>
-                            ) : members.map((m) => {
-                                const c = byId(m.id)
+                            {memberIds.length === 0 ? (
+                                <div className="wk-sqc__empty">还没有队员 —— 可选;指定领队后即可创建。</div>
+                            ) : memberIds.map((id) => {
+                                const c = byId(id)
                                 return (
-                                    <div key={m.id} className={`wk-sqc__member${m.role === "leader" ? " is-leader" : ""}`}>
-                                        <span className="wk-sqc__ava"><Bot size={15} /><i /></span>
+                                    <div key={id} className="wk-sqc__member">
+                                        <AgentAvatar name={c.name} size={28} dot="online" />
                                         <span className="wk-sqc__m-main"><strong>{c.name}</strong><small>{c.runtime}</small></span>
-                                        <select
-                                            className="wk-sqc__role"
-                                            value={m.role}
-                                            onChange={(e) => setRole(m.id, e.target.value as "leader" | "member")}
-                                            aria-label={`${c.name} 角色`}
-                                        >
-                                            <option value="leader">领队</option>
-                                            <option value="member">成员</option>
-                                        </select>
-                                        <button type="button" className="wk-sqc__remove" onClick={() => removeMember(m.id)} aria-label="移除"><X size={15} /></button>
+                                        <button type="button" className="wk-sqc__remove" onClick={() => setMemberIds((cur) => cur.filter((x) => x !== id))} aria-label="移除"><X size={15} /></button>
                                     </div>
                                 )
                             })}
@@ -2134,7 +2145,7 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
 
                 <footer className="wk-sqc__foot">
                     <span className="wk-sqc__count">
-                        {members.length ? `${members.length} 名成员 · 领队 ${leaderId ? byId(leaderId).name : "—"}` : "未选成员"}
+                        {leaderId ? `领队 ${byId(leaderId).name}${memberIds.length ? ` · ${memberIds.length} 名队员` : ""}` : "先指定领队"}
                     </span>
                     <div className="wk-sqc__actions">
                         <button type="button" className="wk-sqc__cancel" onClick={onClose}>取消</button>

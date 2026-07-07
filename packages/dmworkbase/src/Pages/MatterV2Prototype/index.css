@@ -6979,3 +6979,10 @@
 .wk-mv2-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 7px; background: var(--wk-brand-tint-06, rgba(0,0,0,0.04)); }
 .wk-mv2-seg button { height: 24px; padding: 0 12px; border: none; background: transparent; border-radius: 5px; font-size: 12.5px; font-weight: 550; color: var(--wk-text-tertiary, #8f959e); cursor: pointer; }
 .wk-mv2-seg button.is-on { background: var(--wk-bg-surface, #fff); color: var(--wk-text-primary, #1f2329); box-shadow: var(--wk-shadow-sm, 0 1px 2px rgba(0,0,0,0.06)); }
+
+
+/* C3:小队创建 领队卡 + 徽章 + 更换 */
+.wk-sqc__leadercard { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--wk-brand-primary, #1f2329); border-radius: var(--wk-r-md, 8px); background: var(--wk-brand-tint-06, rgba(0,0,0,0.03)); }
+.wk-sqc__leaderbadge { flex: 0 0 auto; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 5px; font-size: 11px; font-weight: 600; color: var(--wk-text-on-brand, #fff); background: var(--wk-brand-primary, #1f2329); }
+.wk-sqc__change { flex: 0 0 auto; border: none; background: transparent; color: var(--wk-text-tertiary, #8f959e); font-size: 12.5px; cursor: pointer; }
+.wk-sqc__change:hover { color: var(--wk-text-primary, #1f2329); }
