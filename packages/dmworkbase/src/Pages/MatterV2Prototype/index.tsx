@@ -1692,24 +1692,19 @@ function MatterProjectsList() {
                 </div>
             </div>
 
-            <div className="wk-mv2-projects__table" role="table" aria-label="项目列表">
-                <div className="wk-mv2-projects__row wk-mv2-projects__headrow" role="row">
-                    <div role="columnheader">名称</div>
-                    <div role="columnheader">状态</div>
-                    <div role="columnheader">优先级</div>
-                    <div role="columnheader">进度</div>
-                    <div role="columnheader">负责人</div>
-                    <div role="columnheader">创建时间 ↓</div>
-                </div>
+            <div className="mlv-list mlv-list--flush" role="list" aria-label="项目列表">
                 {PROJECTS_ROWS.map((p) => (
-                    <button key={p.name} type="button" className="wk-mv2-projects__row wk-mv2-projects__item" role="row">
-                        <div className="wk-mv2-projects__name" role="cell"><i>{p.icon}</i>{p.name}</div>
-                        <div className="wk-mv2-projects__muted" role="cell">{p.status}</div>
-                        <div className="wk-mv2-projects__muted" role="cell">{p.pri}</div>
-                        <div role="cell"><ProgressRing done={p.done} total={p.total} /></div>
-                        <div className="wk-mv2-projects__muted" role="cell">{p.owner ? <><i className="wk-mv2-projects__avatar">L</i>{p.owner}</> : "—"}</div>
-                        <div className="wk-mv2-projects__muted" role="cell">{p.created}</div>
-                    </button>
+                    <div key={p.name} className="mlv-row" role="button" tabIndex={0}>
+                        <span className="mlv-emoji">{p.icon}</span>
+                        <span className="mlv-title">{p.name}</span>
+                        <span className="mlv-flex" />
+                        <span className="mlv-proj">{p.status}</span>
+                        <ProgressRing done={p.done} total={p.total} />
+                        {p.owner
+                            ? <span className="mlv-leader"><span className="mlv-owner-ava">L</span><span className="mlv-leader-name">{p.owner}</span></span>
+                            : <span className="mlv-leader mlv-leader--none">未指定</span>}
+                        <span className="mlv-date">{p.created}</span>
+                    </div>
                 ))}
             </div>
         </section>
@@ -1744,40 +1739,24 @@ function MatterCoWorkersList() {
                 </div>
             </div>
 
-            <div className="wk-matter-coworkers__table" role="table" aria-label="AI 队友列表">
-                <div className="wk-matter-coworkers__row wk-matter-coworkers__head-row" role="row">
-                    <div role="columnheader">AI 队友</div>
-                    <div role="columnheader">状态</div>
-                    <div role="columnheader">所有者</div>
-                    <div role="columnheader">运行时</div>
-                    <div role="columnheader">最近活跃 ↓</div>
-                    <div role="columnheader">运行次数</div>
-                </div>
+            <div className="mlv-list mlv-list--flush" role="list" aria-label="AI 队友列表">
                 {COWORKERS.map((coworker) => (
-                    <button
+                    <div
                         key={coworker.id}
-                        type="button"
-                        className="wk-matter-coworkers__row wk-matter-coworkers__item"
-                        role="row"
+                        className="mlv-row"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => WKApp.routeRight.replaceToRoot(<MatterCoWorkerDetail coworker={coworker} />)}
                     >
-                        <div className="wk-matter-coworkers__name" role="cell">
-                            <AgentAvatar name={coworker.name} size={24} dot="online" />
-                            <div className="wk-matter-coworkers__nd">
-                                <strong>
-                                    {coworker.name}
-                                    {coworker.visibility === "personal" && <Lock size={12} aria-label="Personal" />}
-                                    <em>你</em>
-                                </strong>
-                                <small>{coworker.desc}</small>
-                            </div>
-                        </div>
-                        <div className="wk-matter-coworkers__status" role="cell"><i />在线</div>
-                        <div className="wk-matter-coworkers__owner" role="cell"><span>L</span>{coworker.owner}</div>
-                        <div className="wk-matter-coworkers__muted" role="cell">{coworker.runtime}</div>
-                        <div className={coworker.archived ? "wk-matter-coworkers__quiet" : "wk-matter-coworkers__muted"} role="cell">{coworker.lastActive}</div>
-                        <div className="wk-matter-coworkers__runs" role="cell">{coworker.runs}</div>
-                    </button>
+                        <AgentAvatar name={coworker.name} size={20} dot={coworker.archived ? "idle" : "online"} />
+                        <span className="mlv-title">{coworker.name}</span>
+                        {coworker.visibility === "personal" && <Lock size={12} className="mlv-lock" aria-label="Personal" />}
+                        <span className="mlv-rowsub">{coworker.desc}</span>
+                        <span className="mlv-flex" />
+                        <span className="mlv-proj">{coworker.runtime}</span>
+                        <span className="mlv-leader"><span className="mlv-owner-ava">L</span><span className="mlv-leader-name">{coworker.owner}</span></span>
+                        <span className="mlv-date">{coworker.lastActive}</span>
+                    </div>
                 ))}
             </div>
 
@@ -2065,34 +2044,23 @@ function MatterSquadsList() {
                 </div>
             </div>
 
-            <div className="wk-matter-squads__table" role="table" aria-label="小队列表">
-                <div className="wk-matter-squads__row wk-matter-squads__head-row" role="row">
-                    <div role="columnheader">小队 ↑</div>
-                    <div role="columnheader">队长</div>
-                    <div role="columnheader">成员</div>
-                    <div role="columnheader">创建者</div>
-                </div>
+            <div className="mlv-list mlv-list--flush" role="list" aria-label="小队列表">
                 {SQUADS.map((squad) => (
-                    <button
+                    <div
                         key={squad.id}
-                        type="button"
-                        className="wk-matter-squads__row wk-matter-squads__item"
-                        role="row"
+                        className="mlv-row"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => WKApp.routeRight.replaceToRoot(<MatterSquadDetail squad={squad} />)}
                     >
-                        <div className="wk-matter-squads__name" role="cell">
-                            <SquadAvatar name={squad.name} size={24} />
-                            <div className="wk-matter-squads__nd">
-                                <strong>{squad.name}</strong>
-                                <small>{squad.description}</small>
-                            </div>
-                        </div>
-                        <div className="wk-matter-squads__leader" role="cell"><AgentAvatar name={squad.leader} size={18} />{squad.leader}</div>
-                        <div className="wk-matter-squads__members" role="cell">
-                            {squad.members.map((member) => <AgentAvatar key={member} name={member} size={20} />)}
-                        </div>
-                        <div className="wk-matter-squads__creator" role="cell"><i>L</i>{squad.creator}</div>
-                    </button>
+                        <SquadAvatar name={squad.name} size={20} />
+                        <span className="mlv-title">{squad.name}</span>
+                        <span className="mlv-rowsub">{squad.description}</span>
+                        <span className="mlv-flex" />
+                        <span className="mlv-leader"><AgentAvatar name={squad.leader} size={18} /><span className="mlv-leader-name">{squad.leader}</span></span>
+                        <span className="mlv-squadmembers">{squad.members.map((member) => <AgentAvatar key={member} name={member} size={18} className="mlv-stack" />)}</span>
+                        <span className="mlv-leader mlv-leader--creator"><span className="mlv-owner-ava">L</span><span className="mlv-leader-name">{squad.creator}</span></span>
+                    </div>
                 ))}
             </div>
 
