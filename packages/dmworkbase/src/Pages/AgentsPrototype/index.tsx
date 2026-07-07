@@ -147,7 +147,7 @@ function AgentsListSurface({
                     <Bot size={16} />
                     <strong>Bot</strong>
                     <span>{AGENTS.length}</span>
-                    <p>能领取 issue、留下评论、推进状态的 AI 队友。</p>
+                    <p>能领取 Loop、留下评论、推进状态的 AI 队友。</p>
                     <a href="#learn-more">了解更多 →</a>
                 </div>
                 <button type="button" className="wk-agents-list__create" onClick={onCreate}>
@@ -252,7 +252,7 @@ function AgentDetailSurface({ agent }: { agent: AgentItem }) {
                         </span>
                         <div>
                             <h2>{agent.name}</h2>
-                            <p>Prototype agent for issue triage and workspace tasks.</p>
+                            <p>Prototype agent for Loop triage and workspace tasks.</p>
                         </div>
                     </div>
 
@@ -302,13 +302,13 @@ function AgentDetailSurface({ agent }: { agent: AgentItem }) {
                         </header>
                         <div className="wk-agent-detail__editor">
                             <p># Role</p>
-                            <p>You are {agent.name}, a workspace agent that helps convert messy requests into clear issues, comments, and next actions.</p>
+                            <p>You are {agent.name}, a workspace agent that helps convert messy requests into clear Loops, comments, and next actions.</p>
                             <p># Operating style</p>
                             <p>- Keep replies concise and action-oriented.</p>
                             <p>- Ask one clarifying question only when the missing detail changes the outcome.</p>
                             <p>- Prefer prototype-safe suggestions and avoid touching production data.</p>
                             <p># Scope</p>
-                            <p>Use workspace context, issue status, runtime availability, and assigned tasks as mock prototype inputs.</p>
+                            <p>Use workspace context, Loop status, runtime availability, and assigned tasks as mock prototype inputs.</p>
                         </div>
                     </article>
                 </main>

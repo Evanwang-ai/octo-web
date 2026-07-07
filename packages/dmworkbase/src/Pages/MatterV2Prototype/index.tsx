@@ -29,7 +29,7 @@ import { CreateAgentModal } from "../AgentsPrototype"
 import "./index.css"
 
 // T1 换皮(蓝图 §1.2):单模块 sidebar——砍 搜索/收件箱/用量/设置/workspace 下拉,
-// 并入 技能 节点;CoWorker 中文定名「AI 队友」。收件箱砍除后 review 入口=我的 issue(T5 补四 tabs)。
+// 并入 技能 节点;CoWorker 中文定名「AI 队友」。收件箱砍除后 review 入口=我的 Loop(T5 补四 tabs)。
 type MatterView = "issues" | "myissues" | "projects" | "automation" | "coworkers" | "squads" | "skills"
 
 const SQUADS = [
@@ -45,24 +45,24 @@ const SQUADS = [
     },
     {
         id: "squad-triage",
-        name: "Issue 分诊小队",
+        name: "Loop 分诊小队",
         leader: "Triager-Worker",
         members: ["Triager-Worker", "Analyser-CC-MBOT"],
         creator: "lvsijia",
         created: "3 天前",
         updated: "昨天",
-        description: "Triager + Analyser：新 issue 补上下文、定优先级、派人。",
+        description: "Triager + Analyser：新 Loop 补上下文、定优先级、派人。",
     },
 ]
 
 const COWORKERS = [
-    { id: "cw-prototyper", name: "Prototyper-Codex-MBOT", desc: "把杂乱请求整理成清晰 issue,推进状态并给出下一步。", runtime: "Codex (kaka-mbp)", owner: "lvsijia", lastActive: "今天", runs: 5, archived: false, visibility: "personal", concurrency: 2 },
+    { id: "cw-prototyper", name: "Prototyper-Codex-MBOT", desc: "把杂乱请求整理成清晰 Loop,推进状态并给出下一步。", runtime: "Codex (kaka-mbp)", owner: "lvsijia", lastActive: "今天", runs: 5, archived: false, visibility: "personal", concurrency: 2 },
     { id: "cw-analyser", name: "Analyser-CC-MBOT", desc: "读 PDF 与上下文做独立分析,先结论后论据。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "3 天前", runs: 5, archived: false, visibility: "workspace", concurrency: 6 },
     { id: "cw-documenter", name: "Documenter-Worker", desc: "把讨论沉淀为文档与交付说明。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "3 天前", runs: 5, archived: false, visibility: "workspace", concurrency: 4 },
-    { id: "cw-triager", name: "Triager-Worker", desc: "新 issue 分诊:补上下文、定优先级、派人。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "30 天内无活动", runs: 0, archived: true, visibility: "workspace", concurrency: 1 },
+    { id: "cw-triager", name: "Triager-Worker", desc: "新 Loop 分诊:补上下文、定优先级、派人。", runtime: "Claude (kaka-mbp)", owner: "lvsijia", lastActive: "30 天内无活动", runs: 0, archived: true, visibility: "workspace", concurrency: 1 },
 ]
 
-// ── 共享:按状态分组的 issue 列表(T3 Tasks tab / T5 列表视图共用)──
+// ── 共享:按状态分组的 Loop 列表(T3 Tasks tab / T5 列表视图共用)──
 const ISSUE_ROWS = [
     { key: "OCT-1", title: "test", project: "Octo-Runtime", status: "待办", pri: "none" },
     { key: "OCT-2", title: "询问当前 agent 身份和模型", project: "Octo-Runtime", status: "审核中", pri: "mid" },
@@ -107,7 +107,7 @@ function IssueGroupList({ rows }: { rows: ReadonlyArray<typeof ISSUE_ROWS[number
                             <small>{group.length}</small>
                         </header>
                         {group.length === 0 ? (
-                            <div className="wk-mv2-grouplist__empty">无 issue</div>
+                            <div className="wk-mv2-grouplist__empty">无 Loop</div>
                         ) : (
                             group.map((r) => (
                                 <button key={r.key} type="button" className="wk-mv2-grouplist__row">
@@ -137,7 +137,7 @@ export default function MatterV2Prototype() {
     function showSurface(view = activeView) {
         if (view === "myissues") {
             WKApp.routeRight.replaceToRoot(
-                <MatterIssuesBoard title="我的 issue" tabs={["全部", "已分配", "我创建的", "我的智能体和小队"]} defaultTab={1} />
+                <MatterIssuesBoard title="我的 Loop" tabs={["全部", "已分配", "我创建的", "我的智能体和小队"]} defaultTab={1} />
             )
             return
         }
@@ -188,13 +188,13 @@ export default function MatterV2Prototype() {
             </header>
 
             <div className="wk-matter-v2-sidebar__quick">
-                <button type="button" onClick={() => setCreateIssueOpen(true)}><Edit3 size={16} />新建 issue<kbd>C</kbd></button>
+                <button type="button" onClick={() => setCreateIssueOpen(true)}><Edit3 size={16} />新建 Loop<kbd>C</kbd></button>
             </div>
 
             <nav className="wk-matter-v2-sidebar__nav">
                 <button type="button" className={activeView === "myissues" ? "is-active" : ""} onClick={() => setView("myissues")}>
                     <Circle size={16} />
-                    我的 issue
+                    我的 Loop
                 </button>
             </nav>
 
@@ -202,7 +202,7 @@ export default function MatterV2Prototype() {
                 <span>工作区</span>
                 <button type="button" className={activeView === "issues" ? "is-active" : ""} onClick={() => setView("issues")}>
                     <ClipboardList size={16} />
-                    Issues
+                    Loops
                 </button>
                 <button type="button" className={activeView === "projects" ? "is-active" : ""} onClick={() => setView("projects")}>
                     <Briefcase size={16} />
@@ -308,7 +308,7 @@ const BOARD_COLUMNS: Array<{ id: string; label: string; tone: string; cards: Boa
         label: "已完成",
         tone: "done",
         cards: [
-            { key: "OCT-4", title: "整理 OctoLoop 上手指南", desc: "七条上手 issue 的正文与截图。", project: "OctoLoop 产品手册", agent: "Documenter-Worker", agentType: "bot", updated: "更新于 昨天", pri: "mid", progress: { done: 4, total: 4 } },
+            { key: "OCT-4", title: "整理 OctoLoop 上手指南", desc: "七条上手 Loop 的正文与截图。", project: "OctoLoop 产品手册", agent: "Documenter-Worker", agentType: "bot", updated: "更新于 昨天", pri: "mid", progress: { done: 4, total: 4 } },
             { key: "OCT-5", title: "附件测试：仅 PDF → Runtime 抽取文字", desc: "", project: "接线演练场", agent: "Analyser-CC-MBOT", agentType: "bot", updated: "更新于 3 天前", pri: "urgent" },
         ],
     },
@@ -327,7 +327,7 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
     const c = 2 * Math.PI * r
     const frac = total === 0 ? 0 : done / total
     return (
-        <span className="wk-mv2-ring" title={`子 issue ${done}/${total}`}>
+        <span className="wk-mv2-ring" title={`子 Loop ${done}/${total}`}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
                 <circle cx="7" cy="7" r={r} fill="none" stroke="var(--wk-border-default)" strokeWidth="2" />
                 <circle cx="7" cy="7" r={r} fill="none" stroke={frac >= 1 ? "#2f6fed" : "#2ea44f"} strokeWidth="2" strokeDasharray={`${c * frac} ${c}`} transform="rotate(-90 7 7)" strokeLinecap="round" />
@@ -337,10 +337,10 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
     )
 }
 
-const CARD_PROPS = ["优先级", "描述", "负责人", "开始日期", "截止日期", "项目", "标签", "子 issue 进度"]
+const CARD_PROPS = ["优先级", "描述", "负责人", "开始日期", "截止日期", "项目", "标签", "子 Loop 进度"]
 
 function MatterIssuesBoard({
-    title = "Issues",
+    title = "Loops",
     tabs = ["全部", "成员", "智能体"],
     defaultTab = 0,
 }: {
@@ -360,7 +360,7 @@ function MatterIssuesBoard({
     const toggleProp = (p: string) => setCardProps((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]))
 
     return (
-        <section className="wk-matter-board" aria-label="MatterV2 Issues kanban">
+        <section className="wk-matter-board" aria-label="MatterV2 Loops kanban">
             <header className="wk-matter-board__head">
                 <div className="wk-matter-board__title">
                     <ClipboardList size={17} />
@@ -467,7 +467,7 @@ function MatterIssuesBoard({
                             </header>
 
                             {column.cards.length === 0 ? (
-                                <div className="wk-matter-board__empty">无 issue</div>
+                                <div className="wk-matter-board__empty">无 Loop</div>
                             ) : (
                                 <div className="wk-matter-board__cards">
                                     {column.cards.map((card) => (
@@ -491,7 +491,7 @@ function MatterIssuesBoard({
                                                         {card.agent}
                                                     </span>
                                                 )}
-                                                {cardProps.includes("子 issue 进度") && card.progress && <ProgressRing done={card.progress.done} total={card.progress.total} />}
+                                                {cardProps.includes("子 Loop 进度") && card.progress && <ProgressRing done={card.progress.done} total={card.progress.total} />}
                                                 {card.updated && <time>{card.updated}</time>}
                                             </footer>
                                         </button>
@@ -509,7 +509,7 @@ function MatterIssuesBoard({
 }
 
 // T2 建单双模式(照 Multica 真身 0701 实拍):手动 ⇄ AI 队友互切;
-// 手动=标题/描述+提示行+chips(⋯菜单:开始日期/父issue/子issue);AI 队友=创建者行+意图框+项目下拉+⌘↵。
+// 手动=标题/描述+提示行+chips(⋯菜单:开始日期/父Loop/子Loop);AI 队友=创建者行+意图框+项目下拉+⌘↵。
 const CREATE_ISSUE_AGENT = "Prototyper-Codex-MBOT"
 const CREATE_ISSUE_PROJECTS = ["Octo-Runtime", "OctoLoop 产品手册", "接线演练场"]
 
@@ -526,7 +526,7 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                 className="wk-matter-create-issue__dialog"
                 role="dialog"
                 aria-modal="true"
-                aria-label="新建 issue"
+                aria-label="新建 Loop"
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <header className="wk-matter-create-issue__head">
@@ -544,7 +544,7 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                 {mode === "manual" ? (
                     <>
                         <main className="wk-matter-create-issue__body">
-                            <input className="wk-matter-create-issue__title" placeholder="issue 标题" autoFocus />
+                            <input className="wk-matter-create-issue__title" placeholder="Loop 标题" autoFocus />
                             <textarea className="wk-matter-create-issue__desc" placeholder="添加描述..." />
                         </main>
 
@@ -565,8 +565,8 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                             {moreOpen && (
                                 <div className="wk-matter-create-issue__more" role="menu">
                                     <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>📅 设置开始日期...</button>
-                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↑ 设置父 issue...</button>
-                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↓ 添加子 issue...</button>
+                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↑ 设置父 Loop...</button>
+                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↓ 添加子 Loop...</button>
                                 </div>
                             )}
                         </div>
@@ -623,7 +623,7 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                             <span>继续创建</span>
                         </div>
                         <button type="button" className="wk-matter-create-issue__submit" onClick={onClose}>
-                            {mode === "manual" ? "创建 issue" : "创建 (⌘↵)"}
+                            {mode === "manual" ? "创建 Loop" : "创建 (⌘↵)"}
                         </button>
                     </div>
                 </footer>
@@ -934,7 +934,7 @@ function MatterCoWorkersList() {
                     <Bot size={17} />
                     <strong>AI 队友</strong>
                     <span>{COWORKERS.length}</span>
-                    <p>能领取 issue、留下评论、推进状态的 AI 队友。</p>
+                    <p>能领取 Loop、留下评论、推进状态的 AI 队友。</p>
                     <a href="#coworker-learn">了解更多 →</a>
                 </div>
                 <button type="button" className="wk-matter-coworkers__create" onClick={() => setCreateOpen(true)}><PlusIcon />新建 AI 队友</button>
@@ -1129,7 +1129,7 @@ function MatterCoWorkerDetail({
                         <div className="wk-cw-tasks wk-seccard">
                             <h4>Tasks<span>分配给这个 AI 队友的 Loop</span></h4>
                             <div className="wk-cw-tasks__toolbar">
-                                <label className="wk-cw-tasks__search"><Search size={14} /><input placeholder="搜索 issue..." /></label>
+                                <label className="wk-cw-tasks__search"><Search size={14} /><input placeholder="搜索 Loop..." /></label>
                                 <div className="wk-cw-tasks__chips">
                                     <button type="button" className="is-active">已分配</button>
                                     <button type="button">已创建</button>
@@ -1150,7 +1150,7 @@ function MatterCoWorkerDetail({
                             <textarea
                                 className="wk-cw-editor"
                                 spellCheck={false}
-                                defaultValue={`你是 ${coworker.name},负责把杂乱请求整理成清晰的 issue、评论和下一步动作。\n\n# 工作风格\n- 回复简洁、行动导向。\n- 只在缺失信息会改变结论时提一个澄清问题。\n\n# 范围\n把 workspace 上下文、issue 状态、运行时可用性当作输入。`}
+                                defaultValue={`你是 ${coworker.name},负责把杂乱请求整理成清晰的 Loop、评论和下一步动作。\n\n# 工作风格\n- 回复简洁、行动导向。\n- 只在缺失信息会改变结论时提一个澄清问题。\n\n# 范围\n把 workspace 上下文、Loop 状态、运行时可用性当作输入。`}
                             />
                             <div className="wk-cw-savebar"><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
                         </div>
@@ -1471,7 +1471,7 @@ function MatterIssueDetail({
     const isRuntimeQuestion = issue.key === "OCT-3"
 
     return (
-        <section className="wk-matter-issue-detail" aria-label="Issue detail prototype">
+        <section className="wk-matter-issue-detail" aria-label="Loop detail prototype">
             <header className="wk-matter-issue-detail__top">
                 <div className="wk-matter-issue-detail__crumb">
                     <span>📁 {issue.project}</span>
@@ -1500,7 +1500,7 @@ function MatterIssueDetail({
                             </>
                         ) : (
                             <>
-                                <p>{issue.desc || "请继续推进这个 issue，并补充下一步处理建议。"}</p>
+                                <p>{issue.desc || "请继续推进这个 Loop，并补充下一步处理建议。"}</p>
                                 <ol>
                                     <li>确认当前任务目标。</li>
                                     <li>补齐必要上下文。</li>
@@ -1509,7 +1509,7 @@ function MatterIssueDetail({
                             </>
                         )}
                         <div className="wk-matter-issue-detail__inline-actions">☺︎　📎</div>
-                        <button type="button" className="wk-matter-issue-detail__add">＋ 添加子 issue</button>
+                        <button type="button" className="wk-matter-issue-detail__add">＋ 添加子 Loop</button>
                     </section>
 
                     <section className="wk-matter-issue-detail__activity">
@@ -1525,7 +1525,7 @@ function MatterIssueDetail({
                                 "运行环境询问回答：",
                                 "1. Workspace 绝对路径： /Users/lvsijia/multica_workspaces/bfa7830c-929d-493d-9650-4f31d86e54ff/550c0581/workdir",
                                 "2. 机器名称： kaka-mbp（macOS / Darwin 25.5.0，arm64 架构，Apple Silicon）",
-                                "3. 执行状态：正常。CLI 认证有效，可以正常读写 issue、评论及状态，环境健康无异常。",
+                                "3. 执行状态：正常。CLI 认证有效，可以正常读写 Loop、评论及状态，环境健康无异常。",
                             ]}
                         />
                         <div className="wk-matter-issue-detail__events">
@@ -1553,7 +1553,7 @@ function MatterIssueDetail({
                     <button type="button">＋ 添加字段</button>
 
                     <h3>Pull Request⌄</h3>
-                    <p>还没有关联的 PR。在 PR 的分支名、标题或正文里引用本 issue 的 identifier 即可自动关联。</p>
+                    <p>还没有关联的 PR。在 PR 的分支名、标题或正文里引用本 Loop 的 identifier 即可自动关联。</p>
 
                     <h3>详情⌄</h3>
                     <dl>
