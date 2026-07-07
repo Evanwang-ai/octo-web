@@ -2094,7 +2094,7 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
     return (
         <div className="wk-sqc" role="presentation" onMouseDown={onClose}>
             <section
-                className="wk-sqc__dialog"
+                className="wk-sqc__dialog is-two-pane"
                 role="dialog"
                 aria-modal="true"
                 aria-label="创建小队"
@@ -2108,6 +2108,7 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                     <button type="button" className="wk-sqc__close" onClick={onClose} aria-label="关闭"><X size={18} /></button>
                 </header>
 
+                <div className="wk-sqc__panes">
                 <main className="wk-sqc__body">
                     <div className="wk-sqc__field">
                         <span className="wk-sqc__label">名称</span>
@@ -2203,6 +2204,30 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                         </div>
                     </div>
                 </main>
+                <aside className="wk-sqp">
+                    <span className="wk-sqp__label">预览</span>
+                    <div className="wk-sqp__card">
+                        <SquadAvatar name={name.trim() || "新小队"} size={40} />
+                        <strong className="wk-sqp__name">{name.trim() || "新小队"}</strong>
+                        {desc.trim() && <p className="wk-sqp__desc">{desc}</p>}
+                        <div className="wk-sqp__roster">
+                            <div className="wk-sqp__rrow">
+                                <span className="wk-sqp__rlabel">领队</span>
+                                {leaderId
+                                    ? <span className="wk-sqp__m"><AgentAvatar name={byId(leaderId).name} size={20} /><span>{byId(leaderId).name}</span></span>
+                                    : <span className="wk-sqp__none">未指定</span>}
+                            </div>
+                            <div className="wk-sqp__rrow">
+                                <span className="wk-sqp__rlabel">队员</span>
+                                {memberIds.length
+                                    ? <span className="wk-sqp__stack">{memberIds.map((id) => <AgentAvatar key={id} name={byId(id).name} size={20} />)}</span>
+                                    : <span className="wk-sqp__none">可选</span>}
+                            </div>
+                        </div>
+                    </div>
+                    <p className="wk-sqp__foot">创建后出现在 小队 列表,可整体派单给领队。</p>
+                </aside>
+                </div>
 
                 <footer className="wk-sqc__foot">
                     <span className="wk-sqc__count">

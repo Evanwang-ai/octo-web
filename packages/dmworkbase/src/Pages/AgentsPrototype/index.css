@@ -435,3 +435,20 @@
 /* C2:模型选择字段 */
 .wk-agent-modal__modelrow { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-md, 8px); background: var(--wk-bg-surface, #fff); color: var(--wk-text-tertiary, #8f959e); }
 .wk-agent-modal__modelsel { flex: 1 1 auto; height: 100%; border: none; background: transparent; font-size: 13.5px; color: var(--wk-text-primary, #1f2329); cursor: pointer; outline: none; }
+
+
+/* R4-4:配置 AI 队友 两栏(表单 + 右侧队友卡实时预览) */
+.wk-agent-modal__dialog.is-two-pane { width: 760px; max-width: calc(100vw - 40px); }
+.wk-agent-modal__panes { display: grid; grid-template-columns: minmax(0, 1fr) 272px; }
+.wk-agent-modal__panes .wk-agent-modal__body { border-right: 1px solid var(--wk-border-default, #e6e8eb); }
+.wk-ap { display: flex; flex-direction: column; gap: 12px; padding: 20px 18px; background: var(--wk-bg-base, #fafbfc); }
+.wk-ap__label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--wk-text-tertiary, #8f959e); }
+.wk-ap__card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: 12px; background: var(--wk-bg-surface, #fff); box-shadow: var(--wk-shadow-sm, 0 1px 2px rgba(0,0,0,0.05)); }
+.wk-ap__avatar { position: relative; width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--wk-brand-tint-08, rgba(0,0,0,0.06)); color: var(--wk-text-primary, #1f2329); font-size: 17px; font-weight: 650; }
+.wk-ap__avatar i { position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px; border-radius: 50%; background: var(--wk-color-online, #3ba55d); border: 2px solid var(--wk-bg-surface, #fff); }
+.wk-ap__name { font-size: 15px; font-weight: 650; color: var(--wk-text-primary, #1f2329); word-break: break-word; }
+.wk-ap__sub { font-size: 12px; color: var(--wk-text-tertiary, #8f959e); }
+.wk-ap__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wk-ap__chip { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--wk-brand-tint-06, rgba(0,0,0,0.05)); color: var(--wk-text-secondary, #51565d); }
+.wk-ap__desc { font-size: 12px; color: var(--wk-text-tertiary, #8f959e); line-height: 1.5; margin: 4px 0 0; }
+.wk-ap__foot { font-size: 11px; color: var(--wk-text-disabled, #c9cdd4); line-height: 1.5; margin: 0; }

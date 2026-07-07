@@ -361,7 +361,7 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
     return (
         <div className="wk-agent-modal" role="presentation" onMouseDown={onClose}>
             <section
-                className="wk-agent-modal__dialog"
+                className={`wk-agent-modal__dialog${step === "config" ? " is-two-pane" : ""}`}
                 role="dialog"
                 aria-modal="true"
                 aria-label="接入 AI 队友"
@@ -405,6 +405,7 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
                         <p className="wk-agent-modal__rtnote">找不到想要的?去「我的 · Runtime」装一个新的运行时,它就会出现在这里。</p>
                     </div>
                 ) : (
+                    <div className="wk-agent-modal__panes">
                     <div className="wk-agent-modal__body">
                         <div className="wk-agent-modal__picked">
                             <span className="wk-agent-modal__rticon">{picked?.icon}</span>
@@ -460,6 +461,21 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
 
                         <PrototypeSelect label="指令" icon={<ClipboardList size={17} />} title="点击撰写指令..." muted />
                         <PrototypeSelect label="Skills" icon={<Plus size={17} />} title="从工作区添加 skill" muted />
+                    </div>
+                    <aside className="wk-ap">
+                        <span className="wk-ap__label">预览</span>
+                        <div className="wk-ap__card">
+                            <div className="wk-ap__avatar">{(name.trim() || picked?.name || "?").slice(0, 1).toUpperCase()}<i /></div>
+                            <strong className="wk-ap__name">{name.trim() || "新队友"}</strong>
+                            <span className="wk-ap__sub">{picked?.icon} {picked?.name} · {picked?.machine}</span>
+                            <div className="wk-ap__chips">
+                                <span className="wk-ap__chip"><Cpu size={11} />{model}</span>
+                                <span className="wk-ap__chip">{visibility === "workspace" ? "工作区" : "个人"}</span>
+                            </div>
+                            <p className="wk-ap__desc">能领取回路、留下评论、推进状态的 AI 队友。</p>
+                        </div>
+                        <p className="wk-ap__foot">创建后出现在 AI 队友列表,可被派单。</p>
+                    </aside>
                     </div>
                 )}
 

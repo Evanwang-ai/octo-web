@@ -7042,3 +7042,22 @@
 .mlv-squadmembers .wk-avatarm { margin-left: -6px; box-shadow: 0 0 0 1.5px var(--wk-bg-surface, #fff); }
 .mlv-squadmembers .wk-avatarm:first-child { margin-left: 0; }
 .mlv-leader--creator { min-width: 96px; }
+
+/* R4-4:创建小队 两栏(表单 + 右侧小队卡实时预览) */
+.wk-sqc__dialog.is-two-pane { width: 780px; max-width: calc(100vw - 40px); }
+.wk-sqc__panes { display: grid; grid-template-columns: minmax(0, 1fr) 280px; min-height: 0; }
+.wk-sqc__panes .wk-sqc__body { border-right: 1px solid var(--wk-border-default, #e6e8eb); }
+.wk-sqp { display: flex; flex-direction: column; gap: 12px; padding: 20px 18px; background: var(--wk-bg-base, #fafbfc); }
+.wk-sqp__label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--wk-text-tertiary, #8f959e); }
+.wk-sqp__card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: 12px; background: var(--wk-bg-surface, #fff); box-shadow: var(--wk-shadow-sm, 0 1px 2px rgba(0,0,0,0.05)); }
+.wk-sqp__name { font-size: 15px; font-weight: 650; color: var(--wk-text-primary, #1f2329); word-break: break-word; }
+.wk-sqp__desc { font-size: 12px; color: var(--wk-text-tertiary, #8f959e); line-height: 1.5; margin: 0; }
+.wk-sqp__roster { display: flex; flex-direction: column; gap: 8px; width: 100%; padding-top: 8px; border-top: 1px solid var(--wk-brand-tint-06, rgba(0,0,0,0.05)); }
+.wk-sqp__rrow { display: flex; align-items: center; gap: 10px; }
+.wk-sqp__rlabel { flex: 0 0 32px; font-size: 11.5px; color: var(--wk-text-tertiary, #8f959e); }
+.wk-sqp__m { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--wk-text-primary, #1f2329); }
+.wk-sqp__none { font-size: 12px; color: var(--wk-text-disabled, #c9cdd4); }
+.wk-sqp__stack { display: inline-flex; align-items: center; }
+.wk-sqp__stack .wk-avatarm { margin-left: -6px; box-shadow: 0 0 0 1.5px var(--wk-bg-surface, #fff); }
+.wk-sqp__stack .wk-avatarm:first-child { margin-left: 0; }
+.wk-sqp__foot { font-size: 11px; color: var(--wk-text-disabled, #c9cdd4); line-height: 1.5; margin: 0; }
