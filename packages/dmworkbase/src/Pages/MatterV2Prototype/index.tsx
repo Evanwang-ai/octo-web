@@ -1832,166 +1832,178 @@ function AddSkillModal({ onClose }: { onClose: () => void }) {
     )
 }
 
-// ④ WorkOS 骨架(06-WorkOS 蒸馏):全宽单栏 = 身份头(大头像+名+元数据 chips)→ 水平 tab → section 卡片流。
-function MatterCoWorkerDetail({
-    coworker,
-}: {
-    coworker: typeof COWORKERS[number]
-}) {
-    const [page, setPage] = useState<CwTab>("activity")
+// R6-C(Evan):AI 队友详情对齐 feat/loop-react WorkerDetailView —— 两栏(主+右Inspector 296)、档案(GitHub 热力格+履历)/配置(Attio 左子导航)。
+const CFG_SECTIONS = [
+    { key: "instructions", label: "Instructions" },
+    { key: "env", label: "环境变量" },
+    { key: "args", label: "自定义参数" },
+    { key: "mcp", label: "MCP" },
+    { key: "skills", label: "技能" },
+] as const
+type CfgSection = typeof CFG_SECTIONS[number]["key"]
+
+const CW_RUNS = [
+    { title: "检查新接口边界处理", trigger: "评论触发", state: "cancelled", when: "9 小时前", dur: "4m 50s" },
+    { title: "复审支付模块 PR", trigger: "自动化运行", state: "ok", when: "1 天前", dur: "6m 50s" },
+    { title: "评审数据管道重构方案", trigger: "评论触发", state: "ok", when: "2 天前", dur: "2m 50s" },
+    { title: "检查新接口边界处理", trigger: "自动化运行", state: "ok", when: "2 天前", dur: "3m 50s" },
+    { title: "复审支付模块 PR", trigger: "评论触发", state: "cancelled", when: "3 天前", dur: "6m 50s" },
+] as const
+
+// GitHub 式 30 天热力格(端口自 feat/loop-react Heatmap30):5 周列×7 行,前置隐藏格对齐,末格=今天。
+function Heatmap30({ seed }: { seed: string }) {
+    const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h }
+    const days = Array.from({ length: 30 }, (_, i) => ({ total: hash(`${seed}-${i}`) % 5, fail: hash(`${seed}-f-${i}`) % 9 === 0 ? 1 : 0, i }))
+    const cells: Array<{ total: number; fail: number; i: number } | null> = [...Array(5).fill(null), ...days]
+    const cols = Array.from({ length: 5 }, (_, c) => cells.slice(c * 7, c * 7 + 7))
+    const lv = (v: number) => (v === 0 ? 0 : v <= 1 ? 1 : v <= 2 ? 2 : v <= 3 ? 3 : 4)
+    return (
+        <div className="wk-hm" aria-hidden>
+            {cols.map((col, ci) => (
+                <div key={ci} className="wk-hm-col">
+                    {col.map((d, ri) => d === null
+                        ? <span key={ri} className="wk-hm-cell is-pad" />
+                        : <span key={ri} className={`wk-hm-cell is-lv${lv(d.total)}`} title={`第 ${d.i + 1} 天:${d.total} 次运行 · ${d.fail} 次失败`} />)}
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function CwRunRow({ r }: { r: typeof CW_RUNS[number] }) {
+    return (
+        <div className="wk-runrow">
+            <span className={`wk-runrow__dot is-${r.state}`} />
+            <strong className="wk-runrow__title">{r.title}</strong>
+            <span className="wk-runrow__trigger">{r.trigger}</span>
+            <span className="wk-flex1" />
+            <span className="wk-runrow__meta">{r.when} · {r.dur}</span>
+        </div>
+    )
+}
+
+function MatterCoWorkerDetail({ coworker }: { coworker: typeof COWORKERS[number] }) {
+    const [page, setPage] = useState<"profile" | "config">("profile")
+    const [cfg, setCfg] = useState<CfgSection>("instructions")
     const [addSkillOpen, setAddSkillOpen] = useState(false)
+    const rate = Math.round((CW_RUNS.filter((r) => r.state === "ok").length / CW_RUNS.length) * 100)
 
     return (
-        <section className="wk-matter-coworker-detail" aria-label="AI 队友详情">
-            <header className="wk-matter-coworker-detail__top">
-                <div className="wk-matter-coworker-detail__crumb">
-                    <span>AI 队友</span>
-                    <ChevronRight size={13} />
-                    <strong>{coworker.name}</strong>
-                </div>
-                <MoreHorizontal size={17} />
+        <section className="wk-cwd" aria-label="AI 队友详情">
+            <header className="wk-cwd__crumb">
+                <button type="button" className="wk-cwd__back" onClick={() => WKApp.routeRight.replaceToRoot(<MatterCoWorkersList />)}>AI 队友</button>
+                <ChevronRight size={13} />
+                <strong>{coworker.name}</strong>
+                <span className={`wk-cwd__presence${coworker.archived ? " is-off" : ""}`}><i />{coworker.archived ? "已归档" : `在线${coworker.runs > 0 ? ` · ${coworker.runs} 个任务` : ""}`}</span>
+                <span className="wk-flex1" />
+                <button type="button" className="wk-cwd__archive"><Archive size={14} />{coworker.archived ? "恢复" : "归档"}</button>
             </header>
 
-            <div className="wk-idhost">
-                {/* 身份头:头像 + 名 + 描述 + 元数据 chips 行(WorkOS org_id/域名 chips 位) */}
-                <div className="wk-idhead">
-                    <AgentAvatar name={coworker.name} size={52} dot="online" />
-                    <div className="wk-idhead__main">
-                        <h1>{coworker.name}</h1>
-                        <p>{coworker.desc}</p>
-                        <div className="wk-idhead__chips">
-                            <span className="wk-chip is-online"><i />在线</span>
-                            <span className="wk-chip is-mono">{coworker.runtime}</span>
-                            <span className="wk-chip is-mono">gpt-5.5</span>
-                            <span className="wk-chip">{coworker.visibility === "personal" ? <><Lock size={11} /> Personal</> : "Workspace"}</span>
-                            <span className="wk-chip">并发 {coworker.concurrency}</span>
-                            <span className="wk-chip">思考 · 跟随 CLI</span>
-                        </div>
-                    </div>
-                </div>
-
-                <main className="wk-idhead__content">
-                    <nav className="wk-matter-coworker-detail__tabs">
-                        {CW_TABS.map((tab) => (
-                            <button key={tab.key} type="button" className={page === tab.key ? "is-active" : ""} onClick={() => setPage(tab.key)}>{tab.label}</button>
-                        ))}
+            <div className="wk-cwd__body">
+                <main className="wk-cwd__main">
+                    <nav className="wk-cwd__tabs">
+                        <button type="button" className={page === "profile" ? "is-active" : ""} onClick={() => setPage("profile")}>档案</button>
+                        <button type="button" className={page === "config" ? "is-active" : ""} onClick={() => setPage("config")}>配置</button>
                     </nav>
 
-                    {page === "activity" && (
-                        <div className="wk-matter-coworker-detail__cards">
-                            <section className="wk-seccard">
-                                <h4>概览</h4>
-                                <dl className="wk-seccard__dl">
-                                    <div><dt>所有者</dt><dd><b className="wk-minav">L</b>{coworker.owner}</dd></div>
-                                    <div><dt>创建时间</dt><dd>3 天前</dd></div>
-                                    <div><dt>更新时间</dt><dd>1 小时前</dd></div>
-                                    <div><dt>Skills</dt><dd>{CW_SKILLS.length} 个</dd></div>
-                                </dl>
-                            </section>
-                            <section className="wk-seccard">
-                                <h4>当前<span>无进行中的工作</span></h4>
-                                <p>这个 AI 队友当前没有在跑任何 task。</p>
-                            </section>
-                            <section className="wk-seccard wk-matter-coworker-detail__metric">
-                                <h4>近 30 天<span>表现</span></h4>
-                                <strong>{coworker.runs}</strong>
-                                <p>100% 成功 · 平均 12s</p>
-                                <i />
-                            </section>
-                            <section className="wk-seccard">
-                                <h4>最近工作<span>还没有完成的 task</span></h4>
-                                <p>这个 AI 队友还没有完成过任何 task。</p>
-                            </section>
-                        </div>
-                    )}
-
-                    {page === "tasks" && (
-                        <div className="wk-cw-tasks wk-seccard">
-                            <h4>任务<span>分配给这个 AI 队友的回路</span></h4>
-                            <div className="wk-cw-tasks__toolbar">
-                                <label className="wk-cw-tasks__search"><Search size={14} /><input placeholder="搜索回路..." /></label>
-                                <div className="wk-cw-tasks__chips">
-                                    <button type="button" className="is-active">已分配</button>
-                                    <button type="button">已创建</button>
+                    {page === "profile" ? (
+                        <div className="wk-cwd__profile">
+                            <div className="wk-cwd__hero">
+                                <div className="wk-cwd__heronums">
+                                    <div><strong>{coworker.runs}</strong><span>次运行 · 近 30 天</span></div>
+                                    <em>{rate}% 成功 · 平均 4m 30s</em>
                                 </div>
-                                <div className="wk-cw-tasks__actions">
-                                    <button type="button">筛选</button>
-                                    <button type="button">手动</button>
-                                </div>
+                                <Heatmap30 seed={coworker.name} />
                             </div>
-                            <IssueGroupList rows={ISSUE_ROWS} />
+                            <section className="wk-cwd__runsec">
+                                <h4>履历<span>{CW_RUNS.length} 次执行</span></h4>
+                                <div className="wk-cwd__runs">{CW_RUNS.map((r, i) => <CwRunRow key={i} r={r} />)}</div>
+                            </section>
                         </div>
-                    )}
-
-                    {page === "instructions" && (
-                        <div className="wk-cw-pane wk-seccard">
-                            <h4>指令</h4>
-                            <p className="wk-cw-help">定义这个 AI 队友的身份和工作风格。会注入到每个 task 的上下文。支持 Markdown。</p>
-                            <textarea
-                                className="wk-cw-editor"
-                                spellCheck={false}
-                                defaultValue={`你是 ${coworker.name},负责把杂乱请求整理成清晰的回路、评论和下一步动作。\n\n# 工作风格\n- 回复简洁、行动导向。\n- 只在缺失信息会改变结论时提一个澄清问题。\n\n# 范围\n把 workspace 上下文、回路状态、运行时可用性当作输入。`}
-                            />
-                            <div className="wk-cw-savebar"><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
-                        </div>
-                    )}
-
-                    {page === "skills" && (
-                        <div className="wk-cw-pane wk-seccard">
-                            <h4>Skills<span>来自 我的 Skills(User 层)</span></h4>
-                            <p className="wk-cw-help">分配给该 AI 队友的 skill。本地运行时 skill 会自动可用。</p>
-                            <div className="wk-cw-skillgrid">
-                                {CW_SKILLS.map((skill) => (
-                                    <span key={skill} className="wk-cw-skillchip">{skill}</span>
+                    ) : (
+                        <div className="wk-cwd__cfg">
+                            <nav className="wk-cwd__cfgnav">
+                                {CFG_SECTIONS.map((s) => (
+                                    <button key={s.key} type="button" className={cfg === s.key ? "is-active" : ""} onClick={() => setCfg(s.key)}>{s.label}</button>
                                 ))}
+                            </nav>
+                            <div className="wk-cwd__cfgbody">
+                                {cfg === "instructions" && (
+                                    <div className="wk-cw-pane">
+                                        <div className="wk-cwd__cfghead"><h4>Instructions</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                                        <textarea className="wk-cw-editor" spellCheck={false} defaultValue={`你是 ${coworker.name},负责把杂乱请求整理成清晰的回路、评论和下一步动作。\n\n# 工作风格\n- 回复简洁、行动导向。\n- 只在缺失信息会改变结论时提一个澄清问题。`} />
+                                    </div>
+                                )}
+                                {cfg === "env" && (
+                                    <div className="wk-cw-pane">
+                                        <div className="wk-cwd__cfghead"><h4>环境变量</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                                        <p className="wk-cw-help">在 AI 队友进程启动时注入(例如 <code>ANTHROPIC_API_KEY</code>)。</p>
+                                        <div className="wk-cw-kv"><input placeholder="KEY" /><input placeholder="值" type="password" /><button type="button" aria-label="显示值"><Eye size={14} /></button><button type="button" aria-label="删除"><Trash2 size={14} /></button></div>
+                                        <button type="button" className="wk-cw-addbtn">+ 添加变量</button>
+                                    </div>
+                                )}
+                                {cfg === "args" && (
+                                    <div className="wk-cw-pane">
+                                        <div className="wk-cwd__cfghead"><h4>自定义参数</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                                        <p className="wk-cw-help">启动命令追加的额外 CLI 参数。多 token 的参数可共用一行。</p>
+                                        <div className="wk-cw-kv is-one"><input placeholder="--flag 值" /><button type="button" aria-label="删除"><Trash2 size={14} /></button></div>
+                                        <button type="button" className="wk-cw-addbtn">+ 添加</button>
+                                    </div>
+                                )}
+                                {cfg === "mcp" && (
+                                    <div className="wk-cw-pane">
+                                        <div className="wk-cwd__cfghead"><h4>MCP</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                                        <p className="wk-cw-help">转发给运行时 CLI 的 MCP 服务器配置,留空回退 CLI 默认。</p>
+                                        <textarea className="wk-cw-editor is-json" spellCheck={false} defaultValue={`{\n  "mcpServers": {\n    "fetch": { "command": "uvx", "args": ["mcp-server-fetch"] }\n  }\n}`} />
+                                    </div>
+                                )}
+                                {cfg === "skills" && (
+                                    <div className="wk-cw-pane">
+                                        <div className="wk-cwd__cfghead"><h4>技能</h4><button type="button" className="wk-cw-save" onClick={() => setAddSkillOpen(true)}>+ 添加 skill</button></div>
+                                        <div className="wk-cw-skillgrid">{CW_SKILLS.map((skill) => <span key={skill} className="wk-cw-skillchip">{skill}</span>)}</div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="wk-seccard__actions">
-                                <button type="button" className="wk-cw-save" onClick={() => setAddSkillOpen(true)}>+ 添加 skill</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {page === "connectors" && (
-                        <div className="wk-cw-pane wk-cw-connectors">
-                            <section>
-                                <h4>MCP</h4>
-                                <p className="wk-cw-help">转发给运行时 CLI 的 MCP 服务器配置。原样保存,可能包含密钥——只有 AI 队友所有者和工作区管理员可以读取。留空则回退到 CLI 自身的默认设置。</p>
-                                <textarea
-                                    className="wk-cw-editor is-json"
-                                    spellCheck={false}
-                                    defaultValue={`{\n  "mcpServers": {\n    "fetch": {\n      "command": "uvx",\n      "args": ["mcp-server-fetch"]\n    }\n  }\n}`}
-                                />
-                            </section>
-                            <section>
-                                <h4>CLI · 环境变量</h4>
-                                <p className="wk-cw-help">在 AI 队友进程启动时注入(例如 <code>ANTHROPIC_API_KEY</code>、<code>ANTHROPIC_BASE_URL</code>)。</p>
-                                <div className="wk-cw-kv">
-                                    <input placeholder="KEY" />
-                                    <input placeholder="值" type="password" />
-                                    <button type="button" aria-label="显示值"><Eye size={14} /></button>
-                                    <button type="button" aria-label="删除"><Trash2 size={14} /></button>
-                                </div>
-                                <button type="button" className="wk-cw-addbtn">+ 添加</button>
-                            </section>
-                            <section>
-                                <h4>CLI · 自定义参数</h4>
-                                <p className="wk-cw-help">启动命令追加的额外 CLI 参数。多 token 的参数可以共用一行——传给 CLI 前会按空白拆分。</p>
-                                <div className="wk-cw-kv is-one">
-                                    <input placeholder="--flag 值" />
-                                    <button type="button" aria-label="删除"><Trash2 size={14} /></button>
-                                </div>
-                                <button type="button" className="wk-cw-addbtn">+ 添加</button>
-                            </section>
-                            <div className="wk-cw-savebar"><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
                         </div>
                     )}
                 </main>
+
+                <aside className="wk-cwd__inspector">
+                    <div className="wk-cwd__idcard">
+                        <AgentAvatar name={coworker.name} size={56} dot={coworker.archived ? "idle" : "online"} />
+                        <strong>{coworker.name}</strong>
+                        <p>{coworker.desc}</p>
+                    </div>
+                    <section className="wk-cwd__insgroup">
+                        <h5>属性</h5>
+                        <dl>
+                            <div><dt>设备</dt><dd>{coworker.runtime}</dd></div>
+                            <div><dt>模型</dt><dd className="is-mono">claude-opus-4.8</dd></div>
+                            <div><dt>思考力度</dt><dd>max</dd></div>
+                            <div><dt>可见性</dt><dd>{coworker.visibility === "personal" ? "仅自己" : "空间可见"}</dd></div>
+                            <div><dt>并发</dt><dd>{coworker.concurrency}</dd></div>
+                        </dl>
+                    </section>
+                    <section className="wk-cwd__insgroup">
+                        <h5>详情</h5>
+                        <dl>
+                            <div><dt>所有者</dt><dd><b className="wk-minav">L</b>{coworker.owner}</dd></div>
+                            <div><dt>创建时间</dt><dd>9 天前</dd></div>
+                            <div><dt>更新时间</dt><dd>1 天前</dd></div>
+                        </dl>
+                    </section>
+                    <section className="wk-cwd__insgroup">
+                        <h5>技能 <span>{CW_SKILLS.length}</span></h5>
+                        <div className="wk-cwd__inskills">{CW_SKILLS.slice(0, 6).map((s) => <span key={s} className="wk-cwd__skillchip">{s}</span>)}</div>
+                    </section>
+                </aside>
             </div>
 
             {addSkillOpen && <AddSkillModal onClose={() => setAddSkillOpen(false)} />}
         </section>
     )
 }
+
 
 function MatterSquadsList() {
     const [createOpen, setCreateOpen] = useState(false)
