@@ -98,7 +98,7 @@
 .wk-matter-v2-sidebar__quick {
   display: flex;
   flex-direction: column;
-  padding: 0 0 12px;
+  padding: 0 0 10px;
 }
 
 .wk-matter-v2-sidebar__quick button {
@@ -137,6 +137,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  margin-top: 8px;
 }
 
 .wk-matter-v2-sidebar__group {
