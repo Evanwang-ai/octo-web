@@ -1224,7 +1224,7 @@ function AutomationCreateModal({ onClose }: { onClose: () => void }) {
                         </select>
                     </div>
                     <div className="wk-awz__row is-when">
-                        <span>When</span>
+                        <span>触发时间</span>
                         <input
                             placeholder="用一句话描述时间,例如:每天 09:00"
                             value={when}
@@ -1527,7 +1527,7 @@ function MatterCoWorkersList() {
                 <div className="wk-matter-coworkers__row wk-matter-coworkers__head-row" role="row">
                     <div role="columnheader">AI 队友</div>
                     <div role="columnheader">状态</div>
-                    <div role="columnheader">Owner</div>
+                    <div role="columnheader">所有者</div>
                     <div role="columnheader">运行时</div>
                     <div role="columnheader">最近活跃 ↓</div>
                     <div role="columnheader">运行次数</div>
@@ -1568,10 +1568,10 @@ function MatterCoWorkersList() {
 // T3:五 tab(动态/Tasks/指令/Skills/Connectors[MCP+CLI]);Properties 先按真身字段,后续换 Agent Card。
 const CW_TABS = [
     { key: "activity", label: "动态" },
-    { key: "tasks", label: "Tasks" },
+    { key: "tasks", label: "任务" },
     { key: "instructions", label: "指令" },
     { key: "skills", label: "Skills" },
-    { key: "connectors", label: "Connectors" },
+    { key: "connectors", label: "连接器" },
 ] as const
 type CwTab = typeof CW_TABS[number]["key"]
 
@@ -1698,7 +1698,7 @@ function MatterCoWorkerDetail({
 
                     {page === "tasks" && (
                         <div className="wk-cw-tasks wk-seccard">
-                            <h4>Tasks<span>分配给这个 AI 队友的 Loop</span></h4>
+                            <h4>任务<span>分配给这个 AI 队友的 Loop</span></h4>
                             <div className="wk-cw-tasks__toolbar">
                                 <label className="wk-cw-tasks__search"><Search size={14} /><input placeholder="搜索 Loop..." /></label>
                                 <div className="wk-cw-tasks__chips">
@@ -1978,11 +1978,11 @@ function MatterSquadDetail({
                     <nav className="wk-matter-squad-detail__tabs">
                         <button type="button" className={activeTab === "members" ? "is-active" : ""} onClick={() => setActiveTab("members")}>
                             <Users size={15} />
-                            Members
+                            成员
                         </button>
                         <button type="button" className={activeTab === "instructions" ? "is-active" : ""} onClick={() => setActiveTab("instructions")}>
                             <ClipboardList size={15} />
-                            Instructions
+                            指引
                         </button>
                     </nav>
 
@@ -1995,7 +1995,7 @@ function MatterSquadDetail({
                                         <span className="wk-sqtable__avatar"><Bot size={15} /><i /></span>
                                         <div className="wk-sqtable__who">
                                             <strong>{member}</strong>
-                                            <small>Agent · 最近活动 1 分钟前</small>
+                                            <small>AI 队友 · 最近活动 1 分钟前</small>
                                         </div>
                                         <span className={`wk-chip${index === 0 ? " is-leader" : ""}`}>{index === 0 ? "负责人" : "成员"}</span>
                                         <span className="wk-sqtable__state">空闲</span>
@@ -2009,9 +2009,9 @@ function MatterSquadDetail({
                         </section>
                     ) : (
                         <section className="wk-seccard">
-                            <h4>Instructions</h4>
+                            <h4>小队指引</h4>
                             <p className="wk-cw-help">小队指引会在领队处理分配给该小队的 Loop 时注入到它的 prompt 中。可用来给领队提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
-                            <textarea className="wk-cw-editor" placeholder="e.g. Always start by writing a failing test. Prefer small, atomic commits." />
+                            <textarea className="wk-cw-editor" placeholder="例如:处理任何 Loop 前先与相关方对齐范围;优先小步、可回滚的提交。" />
                             <div className="wk-seccard__actions">
                                 <button type="button" className="wk-cw-save"><Save size={14} />保存</button>
                             </div>
