@@ -632,29 +632,60 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
     )
 }
 
-// A1 自动化(照 feat/loop-react S10 语法):行=开关/标题/[已停用 chip]/副标题(cron 人话·去向)/
-// 右缘(健康点串·执行方·下次);启用/停用双组;空态居中卡;新建=三步向导(要做什么→什么时候→谁来做)。
+// A1 自动化(0707 批改):列表=Obvious 式卡片(标题+说明两行+频率 tag,参照 11-Obvious Daily Briefing);
+// 新建=单页表单(全字段一屏,不分步);详情页=feat/loop-react AutomationDetailView 语法(属性/任务说明/运行历史)。
 interface AutomationRow {
     id: string
     title: string
+    desc: string
     enabled: boolean
     cronText: string
     target: string
     executor: string
     next: string
     health: Array<"ok" | "skip" | "fail">
+    runs: Array<{ state: "ok" | "skip" | "fail"; dur: string; at: string }>
 }
 
 const AUTOMATIONS_SEED: AutomationRow[] = [
-    { id: "auto-digest", title: "Daily news digest", enabled: true, cronText: "每天 09:00", target: "发到 Octo-Runtime", executor: "Prototyper-Codex-MBOT", next: "明天 09:00", health: ["ok", "ok", "ok", "skip", "ok", "ok", "ok", "ok"] },
-    { id: "auto-weekly", title: "周报汇总", enabled: false, cronText: "每周五 17:00", target: "发到 OctoLoop 产品手册", executor: "Documenter-Worker", next: "", health: ["ok", "ok", "fail", "ok"] },
+    {
+        id: "auto-digest",
+        title: "Daily news digest",
+        desc: "每天早上收集团队相关的行业动态,汇总成一份晨报发到项目里。",
+        enabled: true,
+        cronText: "每天 09:00",
+        target: "Octo-Runtime",
+        executor: "Prototyper-Codex-MBOT",
+        next: "明天 09:00",
+        health: ["ok", "ok", "ok", "skip", "ok", "ok", "ok", "ok"],
+        runs: [
+            { state: "ok", dur: "2m 41s", at: "今天 09:00" },
+            { state: "ok", dur: "2m 58s", at: "昨天 09:00" },
+            { state: "skip", dur: "—", at: "6月28日 09:00" },
+            { state: "ok", dur: "3m 02s", at: "6月27日 09:00" },
+            { state: "ok", dur: "2m 33s", at: "6月26日 09:00" },
+        ],
+    },
+    {
+        id: "auto-weekly",
+        title: "周报汇总",
+        desc: "每周五扫描本周完成的 Loop,生成周报草稿等确认。",
+        enabled: false,
+        cronText: "每周五 17:00",
+        target: "OctoLoop 产品手册",
+        executor: "Documenter-Worker",
+        next: "",
+        health: ["ok", "ok", "fail", "ok"],
+        runs: [
+            { state: "ok", dur: "4m 12s", at: "6月27日 17:00" },
+            { state: "fail", dur: "0m 41s", at: "6月20日 17:00" },
+            { state: "ok", dur: "3m 55s", at: "6月13日 17:00" },
+        ],
+    },
 ]
 
-const AWZ_STEPS = ["要做什么", "什么时候", "谁来做"]
-
-function AutomationWizardModal({ onClose }: { onClose: () => void }) {
-    const [step, setStep] = useState(0)
-
+// 单页新建:全字段一屏(0707 批改:不分步)
+function AutomationCreateModal({ onClose }: { onClose: () => void }) {
     return (
         <div className="wk-awz" role="presentation" onMouseDown={onClose}>
             <section className="wk-awz__dialog" role="dialog" aria-modal="true" aria-label="新建自动化" onMouseDown={(e) => e.stopPropagation()}>
@@ -663,107 +694,127 @@ function AutomationWizardModal({ onClose }: { onClose: () => void }) {
                     <button type="button" aria-label="关闭" onClick={onClose}>×</button>
                 </header>
 
-                <div className="wk-awz__steps">
-                    {AWZ_STEPS.map((s, i) => (
-                        <button key={s} type="button" className={i === step ? "is-active" : i < step ? "is-done" : ""} onClick={() => { if (i < step) setStep(i) }}>
-                            <i>{i + 1}</i>
-                            {s}
-                        </button>
-                    ))}
-                </div>
-
                 <main className="wk-awz__body">
-                    {step === 0 && (
-                        <>
-                            <label className="wk-awz__field">
-                                <span>名称</span>
-                                <input autoFocus placeholder="例如：每日晨报" />
-                            </label>
-                            <label className="wk-awz__field">
-                                <span>任务说明<em>AI 队友每次运行时读取</em></span>
-                                <textarea rows={5} placeholder={"# 目标\n你希望 AI 队友完成什么?\n\n# 步骤\n1. ...\n2. ..."} spellCheck={false} />
-                            </label>
-                        </>
-                    )}
-                    {step === 1 && (
-                        <>
-                            <label className="wk-awz__field">
-                                <span>频率</span>
-                                <select defaultValue="每天"><option>每天</option><option>每个工作日</option><option>每周五</option><option>每月 1 日</option></select>
-                            </label>
-                            <label className="wk-awz__field">
-                                <span>时间</span>
-                                <input type="time" defaultValue="09:00" />
-                            </label>
-                            <p className="wk-awz__hint">保存后会自动运行,直到停用。</p>
-                        </>
-                    )}
-                    {step === 2 && (
-                        <>
-                            <label className="wk-awz__field">
-                                <span>执行方</span>
-                                <select defaultValue="Prototyper-Codex-MBOT">
-                                    {COWORKERS.map((c) => <option key={c.id}>{c.name}</option>)}
-                                    {SQUADS.map((s) => <option key={s.id}>{s.name}(小队)</option>)}
-                                </select>
-                            </label>
-                            <label className="wk-awz__field">
-                                <span>发到哪</span>
-                                <select defaultValue="Octo-Runtime">
-                                    {PROJECTS_ROWS.map((p) => <option key={p.name}>{p.name}</option>)}
-                                </select>
-                            </label>
-                        </>
-                    )}
+                    <label className="wk-awz__field">
+                        <span>名称</span>
+                        <input autoFocus placeholder="例如：每日晨报" />
+                    </label>
+                    <label className="wk-awz__field">
+                        <span>任务说明<em>AI 队友每次运行时读取</em></span>
+                        <textarea rows={5} placeholder={"# 目标\n你希望 AI 队友完成什么?\n\n# 步骤\n1. ...\n2. ..."} spellCheck={false} />
+                    </label>
+                    <div className="wk-awz__grid">
+                        <label className="wk-awz__field">
+                            <span>频率</span>
+                            <select defaultValue="每天"><option>每天</option><option>每个工作日</option><option>每周五</option><option>每月 1 日</option></select>
+                        </label>
+                        <label className="wk-awz__field">
+                            <span>时间</span>
+                            <input type="time" defaultValue="09:00" />
+                        </label>
+                    </div>
+                    <div className="wk-awz__grid">
+                        <label className="wk-awz__field">
+                            <span>执行方</span>
+                            <select defaultValue="Prototyper-Codex-MBOT">
+                                {COWORKERS.map((c) => <option key={c.id}>{c.name}</option>)}
+                                {SQUADS.map((s) => <option key={s.id}>{s.name}(小队)</option>)}
+                            </select>
+                        </label>
+                        <label className="wk-awz__field">
+                            <span>发到哪</span>
+                            <select defaultValue="Octo-Runtime">
+                                {PROJECTS_ROWS.map((p) => <option key={p.name}>{p.name}</option>)}
+                            </select>
+                        </label>
+                    </div>
+                    <p className="wk-awz__hint">保存后会自动运行,直到停用。</p>
                 </main>
 
                 <footer className="wk-awz__foot">
-                    {step > 0 && <button type="button" className="wk-awz__text" onClick={() => setStep(step - 1)}>上一步</button>}
                     <button type="button" className="wk-awz__text" onClick={onClose}>取消</button>
-                    {step < 2 ? (
-                        <button type="button" className="wk-awz__primary" onClick={() => setStep(step + 1)}>下一步</button>
-                    ) : (
-                        <button type="button" className="wk-awz__primary" onClick={onClose}>创建自动化</button>
-                    )}
+                    <button type="button" className="wk-awz__primary" onClick={onClose}>创建自动化</button>
                 </footer>
             </section>
         </div>
     )
 }
 
+const RUN_STATE_LABEL = { ok: "运行成功", skip: "已跳过", fail: "运行失败" } as const
+
+function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggle: (id: string) => void }) {
+    return (
+        <section className="wk-avd" aria-label="自动化详情">
+            <header className="wk-avd__top">
+                <div className="wk-avd__crumb">
+                    <span>自动化</span>
+                    <ChevronRight size={13} />
+                    <strong>{row.title}</strong>
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={row.enabled}
+                        aria-label="启用开关"
+                        className={`wk-toggle${row.enabled ? " is-on" : ""}`}
+                        onClick={() => onToggle(row.id)}
+                    >
+                        <i />
+                    </button>
+                    <em className={row.enabled ? "is-on" : ""}>{row.enabled ? "启用中" : "已停用"}</em>
+                </div>
+                <button type="button" className="wk-avd__run">▶ 立即运行</button>
+            </header>
+
+            <div className="wk-avd__main">
+                <section className="wk-avd__card">
+                    <h4>属性</h4>
+                    <dl>
+                        <div><dt>执行方</dt><dd><Bot size={13} />{row.executor}</dd></div>
+                        <div><dt>频率</dt><dd>{row.cronText}</dd></div>
+                        <div><dt>发到</dt><dd>📁 {row.target}</dd></div>
+                        <div><dt>下次运行</dt><dd>{row.enabled && row.next ? row.next : "—"}</dd></div>
+                    </dl>
+                </section>
+
+                <section className="wk-avd__card">
+                    <h4>任务说明<span>AI 队友每次运行时读取</span></h4>
+                    <p>{row.desc}</p>
+                </section>
+
+                <section className="wk-avd__card">
+                    <h4>运行历史<span>近 {row.runs.length} 次</span></h4>
+                    <div className="wk-avd__runs">
+                        {row.runs.map((r, i) => (
+                            <div key={i} className="wk-avd__runrow">
+                                <i className={`is-${r.state}`} />
+                                <span>{RUN_STATE_LABEL[r.state]}</span>
+                                <em>{r.dur}</em>
+                                <time>{r.at}</time>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </section>
+    )
+}
+
 function MatterAutomationList() {
     const [rows, setRows] = useState<AutomationRow[]>(AUTOMATIONS_SEED)
-    const [wizardOpen, setWizardOpen] = useState(false)
+    const [createOpen, setCreateOpen] = useState(false)
+    const [detailId, setDetailId] = useState<string | null>(null)
 
     const toggle = (id: string) => setRows((cur) => cur.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)))
-    const on = rows.filter((r) => r.enabled)
-    const off = rows.filter((r) => !r.enabled)
-    const bothGroups = on.length > 0 && off.length > 0
+    const detail = detailId ? rows.find((r) => r.id === detailId) : null
 
-    const renderRow = (r: AutomationRow) => (
-        <div key={r.id} className={`wk-av-row${r.enabled ? "" : " is-off"}`}>
-            <button
-                type="button"
-                role="switch"
-                aria-checked={r.enabled}
-                aria-label={`${r.title} 开关`}
-                className={`wk-toggle${r.enabled ? " is-on" : ""}`}
-                onClick={() => toggle(r.id)}
-            >
-                <i />
-            </button>
-            <div className="wk-av-body">
-                <strong className="wk-av-title">{r.title}</strong>
-                {!r.enabled && <span className="wk-av-off">已停用</span>}
-                <span className="wk-av-sub">{r.cronText} · {r.target}</span>
-                <span className="wk-av-dots" aria-label="近 8 次运行">
-                    {r.health.map((h, i) => <i key={i} className={`is-${h}`} />)}
-                </span>
-                <span className="wk-av-exec"><Bot size={13} />{r.executor}</span>
-                <span className="wk-av-next">{r.enabled && r.next ? `下次 ${r.next}` : ""}</span>
+    if (detail) {
+        return (
+            <div className="wk-avd__host">
+                <button type="button" className="wk-avd__back" onClick={() => setDetailId(null)}>‹ 自动化</button>
+                <MatterAutomationDetail row={detail} onToggle={toggle} />
             </div>
-        </div>
-    )
+        )
+    }
 
     return (
         <section className="wk-av" aria-label="自动化">
@@ -772,25 +823,50 @@ function MatterAutomationList() {
                     <strong>自动化</strong>
                     <span>{rows.length}</span>
                 </div>
-                <button type="button" className="wk-av-new" onClick={() => setWizardOpen(true)}><PlusIcon />新建自动化</button>
+                <button type="button" className="wk-av-new" onClick={() => setCreateOpen(true)}><PlusIcon />新建自动化</button>
             </header>
 
             {rows.length === 0 ? (
                 <div className="wk-av-empty">
                     <Sparkles size={26} />
                     <p>暂无自动化</p>
-                    <button type="button" className="wk-av-new" onClick={() => setWizardOpen(true)}><PlusIcon />新建自动化</button>
+                    <button type="button" className="wk-av-new" onClick={() => setCreateOpen(true)}><PlusIcon />新建自动化</button>
                 </div>
             ) : (
-                <div className="wk-av-list">
-                    {bothGroups && <div className="wk-av-group">启用中 <em>{on.length}</em></div>}
-                    {on.map(renderRow)}
-                    {bothGroups && <div className="wk-av-group">已停用 <em>{off.length}</em></div>}
-                    {off.map(renderRow)}
+                <div className="wk-av-grid">
+                    {rows.map((r) => (
+                        <div key={r.id} className={`wk-av-card${r.enabled ? "" : " is-off"}`}>
+                            <button type="button" className="wk-av-card__hit" onClick={() => setDetailId(r.id)} aria-label={`打开 ${r.title}`} />
+                            <div className="wk-av-card__head">
+                                <strong>{r.title}</strong>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={r.enabled}
+                                    aria-label={`${r.title} 开关`}
+                                    className={`wk-toggle${r.enabled ? " is-on" : ""}`}
+                                    onClick={(e) => { e.stopPropagation(); toggle(r.id) }}
+                                >
+                                    <i />
+                                </button>
+                            </div>
+                            <p className="wk-av-card__desc">{r.desc}</p>
+                            <div className="wk-av-card__freq">
+                                {r.cronText}
+                                {!r.enabled && <span className="wk-av-off">已停用</span>}
+                            </div>
+                            <div className="wk-av-card__foot">
+                                <span className="wk-av-exec"><Bot size={13} />{r.executor}</span>
+                                <span className="wk-av-dots" aria-label="近 8 次运行">
+                                    {r.health.map((h, i) => <i key={i} className={`is-${h}`} />)}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
-            {wizardOpen && <AutomationWizardModal onClose={() => setWizardOpen(false)} />}
+            {createOpen && <AutomationCreateModal onClose={() => setCreateOpen(false)} />}
         </section>
     )
 }
