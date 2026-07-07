@@ -333,131 +333,144 @@ const RUNTIME_SKILLS = [
     { name: "sql-explain", path: "~/.claude/skills/sql-explain", meta: "4 个文件 · 19 KB" },
 ]
 
+// R4-3(Evan R4):两栏 = 左表单 + 右 skill 卡实时预览(拉开 Multica 三段壳克隆)。
 function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: () => void }) {
+    const [name, setName] = useState("")
+    const [desc, setDesc] = useState("")
+    const [url, setUrl] = useState("")
     const [picked, setPicked] = useState<string | null>(null)
+
+    const META = {
+        manual: { title: "手动创建", sub: "从空白 SKILL.md 开始写。", badge: "手动", action: "创建 skill" },
+        url: { title: "从 URL 导入", sub: "通过 URL 拉取已发布的 skill,文件由服务端拉取。", badge: "URL 导入", action: "导入" },
+        runtime: { title: "从运行时复制", sub: "扫描本地运行时,把它磁盘上的 skill 提升到工作区。", badge: "运行时", action: "导入到工作区" },
+    }[step]
+
+    const pickedSkill = RUNTIME_SKILLS.find((s) => s.name === picked)
+    const urlName = url.trim().replace(/\/+$/, "").split("/").pop() || ""
+    const previewName = step === "manual" ? (name.trim() || "新 skill")
+        : step === "url" ? (urlName || "从 URL 导入")
+        : (picked || "选择一个 skill")
+    const previewDesc = step === "manual" ? (desc.trim() || "描述:什么时候把这个 skill 分配给 AI 队友。")
+        : step === "url" ? (url.trim() || "https://clawhub.ai/owner/skill")
+        : (pickedSkill ? pickedSkill.path : "从上方运行时里挑一个 skill 提升过来。")
+    const canSubmit = step === "manual" ? name.trim().length > 0
+        : step === "url" ? url.trim().length > 0
+        : !!picked
+
     return (
         <div className="wk-skill-import-modal" role="presentation" onMouseDown={onClose}>
             <section
-                className="wk-skill-import-modal__dialog"
+                className="wk-skill-import-modal__dialog is-two-pane"
                 role="dialog"
                 aria-modal="true"
                 aria-label="新建 skill"
                 onMouseDown={(event) => event.stopPropagation()}
             >
-                {step === "manual" && (
-                    <>
-                        <header className="wk-skill-import-modal__head">
-                            <div>
-                                <h2>手动创建</h2>
-                                <p>从空白 SKILL.md 开始写。</p>
-                            </div>
-                            <button type="button" aria-label="关闭" onClick={onClose}><X size={16} /></button>
-                        </header>
-                        <div className="wk-skill-import-modal__body">
-                            <label>
-                                <span>名称</span>
-                                <input autoFocus placeholder="例如：review-helper" />
-                                <small className="wk-skill-import-modal__help">工作区内必须唯一。</small>
-                            </label>
-                            <label>
-                                <span>描述</span>
-                                <textarea className="wk-skill-import-modal__desc" placeholder="用一句话说什么时候应该把这个 skill 分配给 AI 队友。" />
-                            </label>
-                        </div>
-                        <footer className="wk-skill-import-modal__foot">
-                            <button type="button" onClick={onClose}>取消</button>
-                            <button type="button" className="wk-skill-import-modal__submit" disabled>创建 skill</button>
-                        </footer>
-                    </>
-                )}
+                <header className="wk-skill-import-modal__head">
+                    <div>
+                        <h2>{META.title}</h2>
+                        <p>{META.sub}</p>
+                    </div>
+                    <button type="button" aria-label="关闭" onClick={onClose}><X size={16} /></button>
+                </header>
 
-                {step === "url" && (
-                    <>
-                        <header className="wk-skill-import-modal__head">
-                            <div>
-                                <h2>从 URL 导入</h2>
-                                <p>通过 URL 拉取已发布的 skill，文件由服务端拉取。</p>
-                            </div>
-                            <button type="button" aria-label="关闭" onClick={onClose}><X size={16} /></button>
-                        </header>
-                        <div className="wk-skill-import-modal__body">
-                            <label>
-                                <span>Skill URL</span>
-                                <input autoFocus defaultValue="https://clawhub.ai/owner/skill" />
-                            </label>
-                            <div className="wk-skill-import-modal__sources">
-                                <span>支持的来源</span>
-                                <div>
-                                    {[
-                                        ["ClawHub", "clawhub.ai/owner/skill"],
-                                        ["Skills.sh", "skills.sh/owner/skill"],
-                                        ["GitHub", "github.com/owner/repo"],
-                                    ].map(([title, url]) => (
-                                        <button key={title} type="button">
-                                            <strong>{title}</strong>
-                                            <small>{url}</small>
+                <div className="wk-skill-import-modal__panes">
+                    <div className="wk-skill-import-modal__body">
+                        {step === "manual" && (
+                            <>
+                                <label>
+                                    <span>名称</span>
+                                    <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="例如:review-helper" />
+                                    <small className="wk-skill-import-modal__help">工作区内必须唯一。</small>
+                                </label>
+                                <label>
+                                    <span>描述</span>
+                                    <textarea className="wk-skill-import-modal__desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="用一句话说什么时候应该把这个 skill 分配给 AI 队友。" />
+                                </label>
+                            </>
+                        )}
+                        {step === "url" && (
+                            <>
+                                <label>
+                                    <span>Skill URL</span>
+                                    <input autoFocus value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://clawhub.ai/owner/skill" />
+                                </label>
+                                <div className="wk-skill-import-modal__sources">
+                                    <span>支持的来源</span>
+                                    <div>
+                                        {[
+                                            ["ClawHub", "clawhub.ai/owner/skill"],
+                                            ["Skills.sh", "skills.sh/owner/skill"],
+                                            ["GitHub", "github.com/owner/repo"],
+                                        ].map(([title, u]) => (
+                                            <button key={title} type="button" onClick={() => setUrl(`https://${u}`)}>
+                                                <strong>{title}</strong>
+                                                <small>{u}</small>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        {step === "runtime" && (
+                            <>
+                                <label>
+                                    <span>运行时</span>
+                                    <button type="button" className="wk-skill-import-modal__runtime">
+                                        Codex (kaka-mbp) (codex)
+                                        <em>online</em>
+                                    </button>
+                                </label>
+                                <div className="wk-skill-import-modal__rtlist" role="listbox" aria-label="运行时里的 skill">
+                                    {RUNTIME_SKILLS.map((s) => (
+                                        <button
+                                            key={s.name}
+                                            type="button"
+                                            role="option"
+                                            aria-selected={picked === s.name}
+                                            className={`wk-skill-import-modal__rtskill${picked === s.name ? " is-picked" : ""}`}
+                                            onClick={() => setPicked(s.name)}
+                                        >
+                                            <span className="wk-skill-import-modal__rtskill-check">{picked === s.name ? <Check size={14} /> : <Folder size={14} />}</span>
+                                            <span className="wk-skill-import-modal__rtskill-main">
+                                                <strong>{s.name}</strong>
+                                                <small>{s.path}</small>
+                                            </span>
+                                            <span className="wk-skill-import-modal__rtskill-meta">{s.meta}</span>
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-                        </div>
-                        <footer className="wk-skill-import-modal__foot">
-                            <button type="button" onClick={onClose}>取消</button>
-                            <button type="button" className="wk-skill-import-modal__submit" onClick={onClose}>
-                                <Download size={15} />
-                                导入
-                            </button>
-                        </footer>
-                    </>
-                )}
+                                <p className="wk-skill-import-modal__note">导入时会忽略软链、不可读文件、超大文件以及超大目录。</p>
+                            </>
+                        )}
+                    </div>
 
-                {step === "runtime" && (
-                    <>
-                        <header className="wk-skill-import-modal__head">
-                            <div>
-                                <h2>从运行时复制</h2>
-                                <p>扫描本地运行时,把它磁盘上的 skill 提升到工作区。</p>
+                    <aside className="wk-skp">
+                        <span className="wk-skp__label">预览</span>
+                        <div className="wk-skp__card">
+                            <div className="wk-skp__top">
+                                <span className="wk-skp__icon"><FileText size={18} /></span>
+                                <span className="wk-skp__badge">{META.badge}</span>
                             </div>
-                            <button type="button" aria-label="关闭" onClick={onClose}><X size={16} /></button>
-                        </header>
-                        <div className="wk-skill-import-modal__body">
-                            <label>
-                                <span>运行时</span>
-                                <button type="button" className="wk-skill-import-modal__runtime">
-                                    Codex (kaka-mbp) (codex)
-                                    <em>online</em>
-                                </button>
-                            </label>
-                            <div className="wk-skill-import-modal__rtlist" role="listbox" aria-label="运行时里的 skill">
-                                {RUNTIME_SKILLS.map((s) => (
-                                    <button
-                                        key={s.name}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={picked === s.name}
-                                        className={`wk-skill-import-modal__rtskill${picked === s.name ? " is-picked" : ""}`}
-                                        onClick={() => setPicked(s.name)}
-                                    >
-                                        <span className="wk-skill-import-modal__rtskill-check">{picked === s.name ? <Check size={14} /> : <Folder size={14} />}</span>
-                                        <span className="wk-skill-import-modal__rtskill-main">
-                                            <strong>{s.name}</strong>
-                                            <small>{s.path}</small>
-                                        </span>
-                                        <span className="wk-skill-import-modal__rtskill-meta">{s.meta}</span>
-                                    </button>
-                                ))}
+                            <strong className="wk-skp__name">{previewName}</strong>
+                            <p className="wk-skp__desc">{previewDesc}</p>
+                            <div className="wk-skp__files">
+                                <span><FileText size={12} /> SKILL.md</span>
+                                {step === "runtime" && pickedSkill && <em>{pickedSkill.meta}</em>}
                             </div>
-                            <p className="wk-skill-import-modal__note">导入时会忽略软链、不可读文件、超大文件以及超大目录。</p>
                         </div>
-                        <footer className="wk-skill-import-modal__foot">
-                            <span className="wk-skill-import-modal__hint">{picked ? `已选 ${picked}` : "请选择一个 skill 继续。"}</span>
-                            <button type="button" className="wk-skill-import-modal__submit" disabled={!picked} onClick={onClose}>
-                                <Download size={15} />
-                                导入到工作区
-                            </button>
-                        </footer>
-                    </>
-                )}
+                        <p className="wk-skp__foot">创建后出现在工作区 Skills,可分配给任意 AI 队友。</p>
+                    </aside>
+                </div>
+
+                <footer className="wk-skill-import-modal__foot">
+                    <button type="button" onClick={onClose}>取消</button>
+                    <button type="button" className="wk-skill-import-modal__submit" disabled={!canSubmit} onClick={canSubmit ? onClose : undefined}>
+                        {step !== "manual" && <Download size={15} />}
+                        {META.action}
+                    </button>
+                </footer>
             </section>
         </div>
     )
