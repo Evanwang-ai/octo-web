@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react"
 import {
     Archive,
-    BookOpen,
     Bot,
     Briefcase,
     Check,
@@ -27,13 +26,12 @@ import {
     Users,
 } from "lucide-react"
 import WKApp from "../../App"
-import { SKILLS, SkillsListSurface, ImportSkillModal, SkillDetailSurface } from "../SkillsPrototype"
 import { CreateAgentModal } from "../AgentsPrototype"
 import "./index.css"
 
 // T1 换皮(蓝图 §1.2):单模块 sidebar——砍 搜索/收件箱/用量/设置/workspace 下拉,
 // 并入 技能 节点;CoWorker 中文定名「AI 队友」。收件箱砍除后 review 入口=我的 Loop(T5 补四 tabs)。
-type MatterView = "issues" | "myissues" | "projects" | "automation" | "coworkers" | "squads" | "skills" | "workspaces"
+type MatterView = "issues" | "myissues" | "projects" | "automation" | "coworkers" | "squads" | "workspaces"
 
 // ── workspace 层(③/P6/P7/P8):Hotjar 下拉 + Notion teamspace 创建/管理;成员从 Octo Space 拉,不走邮箱邀请 ──
 const SPACE_NAME = "明略 · Octo Space"
@@ -201,10 +199,6 @@ export default function MatterV2Prototype() {
             WKApp.routeRight.replaceToRoot(<MatterSquadsList />)
             return
         }
-        if (view === "skills") {
-            WKApp.routeRight.replaceToRoot(<MatterSkillsHost />)
-            return
-        }
         WKApp.routeRight.replaceToRoot(<MatterIssuesBoard />)
     }
 
@@ -271,10 +265,7 @@ export default function MatterV2Prototype() {
                     <Users size={16} />
                     小队
                 </button>
-                <button type="button" className={activeView === "skills" ? "is-active" : ""} onClick={() => setView("skills")}>
-                    <BookOpen size={16} />
-                    技能
-                </button>
+                {/* ⑧ 技能节点已迁「我的」(User 层);AI 队友/小队详情内 Loading 全局 Skills */}
             </div>
 
         </aside>
@@ -555,33 +546,6 @@ function MatterWorkspacesManage({
                 {visible.length === 0 && <div className="wk-wsmg__empty">没有匹配的工作区</div>}
             </div>
         </section>
-    )
-}
-
-// 技能节点宿主:复用 SkillsPrototype 的 surfaces(列表/详情/导入),Skill 库长期迁「我的」(User 级)
-function MatterSkillsHost() {
-    const [query, setQuery] = useState("")
-    const [importOpen, setImportOpen] = useState(false)
-
-    const normalizedQuery = query.trim().toLowerCase()
-    const visibleSkills = SKILLS.filter(
-        (skill) =>
-            !normalizedQuery
-            || skill.title.toLowerCase().includes(normalizedQuery)
-            || skill.description.toLowerCase().includes(normalizedQuery),
-    )
-
-    return (
-        <>
-            <SkillsListSurface
-                skills={visibleSkills}
-                query={query}
-                onQueryChange={setQuery}
-                onOpenImport={() => setImportOpen(true)}
-                onOpenSkill={(skill) => WKApp.routeRight.replaceToRoot(<SkillDetailSurface skill={skill} />)}
-            />
-            {importOpen && <ImportSkillModal onClose={() => setImportOpen(false)} />}
-        </>
     )
 }
 

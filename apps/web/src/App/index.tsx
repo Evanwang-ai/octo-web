@@ -1,4 +1,4 @@
-import { ChatPage, EndpointCategory, MatterV2Prototype, WKApp, Menus, shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace, RuntimesPage, t } from '@octo/base';
+import { ChatPage, EndpointCategory, MatterV2Prototype, MySpacePrototype, WKApp, Menus, shouldSkipChannelForSpace, shouldSkipPersonConversationForSpace, t } from '@octo/base';
 import { ContactsList } from '@octo/contacts';
 import React, { useEffect } from 'react';
 // lucide icons replaced with filled SVGs per Figma
@@ -8,7 +8,7 @@ import { WKSDK, ChannelTypePerson } from 'wukongimjssdk';
 import { setFaviconBadge, clearFaviconBadge } from '../utils/faviconBadge';
 import { ChatIcon } from '../Components/Icons/ChatIcon';
 import { ContactsIcon } from '../Components/Icons/ContactsIcon';
-import { RuntimesIcon } from '../Components/Icons/RuntimesIcon';
+import { MySpaceIcon } from '../Components/Icons/MySpaceIcon';
 import { SummaryIcon } from '../Components/Icons/SummaryIcon';
 import { MatterV2Icon } from '../Components/Icons/MatterV2Icon';
 import { Toast } from '@douyinfe/semi-ui';
@@ -152,13 +152,10 @@ async function registerMenus() {
     return new Menus("matter-v2", "/matter-v2", "MatterV2", <MatterV2Icon />, <MatterV2Icon />)
   }, 5000)
 
-  // PR-2 (准备上线): 运行时菜单常驻显示, 不再 conditional. 之前的
-  // hasRuntimes / checkRuntimes / 15s polling / mittBus 订阅已删 — 用户
-  // 进 /runtimes 页面后通过顶部 + 创建 Runtime 拿命令自助启 daemon-cli;
-  // 不再依赖"先有 daemon 才看见菜单"那条 chicken-and-egg 链.
-  WKApp.menus.register("runtimes", () => {
-    return new Menus("runtimes", "/runtimes", t("app.nav.runtimes"), <RuntimesIcon />, <RuntimesIcon />)
-  }, 7000)
+  // ⑨「我的」= User 层个人资产(Runtime + Skills);#480 真实 runtimes rail 已摘除,避免双 Runtime 并存
+  WKApp.menus.register("my-space", () => {
+    return new Menus("my-space", "/my-space", "我的", <MySpaceIcon />, <MySpaceIcon />)
+  }, 5500)
 
   WKApp.menus.register("summary", (_context) => {
     const m = new Menus("summary", "/summary", t("app.nav.summary"), <SummaryIcon />, <SummaryIcon />)
@@ -187,8 +184,8 @@ async function registerMenus() {
     return <MatterV2Prototype />
   })
 
-  WKApp.route.register("/runtimes", () => {
-    return <RuntimesPage />
+  WKApp.route.register("/my-space", () => {
+    return <MySpacePrototype />
   })
 
 }
