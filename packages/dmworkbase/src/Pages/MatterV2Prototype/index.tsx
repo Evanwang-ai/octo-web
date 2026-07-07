@@ -4,9 +4,12 @@ import {
     BookOpen,
     Bot,
     Briefcase,
+    Check,
     CheckCircle2,
     ChevronDown,
     ChevronRight,
+    Plus,
+    Settings2,
     Circle,
     ClipboardList,
     Edit3,
@@ -30,7 +33,29 @@ import "./index.css"
 
 // T1 换皮(蓝图 §1.2):单模块 sidebar——砍 搜索/收件箱/用量/设置/workspace 下拉,
 // 并入 技能 节点;CoWorker 中文定名「AI 队友」。收件箱砍除后 review 入口=我的 Loop(T5 补四 tabs)。
-type MatterView = "issues" | "myissues" | "projects" | "automation" | "coworkers" | "squads" | "skills"
+type MatterView = "issues" | "myissues" | "projects" | "automation" | "coworkers" | "squads" | "skills" | "workspaces"
+
+// ── workspace 层(③/P6/P7/P8):Hotjar 下拉 + Notion teamspace 创建/管理;成员从 Octo Space 拉,不走邮箱邀请 ──
+const SPACE_NAME = "明略 · Octo Space"
+const SPACE_MEMBERS = [
+    { id: "u-evan", name: "王宜林", role: "产品" },
+    { id: "u-lvsijia", name: "吕思佳", role: "后端" },
+    { id: "u-jiawei", name: "黄佳伟", role: "IM 平台" },
+    { id: "u-jianhui", name: "陈建辉", role: "搜索" },
+    { id: "u-yizhou", name: "林一舟", role: "前端" },
+    { id: "u-wanqing", name: "苏晚晴", role: "设计" },
+]
+
+type Workspace = { id: string; name: string; desc: string; members: number; updated: string; isDefault?: boolean }
+
+const WORKSPACES_SEED: Workspace[] = [
+    { id: "ws-product", name: "产品研发部", desc: "OctoLoop 主战场:V1 换皮与派单闭环。", members: 12, updated: "今天", isDefault: true },
+    { id: "ws-growth", name: "增长实验室", desc: "转化实验与渠道自动化。", members: 6, updated: "昨天" },
+    { id: "ws-support", name: "客服中台", desc: "工单分诊与知识库维护。", members: 9, updated: "3 天前" },
+    { id: "ws-content", name: "内容运营", desc: "官网与公众号内容生产线。", members: 4, updated: "上周" },
+    { id: "ws-core", name: "OctoLoop 核心", desc: "引擎与 runtime 联调现场。", members: 8, updated: "上周" },
+    { id: "ws-sandbox", name: "个人沙盒", desc: "只属于你的试验田。", members: 1, updated: "6月30日" },
+]
 
 const SQUADS = [
     {
@@ -129,12 +154,31 @@ function IssueGroupList({ rows }: { rows: ReadonlyArray<typeof ISSUE_ROWS[number
 export default function MatterV2Prototype() {
     const [activeView, setActiveView] = useState<MatterView>("issues")
     const [createIssueOpen, setCreateIssueOpen] = useState(false)
+    const [workspaces, setWorkspaces] = useState<Workspace[]>(WORKSPACES_SEED)
+    const [currentWsId, setCurrentWsId] = useState("ws-product")
+    const [wsMenuOpen, setWsMenuOpen] = useState(false)
+    const [createWsOpen, setCreateWsOpen] = useState(false)
+    const currentWs = workspaces.find((w) => w.id === currentWsId) ?? workspaces[0]
 
     function setView(nextView: MatterView) {
         setActiveView(nextView)
     }
 
     function showSurface(view = activeView) {
+        if (view === "workspaces") {
+            WKApp.routeRight.replaceToRoot(
+                <MatterWorkspacesManage
+                    workspaces={workspaces}
+                    currentWsId={currentWsId}
+                    onCreate={() => setCreateWsOpen(true)}
+                    onDelete={(id) => {
+                        setWorkspaces((list) => list.filter((w) => w.id !== id))
+                        if (currentWsId === id) setCurrentWsId(WORKSPACES_SEED[0].id)
+                    }}
+                />
+            )
+            return
+        }
         if (view === "myissues") {
             WKApp.routeRight.replaceToRoot(
                 <MatterIssuesBoard title="我的 Loop" tabs={["全部", "已分配", "我创建的", "我的智能体和小队"]} defaultTab={1} />
@@ -166,7 +210,7 @@ export default function MatterV2Prototype() {
 
     useEffect(() => {
         showSurface()
-    }, [activeView])
+    }, [activeView, workspaces, currentWsId])
 
     useEffect(() => {
         const handleActivated = (payload: { menuId?: string }) => {
@@ -179,12 +223,19 @@ export default function MatterV2Prototype() {
     return (
         <>
         <aside className="wk-matter-v2-sidebar" aria-label="MatterV2 sidebar">
-            {/* 空间名只读(切换/创建等 D2 拍板) */}
+            {/* workspace 切换器(P6=Hotjar Site Search):当前工作区名 + ⌄,面板渲染在 aside 外 */}
             <header className="wk-matter-v2-sidebar__workspace">
-                <div className="wk-matter-v2-sidebar__workspace-btn" role="presentation">
-                    <span className="wk-matter-v2-sidebar__mark">O</span>
-                    <strong>OctoLoop</strong>
-                </div>
+                <button
+                    type="button"
+                    className="wk-matter-v2-sidebar__workspace-btn is-switch"
+                    aria-haspopup="menu"
+                    aria-expanded={wsMenuOpen}
+                    onClick={() => setWsMenuOpen((v) => !v)}
+                >
+                    <span className="wk-matter-v2-sidebar__mark">{currentWs.name.slice(0, 1)}</span>
+                    <strong>{currentWs.name}</strong>
+                    <ChevronDown size={14} className="wk-matter-v2-sidebar__chev" />
+                </button>
             </header>
 
             <div className="wk-matter-v2-sidebar__quick">
@@ -229,11 +280,283 @@ export default function MatterV2Prototype() {
         </aside>
         {/* 弹窗必须在 aside 外:sidebar 的 button{width:100%} 会泄漏进弹窗(原型遗留 bug) */}
         {createIssueOpen && <MatterCreateIssueModal onClose={() => setCreateIssueOpen(false)} />}
+        {wsMenuOpen && (
+            <MatterWorkspaceMenu
+                workspaces={workspaces}
+                currentWsId={currentWsId}
+                onPick={(id) => {
+                    setCurrentWsId(id)
+                    setWsMenuOpen(false)
+                }}
+                onCreate={() => {
+                    setWsMenuOpen(false)
+                    setCreateWsOpen(true)
+                }}
+                onManage={() => {
+                    setWsMenuOpen(false)
+                    setView("workspaces")
+                }}
+                onClose={() => setWsMenuOpen(false)}
+            />
+        )}
+        {createWsOpen && (
+            <MatterWorkspaceCreateModal
+                onClose={() => setCreateWsOpen(false)}
+                onCreate={(ws) => {
+                    setWorkspaces((list) => [...list, ws])
+                    setCurrentWsId(ws.id)
+                    setCreateWsOpen(false)
+                }}
+            />
+        )}
         </>
     )
 }
 
 export { MatterV2Prototype }
+
+// ── P6 workspace 下拉(参考 Hotjar Web Site Search):搜索(≥5 才出现)+ 组标签 + 列表 + 底部两动作 ──
+function MatterWorkspaceMenu({
+    workspaces,
+    currentWsId,
+    onPick,
+    onCreate,
+    onManage,
+    onClose,
+}: {
+    workspaces: Workspace[]
+    currentWsId: string
+    onPick: (id: string) => void
+    onCreate: () => void
+    onManage: () => void
+    onClose: () => void
+}) {
+    const [query, setQuery] = useState("")
+    const q = query.trim().toLowerCase()
+    const visible = workspaces.filter((w) => w.name.toLowerCase().includes(q))
+    return (
+        <div className="wk-ws-menu" role="presentation" onMouseDown={onClose}>
+            <div className="wk-ws-menu__panel" role="menu" aria-label="切换工作区" onMouseDown={(e) => e.stopPropagation()}>
+                {workspaces.length >= 5 && (
+                    <label className="wk-ws-menu__search">
+                        <Search size={14} />
+                        <input placeholder="搜索工作区..." value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
+                    </label>
+                )}
+                <div className="wk-ws-menu__list">
+                    <span className="wk-ws-menu__group">{SPACE_NAME}</span>
+                    {visible.map((w) => (
+                        <button
+                            key={w.id}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={w.id === currentWsId}
+                            className={w.id === currentWsId ? "wk-ws-menu__item is-current" : "wk-ws-menu__item"}
+                            onClick={() => onPick(w.id)}
+                        >
+                            <span className="wk-ws-menu__mark">{w.name.slice(0, 1)}</span>
+                            <span className="wk-ws-menu__name">{w.name}</span>
+                            <span className="wk-ws-menu__meta">{w.members} 成员</span>
+                            {w.id === currentWsId && <Check size={14} className="wk-ws-menu__check" />}
+                        </button>
+                    ))}
+                    {visible.length === 0 && <div className="wk-ws-menu__empty">没有匹配的工作区</div>}
+                </div>
+                <div className="wk-ws-menu__foot">
+                    <button type="button" onClick={onCreate}>
+                        <Plus size={14} />
+                        新建工作区
+                    </button>
+                    <button type="button" onClick={onManage}>
+                        <Settings2 size={14} />
+                        管理工作区
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── P7 新建工作区(参考 Notion Creating a teamspace;Open 权限砍除,换「从 Octo Space 拉人」)──
+function MatterWorkspaceCreateModal({
+    onClose,
+    onCreate,
+}: {
+    onClose: () => void
+    onCreate: (ws: Workspace) => void
+}) {
+    const [name, setName] = useState("")
+    const [desc, setDesc] = useState("")
+    const [picked, setPicked] = useState<string[]>(["u-evan"])
+    const [query, setQuery] = useState("")
+    const visibleMembers = SPACE_MEMBERS.filter((m) => m.name.includes(query.trim()))
+
+    function toggle(id: string) {
+        setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+    }
+
+    function submit() {
+        const trimmed = name.trim() || "未命名工作区"
+        onCreate({
+            id: `ws-${Math.random().toString(36).slice(2, 8)}`,
+            name: trimmed,
+            desc: desc.trim() || "刚创建的工作区。",
+            members: picked.length,
+            updated: "刚刚",
+        })
+    }
+
+    return (
+        <div className="wk-ws-create" role="presentation" onMouseDown={onClose}>
+            <div className="wk-ws-create__dialog" role="dialog" aria-modal="true" aria-label="新建工作区" onMouseDown={(e) => e.stopPropagation()}>
+                <header className="wk-ws-create__head">
+                    <div>
+                        <h2>新建工作区</h2>
+                        <p>工作区是团队组织 Loop、成员与协作的地方。</p>
+                    </div>
+                    <button type="button" onClick={onClose} aria-label="关闭">✕</button>
+                </header>
+                <main className="wk-ws-create__body">
+                    <div className="wk-ws-create__field">
+                        <span className="wk-ws-create__label">图标和名称</span>
+                        <div className="wk-ws-create__namerow">
+                            <span className="wk-ws-create__icon">{(name.trim() || "工").slice(0, 1)}</span>
+                            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如:增长实验室" autoFocus />
+                        </div>
+                    </div>
+                    <div className="wk-ws-create__field">
+                        <span className="wk-ws-create__label">描述</span>
+                        <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="这个工作区负责什么..." />
+                    </div>
+                    <div className="wk-ws-create__field">
+                        <span className="wk-ws-create__label">
+                            成员<em>从 {SPACE_NAME} 选择,而不是邮箱邀请</em>
+                        </span>
+                        <label className="wk-ws-create__search">
+                            <Search size={14} />
+                            <input placeholder="搜索 Space 成员..." value={query} onChange={(e) => setQuery(e.target.value)} />
+                        </label>
+                        <div className="wk-ws-create__members">
+                            {visibleMembers.map((m) => (
+                                <label key={m.id} className="wk-ws-create__member">
+                                    <input type="checkbox" checked={picked.includes(m.id)} onChange={() => toggle(m.id)} />
+                                    <span className="wk-ws-create__avatar">{m.name.slice(0, 1)}</span>
+                                    <span className="wk-ws-create__mname">{m.name}</span>
+                                    <span className="wk-ws-create__mrole">{m.role}</span>
+                                </label>
+                            ))}
+                            {visibleMembers.length === 0 && <div className="wk-ws-create__empty">没有匹配的成员</div>}
+                        </div>
+                    </div>
+                </main>
+                <footer className="wk-ws-create__foot">
+                    <span className="wk-ws-create__picked">已选 {picked.length} 人</span>
+                    <div className="wk-ws-create__actions">
+                        <button type="button" className="wk-ws-create__cancel" onClick={onClose}>取消</button>
+                        <button type="button" className="wk-ws-create__submit" onClick={submit}>创建工作区</button>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    )
+}
+
+// ── P8 工作区管理(参考 Notion Teamspaces 设置页):默认工作区卡 + 无列头行 + ⋯ 行菜单 ──
+function MatterWorkspacesManage({
+    workspaces,
+    currentWsId,
+    onCreate,
+    onDelete,
+}: {
+    workspaces: Workspace[]
+    currentWsId: string
+    onCreate: () => void
+    onDelete: (id: string) => void
+}) {
+    const [query, setQuery] = useState("")
+    const [menuFor, setMenuFor] = useState<string | null>(null)
+    const visible = workspaces.filter((w) => w.name.includes(query.trim()))
+    const defaultWs = workspaces.find((w) => w.isDefault)
+
+    return (
+        <section className="wk-wsmg" aria-label="工作区管理">
+            <header className="wk-wsmg__head">
+                <div>
+                    <h1>
+                        工作区 <em>{workspaces.length}</em>
+                    </h1>
+                    <p>管理 {SPACE_NAME} 下的工作区。</p>
+                </div>
+                <div className="wk-wsmg__tools">
+                    <label className="wk-wsmg__search">
+                        <Search size={14} />
+                        <input placeholder="搜索工作区..." value={query} onChange={(e) => setQuery(e.target.value)} />
+                    </label>
+                    <button type="button" className="wk-wsmg__new" onClick={onCreate}>
+                        <Plus size={15} />
+                        新建工作区
+                    </button>
+                </div>
+            </header>
+
+            <section className="wk-wsmg__default">
+                <div>
+                    <strong>默认工作区</strong>
+                    <p>Space 新成员加入时,会自动进入这个工作区。</p>
+                </div>
+                <select defaultValue={defaultWs?.id}>
+                    {workspaces.map((w) => (
+                        <option key={w.id} value={w.id}>
+                            {w.name}
+                        </option>
+                    ))}
+                </select>
+            </section>
+
+            <div className="wk-wsmg__list">
+                {visible.map((w) => (
+                    <div key={w.id} className="wk-wsmg__row">
+                        <span className="wk-wsmg__mark">{w.name.slice(0, 1)}</span>
+                        <div className="wk-wsmg__main">
+                            <strong>
+                                {w.name}
+                                {w.isDefault && <i>默认</i>}
+                                {w.id === currentWsId && <i className="is-cur">当前</i>}
+                            </strong>
+                            <span>{w.desc}</span>
+                        </div>
+                        <span className="wk-wsmg__meta">{w.members} 成员 · 更新于 {w.updated}</span>
+                        <div className="wk-wsmg__more">
+                            <button type="button" aria-label="更多操作" onClick={() => setMenuFor(menuFor === w.id ? null : w.id)}>
+                                <MoreHorizontal size={16} />
+                            </button>
+                            {menuFor === w.id && (
+                                <div className="wk-wsmg__menu" role="menu">
+                                    <button type="button" role="menuitem" onClick={() => setMenuFor(null)}>重命名...</button>
+                                    <button type="button" role="menuitem" onClick={() => setMenuFor(null)}>移交负责人...</button>
+                                    {!w.isDefault && (
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            className="is-danger"
+                                            onClick={() => {
+                                                setMenuFor(null)
+                                                onDelete(w.id)
+                                            }}
+                                        >
+                                            删除工作区
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                {visible.length === 0 && <div className="wk-wsmg__empty">没有匹配的工作区</div>}
+            </div>
+        </section>
+    )
+}
 
 // 技能节点宿主:复用 SkillsPrototype 的 surfaces(列表/详情/导入),Skill 库长期迁「我的」(User 级)
 function MatterSkillsHost() {
