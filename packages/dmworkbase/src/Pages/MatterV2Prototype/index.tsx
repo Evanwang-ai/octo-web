@@ -143,21 +143,22 @@ const COWORKERS = [
 
 // ── 共享:按状态分组的 Loop 列表(T3 Tasks tab / T5 列表视图共用)──
 const ISSUE_ROWS = [
-    { key: "OCT-1", title: "test", project: "Octo-Runtime", status: "待办", pri: "none", agent: "未分配", updated: "2 天前" },
-    { key: "OCT-2", title: "询问当前 agent 身份和模型", project: "Octo-Runtime", status: "审核中", pri: "mid", agent: "Prototyper-Codex-MBOT", updated: "4 小时前" },
-    { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", project: "Octo-Runtime", status: "审核中", pri: "mid", agent: "CC-Protoper", updated: "4 小时前" },
+    { key: "OCT-1", title: "test", project: "Octo-Runtime", status: "待开始", pri: "none", agent: "未分配", updated: "2 天前" },
+    { key: "OCT-2", title: "询问当前 agent 身份和模型", project: "Octo-Runtime", status: "待确认", pri: "mid", agent: "Prototyper-Codex-MBOT", updated: "4 小时前" },
+    { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", project: "Octo-Runtime", status: "待确认", pri: "mid", agent: "CC-Protoper", updated: "4 小时前" },
     { key: "OCT-4", title: "整理 OctoLoop 上手指南", project: "OctoLoop 产品手册", status: "已完成", pri: "mid", agent: "Documenter-Worker", updated: "1 天前" },
     { key: "OCT-5", title: "附件测试：仅 PDF → Runtime 抽取文字", project: "接线演练场", status: "已完成", pri: "urgent", agent: "Analyser-CC-MBOT", updated: "3 天前" },
-    { key: "OCT-6", title: "等待上游接口：回调闭环验证", project: "接线演练场", status: "已阻塞", pri: "mid", agent: "Triager-Worker", updated: "5 天前" },
+    { key: "OCT-6", title: "等待上游接口：回调闭环验证", project: "接线演练场", status: "需要协助", pri: "mid", agent: "Triager-Worker", updated: "5 天前" },
 ] as const
 
 const ISSUE_STATUSES = [
-    { label: "待规划", tone: "backlog" },
-    { label: "待办", tone: "todo" },
+    { label: "草稿", tone: "backlog" },
+    { label: "待开始", tone: "todo" },
     { label: "进行中", tone: "doing" },
-    { label: "审核中", tone: "review" },
+    { label: "待确认", tone: "review" },
     { label: "已完成", tone: "done" },
-    { label: "已阻塞", tone: "blocked" },
+    { label: "需要协助", tone: "blocked" },
+    { label: "已取消", tone: "cancelled" },
 ] as const
 
 // 优先级 + 状态 = Linear 几何原子(端口自 feat/loop-react mlv icons.tsx,着色走 --wk-* 带 fallback)。
@@ -183,7 +184,7 @@ function PriorityIcon({ pri, size = 16 }: { pri: "none" | "mid" | "urgent"; size
 }
 
 // restyle 状态 tone → benchmark 状态键
-const STATUS_KEY: Record<string, string> = { backlog: "backlog", todo: "open", doing: "in_progress", warm: "in_progress", review: "review", green: "review", done: "done", blocked: "blocked", red: "blocked" }
+const STATUS_KEY: Record<string, string> = { backlog: "backlog", todo: "open", doing: "in_progress", warm: "in_progress", review: "review", green: "review", done: "done", blocked: "blocked", red: "blocked", cancelled: "cancelled" }
 function StatusIcon({ status, size = 16 }: { status: string; size?: number }) {
     const ring = (color: string, dash?: string) => (
         <circle cx="8" cy="8" r="6" fill="none" style={{ stroke: color }} strokeWidth={1.6} strokeDasharray={dash} />
@@ -212,6 +213,13 @@ function StatusIcon({ status, size = 16 }: { status: string; size?: number }) {
                 <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="已完成">
                     <circle cx="8" cy="8" r="7" style={{ fill: "var(--wk-color-success, #2ea44f)" }} />
                     <path d="M5 8.2l2 2 4-4.4" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            )
+        case "cancelled":
+            return (
+                <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="已取消">
+                    <circle cx="8" cy="8" r="7" style={{ fill: "var(--wk-text-tertiary, #8f959e)" }} />
+                    <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
             )
         case "blocked":
@@ -719,13 +727,14 @@ interface BoardCard {
     updated: string
     pri: "none" | "mid" | "urgent"
     progress?: { done: number; total: number }
+    others?: number
 }
 
 const BOARD_COLUMNS: Array<{ id: string; label: string; tone: string; cards: BoardCard[] }> = [
-    { id: "backlog", label: "待规划", tone: "backlog", cards: [] },
+    { id: "backlog", label: "草稿", tone: "backlog", cards: [] },
     {
         id: "todo",
-        label: "待办",
+        label: "待开始",
         tone: "todo",
         cards: [
             { key: "OCT-1", title: "test", desc: "", project: "Octo-Runtime", agent: "未分配", agentType: "none", updated: "", pri: "none" },
@@ -736,12 +745,12 @@ const BOARD_COLUMNS: Array<{ id: string; label: string; tone: string; cards: Boa
         label: "进行中",
         tone: "warm",
         cards: [
-            { key: "OCT-7", title: "打磨 OctoLoop 演示脚本：一句话派单全链路", desc: "从建单到回报,把演示脚本走顺。", project: "OctoLoop 产品手册", agent: "OctoLoop 上手小队", agentType: "squad", updated: "更新于 1 小时前", pri: "mid", progress: { done: 3, total: 5 } },
+            { key: "OCT-7", title: "打磨 OctoLoop 演示脚本：一句话派单全链路", desc: "从建单到回报,把演示脚本走顺。", project: "OctoLoop 产品手册", agent: "OctoLoop 上手小队", agentType: "squad", updated: "更新于 1 小时前", pri: "mid", progress: { done: 3, total: 5 }, others: 2 },
         ],
     },
     {
         id: "review",
-        label: "审核中",
+        label: "待确认",
         tone: "green",
         cards: [
             { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", desc: "User request 请回答以下关于当前运行环...", project: "Octo-Runtime", agent: "CC-Protoper", agentType: "bot", updated: "更新于 4 小时前", pri: "mid" },
@@ -759,12 +768,13 @@ const BOARD_COLUMNS: Array<{ id: string; label: string; tone: string; cards: Boa
     },
     {
         id: "blocked",
-        label: "已阻塞",
+        label: "需要协助",
         tone: "red",
         cards: [
             { key: "OCT-6", title: "等待上游接口：回调闭环验证", desc: "上游 webhook 就绪后解除。", project: "接线演练场", agent: "Analyser-CC-MBOT", agentType: "bot", updated: "更新于 2 天前", pri: "mid" },
         ],
     },
+    { id: "cancelled", label: "已取消", tone: "cancelled", cards: [] },
 ]
 
 function ProgressRing({ done, total }: { done: number; total: number }) {
@@ -901,8 +911,6 @@ function MatterIssuesBoard({
                                     <StatusIcon status={skey} size={14} />
                                     <span className="mlv-col-label">{column.label}</span>
                                     <span className="mlv-col-count">{column.cards.length}</span>
-                                    <span className="mlv-flex" />
-                                    <button type="button" className="mlv-col-add" onClick={() => setCreateIssueOpen(true)} aria-label="新建回路">+</button>
                                 </div>
                                 <div className="mlv-col-cards">
                                     {column.cards.map((card) => (
@@ -929,6 +937,7 @@ function MatterIssuesBoard({
                                                     <span className="mlv-card-leader">
                                                         {card.agentType === "squad" ? <SquadAvatar name={card.agent} size={18} /> : <AgentAvatar name={card.agent} size={18} />}
                                                         <span className="mlv-ai">{card.agentType === "squad" ? "队" : "AI"}</span>
+                                                        {card.others ? <span className="mlv-card-more">等 {card.others} 人</span> : null}
                                                     </span>
                                                 )}
                                             </div>
@@ -2432,7 +2441,7 @@ function MatterIssueDetail({
                             />
                             <div className="wk-matter-issue-detail__ev">
                                 <span className="wk-matter-issue-detail__evdot"><CheckCircle2 size={12} /></span>
-                                <span>状态从 <b>进行中</b> 改为 <b>审核中</b></span>
+                                <span>状态从 <b>进行中</b> 改为 <b>待确认</b></span>
                                 <time>4 小时前</time>
                             </div>
                         </div>
@@ -2448,7 +2457,7 @@ function MatterIssueDetail({
                     <h3>属性⌄</h3>
                     <dl>
                         <dt>状态</dt>
-                        <dd><StatusIcon status="review" size={15} />审核中</dd>
+                        <dd><StatusIcon status="review" size={15} />待确认</dd>
                         <dt>优先级</dt>
                         <dd><PriorityIcon pri="mid" size={15} />中</dd>
                         <dt>负责人</dt>
