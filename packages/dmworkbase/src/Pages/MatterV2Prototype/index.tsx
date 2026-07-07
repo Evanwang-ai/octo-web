@@ -23,6 +23,7 @@ import {
     Trash2,
     UserPlus,
     Users,
+    X,
 } from "lucide-react"
 import WKApp from "../../App"
 import { CreateAgentModal } from "../AgentsPrototype"
@@ -1880,61 +1881,138 @@ function MatterSquadsList() {
     )
 }
 
+// P13(Evan R2 重做,去 Multica 克隆):建小队 = 队名/描述 → 从「我的 AI 队友」名册搜索勾选 →
+// 每成员一行配 领队/成员(参考 Clockwise 创建面 + Vercel 角色行 + Langdock select-existing)。
 function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
+    const [name, setName] = useState("")
+    const [desc, setDesc] = useState("")
+    const [members, setMembers] = useState<{ id: string; role: "leader" | "member" }[]>([])
+    const [query, setQuery] = useState("")
+    const [pickerOpen, setPickerOpen] = useState(false)
+
+    const roster = COWORKERS.filter((c) => !c.archived)
+    const addedIds = new Set(members.map((m) => m.id))
+    const candidates = roster.filter(
+        (c) => !addedIds.has(c.id) && c.name.toLowerCase().includes(query.trim().toLowerCase()),
+    )
+    const byId = (id: string) => COWORKERS.find((c) => c.id === id)!
+    const leaderId = members.find((m) => m.role === "leader")?.id
+    const canCreate = name.trim().length > 0 && members.length > 0
+
+    function addMember(id: string) {
+        setMembers((cur) => [...cur, { id, role: cur.length === 0 ? "leader" : "member" }])
+        setQuery("")
+        setPickerOpen(false)
+    }
+    function removeMember(id: string) {
+        setMembers((cur) => {
+            const next = cur.filter((m) => m.id !== id)
+            if (next.length && !next.some((m) => m.role === "leader")) next[0] = { ...next[0], role: "leader" }
+            return next
+        })
+    }
+    function setRole(id: string, role: "leader" | "member") {
+        setMembers((cur) =>
+            role === "leader"
+                ? cur.map((m) => ({ ...m, role: m.id === id ? "leader" : "member" }))
+                : cur.map((m) => (m.id === id ? { ...m, role } : m)),
+        )
+    }
+
     return (
-        <div className="wk-matter-squad-modal" role="presentation" onMouseDown={onClose}>
+        <div className="wk-sqc" role="presentation" onMouseDown={onClose}>
             <section
-                className="wk-matter-squad-modal__dialog"
+                className="wk-sqc__dialog"
                 role="dialog"
                 aria-modal="true"
                 aria-label="创建小队"
                 onMouseDown={(event) => event.stopPropagation()}
             >
-                <header className="wk-matter-squad-modal__head">
+                <header className="wk-sqc__head">
                     <div>
                         <h2>创建小队</h2>
-                        <p>创建一个由领队协调、成员协作的小队，可选添加成员。</p>
+                        <p>从你的 AI 队友里排一支队,指定一个领队。</p>
                     </div>
-                    <button type="button" onClick={onClose} aria-label="关闭">×</button>
+                    <button type="button" className="wk-sqc__close" onClick={onClose} aria-label="关闭"><X size={18} /></button>
                 </header>
 
-                <main className="wk-matter-squad-modal__body">
-                    <button type="button" className="wk-matter-squad-modal__image" aria-label="上传小队头像">
-                        <Users size={24} />
-                    </button>
-                    <div className="wk-matter-squad-modal__form">
-                        <label>
-                            <span>名称</span>
-                            <input autoFocus placeholder="例如 前端团队" />
-                        </label>
-                        <label>
-                            <span>描述</span>
-                            <input placeholder="描述这个小队负责什么..." />
-                            <small>0 / 255</small>
-                        </label>
+                <main className="wk-sqc__body">
+                    <div className="wk-sqc__field">
+                        <span className="wk-sqc__label">名称</span>
+                        <div className="wk-sqc__namerow">
+                            <span className="wk-sqc__icon"><Users size={18} /></span>
+                            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="例如:Loop 分诊小队" />
+                        </div>
                     </div>
 
-                    <section className="wk-matter-squad-modal__leader">
-                        <span>领队</span>
-                        <p>领队接收分配给这个小队的所有任务并协调团队。</p>
-                        <button type="button">
-                            <UserPlus size={16} />
-                            选择一个领队
-                            <ChevronDown size={15} />
-                        </button>
-                        <span className="wk-matter-squad-modal__label2">附加成员 (可选)</span>
-                        <p>领队可以委派子任务的成员。也可稍后再加。</p>
-                        <button type="button">
-                            <UserPlus size={16} />
-                            添加 AI 队友或工作区成员
-                            <ChevronDown size={15} />
-                        </button>
-                    </section>
+                    <div className="wk-sqc__field">
+                        <span className="wk-sqc__label">描述</span>
+                        <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="这个小队负责什么..." />
+                    </div>
+
+                    <div className="wk-sqc__field">
+                        <span className="wk-sqc__label">成员<em>从你的 AI 队友里挑,一个设为领队</em></span>
+
+                        <div className="wk-sqc__picker">
+                            <label className="wk-sqc__search">
+                                <Search size={15} />
+                                <input
+                                    value={query}
+                                    onFocus={() => setPickerOpen(true)}
+                                    onClick={() => setPickerOpen(true)}
+                                    onChange={(e) => { setQuery(e.target.value); setPickerOpen(true) }}
+                                    placeholder="搜索并添加 AI 队友..."
+                                />
+                            </label>
+                            {pickerOpen && (
+                                <div className="wk-sqc__menu" role="listbox">
+                                    {candidates.length === 0 ? (
+                                        <div className="wk-sqc__menu-empty">没有更多可加的 AI 队友</div>
+                                    ) : candidates.map((c) => (
+                                        <button key={c.id} type="button" className="wk-sqc__option" onClick={() => addMember(c.id)}>
+                                            <span className="wk-sqc__ava"><Bot size={15} /></span>
+                                            <span className="wk-sqc__opt-main"><strong>{c.name}</strong><small>{c.runtime}</small></span>
+                                            <Plus size={15} />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="wk-sqc__members">
+                            {members.length === 0 ? (
+                                <div className="wk-sqc__empty">还没有成员 —— 在上面搜索并添加你的 AI 队友。</div>
+                            ) : members.map((m) => {
+                                const c = byId(m.id)
+                                return (
+                                    <div key={m.id} className={`wk-sqc__member${m.role === "leader" ? " is-leader" : ""}`}>
+                                        <span className="wk-sqc__ava"><Bot size={15} /><i /></span>
+                                        <span className="wk-sqc__m-main"><strong>{c.name}</strong><small>{c.runtime}</small></span>
+                                        <select
+                                            className="wk-sqc__role"
+                                            value={m.role}
+                                            onChange={(e) => setRole(m.id, e.target.value as "leader" | "member")}
+                                            aria-label={`${c.name} 角色`}
+                                        >
+                                            <option value="leader">领队</option>
+                                            <option value="member">成员</option>
+                                        </select>
+                                        <button type="button" className="wk-sqc__remove" onClick={() => removeMember(m.id)} aria-label="移除"><X size={15} /></button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
                 </main>
 
-                <footer className="wk-matter-squad-modal__foot">
-                    <button type="button" onClick={onClose}>取消</button>
-                    <button type="button" className="wk-matter-squad-modal__submit" disabled>创建小队</button>
+                <footer className="wk-sqc__foot">
+                    <span className="wk-sqc__count">
+                        {members.length ? `${members.length} 名成员 · 领队 ${leaderId ? byId(leaderId).name : "—"}` : "未选成员"}
+                    </span>
+                    <div className="wk-sqc__actions">
+                        <button type="button" className="wk-sqc__cancel" onClick={onClose}>取消</button>
+                        <button type="button" className="wk-sqc__submit" disabled={!canCreate} onClick={onClose}>创建小队</button>
+                    </div>
                 </footer>
             </section>
         </div>
