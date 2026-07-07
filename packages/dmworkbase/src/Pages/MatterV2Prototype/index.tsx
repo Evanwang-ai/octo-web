@@ -2450,7 +2450,9 @@ function MatterIssueDetail({
                     <h3>属性⌄</h3>
                     <dl>
                         <dt>状态</dt>
-                        <dd><CheckCircle2 size={15} />审核中</dd>
+                        <dd><StatusIcon status="review" size={15} />审核中</dd>
+                        <dt>优先级</dt>
+                        <dd><PriorityIcon pri="mid" size={15} />中</dd>
                         <dt>负责人</dt>
                         <dd><AgentAvatar name={issue.agent === "未分配" ? "CC-Protoper" : issue.agent} size={16} />{issue.agent === "未分配" ? "CC-Protoper" : issue.agent}</dd>
                         <dt>项目</dt>
