@@ -2270,6 +2270,12 @@ function MatterSquadDetail({
     squad: typeof SQUADS[number]
 }) {
     const [activeTab, setActiveTab] = useState<"members" | "instructions">("members")
+    const [memberView, setMemberView] = useState<"board" | "table">("board")
+    const openAgent = (name: string) => {
+        const cw = COWORKERS.find((c) => c.name === name)
+        if (cw) WKApp.routeRight.replaceToRoot(<MatterCoWorkerDetail coworker={cw} />)
+    }
+    const members = squad.members.filter((m) => m !== squad.leader)
 
     return (
         <section className="wk-matter-squad-detail" aria-label="小队详情">
@@ -2310,26 +2316,55 @@ function MatterSquadDetail({
                     </nav>
 
                     {activeTab === "members" ? (
-                        <section className="wk-seccard">
-                            <h4>成员<span>该小队有 {squad.members.length} 名成员</span></h4>
-                            <div className="wk-sqtable">
-                                {squad.members.map((member, index) => (
-                                    <div key={member} className="wk-sqtable__row">
-                                        <AgentAvatar name={member} size={28} dot="online" />
-                                        <div className="wk-sqtable__who">
-                                            <strong>{member}</strong>
-                                            <small>AI 队友 · 最近活动 1 分钟前</small>
-                                        </div>
-                                        <span className={`wk-chip${index === 0 ? " is-leader" : ""}`}>{index === 0 ? "负责人" : "成员"}</span>
-                                        <span className="wk-sqtable__state">空闲</span>
+                        <div className="wk-sqd-members">
+                            <div className="wk-sqd-mhead">
+                                <h4>成员 <span>{squad.members.length}</span></h4>
+                                <div className="wk-sqd-toggle">
+                                    <button type="button" className={memberView === "board" ? "is-on" : ""} onClick={() => setMemberView("board")}>阵容板</button>
+                                    <button type="button" className={memberView === "table" ? "is-on" : ""} onClick={() => setMemberView("table")}>分配表</button>
+                                </div>
+                                <button type="button" className="wk-sqd-add"><PlusIcon />添加成员</button>
+                            </div>
+
+                            {memberView === "board" ? (
+                                <div className="wk-sqd-board">
+                                    <div className="wk-sqd-leaderwrap">
+                                        <button type="button" className="wk-sqd-pcard is-leader" onClick={() => openAgent(squad.leader)}>
+                                            <AgentAvatar name={squad.leader} size={40} dot="online" />
+                                            <strong>{squad.leader}</strong>
+                                            <span className="wk-sqd-role is-leader">领队</span>
+                                            <small className="wk-sqd-sub">正在处理 M-1790</small>
+                                        </button>
                                     </div>
-                                ))}
-                            </div>
-                            <div className="wk-seccard__actions">
-                                <button type="button" className="wk-cw-save"><PlusIcon />添加成员</button>
-                                <button type="button" className="wk-cw-addbtn"><PlusIcon />创建 AI 队友</button>
-                            </div>
-                        </section>
+                                    <div className="wk-sqd-line" />
+                                    <div className="wk-sqd-memberrow">
+                                        {members.map((m) => (
+                                            <button key={m} type="button" className="wk-sqd-pcard" onClick={() => openAgent(m)}>
+                                                <AgentAvatar name={m} size={40} dot="online" />
+                                                <strong>{m}</strong>
+                                                <span className="wk-sqd-role">成员</span>
+                                                <small className="wk-sqd-sub">空闲</small>
+                                            </button>
+                                        ))}
+                                        <button type="button" className="wk-sqd-pcard is-ghost"><span className="wk-sqd-ghosticon">+</span><small>添加成员</small></button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="wk-sqtable">
+                                    {squad.members.map((member) => (
+                                        <button key={member} type="button" className="wk-sqtable__row is-click" onClick={() => openAgent(member)}>
+                                            <AgentAvatar name={member} size={28} dot="online" />
+                                            <div className="wk-sqtable__who">
+                                                <strong>{member}</strong>
+                                                <small>AI 队友</small>
+                                            </div>
+                                            <span className={`wk-chip${member === squad.leader ? " is-leader" : ""}`}>{member === squad.leader ? "领队" : "成员"}</span>
+                                            <span className="wk-sqtable__state">{member === squad.leader ? "正在处理 M-1790" : "空闲"}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <section className="wk-seccard">
                             <h4>小队指引</h4>
