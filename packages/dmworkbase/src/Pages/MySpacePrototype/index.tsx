@@ -216,7 +216,7 @@ function MyRuntimeSurface() {
 // ── 我的·Skills(⑧):从 OctoLoop 迁入,User 层技能库;workspace 里的 AI 队友/小队引用这里 ──
 function MySkillsHost() {
     const [query, setQuery] = useState("")
-    const [importOpen, setImportOpen] = useState(false)
+    const [importStep, setImportStep] = useState<"manual" | "url" | "runtime" | null>(null)
 
     const normalizedQuery = query.trim().toLowerCase()
     const visibleSkills = SKILLS.filter(
@@ -232,10 +232,10 @@ function MySkillsHost() {
                 skills={visibleSkills}
                 query={query}
                 onQueryChange={setQuery}
-                onOpenImport={() => setImportOpen(true)}
+                onPickCreate={(step) => setImportStep(step)}
                 onOpenSkill={(skill) => WKApp.routeRight.replaceToRoot(<SkillDetailSurface skill={skill} />)}
             />
-            {importOpen && <ImportSkillModal onClose={() => setImportOpen(false)} />}
+            {importStep && <ImportSkillModal step={importStep} onClose={() => setImportStep(null)} />}
         </>
     )
 }
