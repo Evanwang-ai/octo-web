@@ -1141,8 +1141,20 @@ const AUTOMATIONS_SEED: AutomationRow[] = [
     },
 ]
 
-// 单页新建:全字段一屏(0707 批改:不分步)
+// 单页新建(P3=Resend 广播撰写页,0707 终挑):邮件式行字段 + When 自然语言回显(时区注脚)+ 大任务说明输入区
+const WHEN_PRESETS = [
+    { label: "每天 09:00", echo: "明天 09:00" },
+    { label: "每个工作日 09:30", echo: "周一 09:30" },
+    { label: "每周五 17:00", echo: "本周五 17:00" },
+    { label: "每月 1 日 10:00", echo: "8月1日 10:00" },
+]
+
 function AutomationCreateModal({ onClose }: { onClose: () => void }) {
+    const [when, setWhen] = useState("")
+    const [whenOpen, setWhenOpen] = useState(false)
+    const preset = WHEN_PRESETS.find((item) => item.label === when)
+    const echo = preset ? preset.echo : when.trim() ? "明天 09:00" : ""
+
     return (
         <div className="wk-awz" role="presentation" onMouseDown={onClose}>
             <section className="wk-awz__dialog" role="dialog" aria-modal="true" aria-label="新建自动化" onMouseDown={(e) => e.stopPropagation()}>
@@ -1151,41 +1163,62 @@ function AutomationCreateModal({ onClose }: { onClose: () => void }) {
                     <button type="button" aria-label="关闭" onClick={onClose}>×</button>
                 </header>
 
-                <main className="wk-awz__body">
-                    <label className="wk-awz__field">
+                <main className="wk-awz__body is-rows">
+                    <div className="wk-awz__row">
                         <span>名称</span>
-                        <input autoFocus placeholder="例如：每日晨报" />
-                    </label>
-                    <label className="wk-awz__field">
-                        <span>任务说明<em>AI 队友每次运行时读取</em></span>
-                        <textarea rows={5} placeholder={"# 目标\n你希望 AI 队友完成什么?\n\n# 步骤\n1. ...\n2. ..."} spellCheck={false} />
-                    </label>
-                    <div className="wk-awz__grid">
-                        <label className="wk-awz__field">
-                            <span>频率</span>
-                            <select defaultValue="每天"><option>每天</option><option>每个工作日</option><option>每周五</option><option>每月 1 日</option></select>
-                        </label>
-                        <label className="wk-awz__field">
-                            <span>时间</span>
-                            <input type="time" defaultValue="09:00" />
-                        </label>
+                        <input autoFocus placeholder="例如:每日晨报" />
                     </div>
-                    <div className="wk-awz__grid">
-                        <label className="wk-awz__field">
-                            <span>执行方</span>
-                            <select defaultValue="Prototyper-Codex-MBOT">
-                                {COWORKERS.map((c) => <option key={c.id}>{c.name}</option>)}
-                                {SQUADS.map((s) => <option key={s.id}>{s.name}(小队)</option>)}
-                            </select>
-                        </label>
-                        <label className="wk-awz__field">
-                            <span>发到哪</span>
-                            <select defaultValue="Octo-Runtime">
-                                {PROJECTS_ROWS.map((p) => <option key={p.name}>{p.name}</option>)}
-                            </select>
-                        </label>
+                    <div className="wk-awz__row">
+                        <span>执行方</span>
+                        <select defaultValue="Prototyper-Codex-MBOT">
+                            {COWORKERS.map((c) => <option key={c.id}>{c.name}</option>)}
+                            {SQUADS.map((s) => <option key={s.id}>{s.name}(小队)</option>)}
+                        </select>
                     </div>
-                    <p className="wk-awz__hint">保存后会自动运行,直到停用。</p>
+                    <div className="wk-awz__row">
+                        <span>发到哪</span>
+                        <select defaultValue="Octo-Runtime">
+                            {PROJECTS_ROWS.map((proj) => <option key={proj.name}>{proj.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="wk-awz__row is-when">
+                        <span>When</span>
+                        <input
+                            placeholder="用一句话描述时间,例如:每天 09:00"
+                            value={when}
+                            onChange={(e) => setWhen(e.target.value)}
+                            onFocus={() => setWhenOpen(true)}
+                            onClick={() => setWhenOpen(true)}
+                            onBlur={() => window.setTimeout(() => setWhenOpen(false), 150)}
+                        />
+                        {echo && <em className="wk-awz__echo">下次 · {echo}</em>}
+                        {whenOpen && (
+                            <div className="wk-awz__whenmenu" role="menu">
+                                {WHEN_PRESETS.map((item) => (
+                                    <button
+                                        key={item.label}
+                                        type="button"
+                                        role="menuitem"
+                                        onMouseDown={(e) => {
+                                            e.preventDefault()
+                                            setWhen(item.label)
+                                            setWhenOpen(false)
+                                        }}
+                                    >
+                                        <span>{item.label}</span>
+                                        <em>{item.echo}</em>
+                                    </button>
+                                ))}
+                                <footer>Asia/Shanghai (GMT+8)</footer>
+                            </div>
+                        )}
+                    </div>
+                    <textarea
+                        className="wk-awz__instructions"
+                        placeholder={"任务说明:触发时交给执行方的指令,AI 队友每次运行时读取。写得越像给人的交代,效果越好。\n\n# 目标\n你希望 AI 队友完成什么?\n\n# 步骤\n1. ...\n2. ..."}
+                        spellCheck={false}
+                    />
+                    <p className="wk-awz__hint">创建后立即启用,按 When 的节奏运行,直到停用。</p>
                 </main>
 
                 <footer className="wk-awz__foot">
@@ -1197,9 +1230,19 @@ function AutomationCreateModal({ onClose }: { onClose: () => void }) {
     )
 }
 
-const RUN_STATE_LABEL = { ok: "运行成功", skip: "已跳过", fail: "运行失败" } as const
+const RUN_BADGE = { ok: "成功", skip: "跳过", fail: "失败" } as const
 
+// P4(0707 终挑 Stripe 1bbafee3):状态徽章 + 统计卡行(点击即筛运行历史)
 function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggle: (id: string) => void }) {
+    const [runFilter, setRunFilter] = useState<"all" | "ok" | "fail" | "skip">("all")
+    const counts = {
+        all: row.health.length,
+        ok: row.health.filter((h) => h === "ok").length,
+        fail: row.health.filter((h) => h === "fail").length,
+        skip: row.health.filter((h) => h === "skip").length,
+    }
+    const visibleRuns = row.runs.filter((r) => runFilter === "all" || r.state === runFilter)
+
     return (
         <section className="wk-avd" aria-label="自动化详情">
             <header className="wk-avd__top">
@@ -1223,6 +1266,27 @@ function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggl
             </header>
 
             <div className="wk-avd__main">
+                <div className="wk-avd__stats" role="tablist" aria-label="按状态筛选运行历史">
+                    {([
+                        { k: "all", label: "全部运行" },
+                        { k: "ok", label: "成功" },
+                        { k: "fail", label: "失败" },
+                        { k: "skip", label: "跳过" },
+                    ] as const).map((s) => (
+                        <button
+                            key={s.k}
+                            type="button"
+                            role="tab"
+                            aria-selected={runFilter === s.k}
+                            className={runFilter === s.k ? "is-active" : ""}
+                            onClick={() => setRunFilter(s.k)}
+                        >
+                            <span>{s.label}</span>
+                            <strong>{counts[s.k]}</strong>
+                        </button>
+                    ))}
+                </div>
+
                 <section className="wk-avd__card">
                     <h4>属性</h4>
                     <dl>
@@ -1239,16 +1303,19 @@ function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggl
                 </section>
 
                 <section className="wk-avd__card">
-                    <h4>运行历史<span>近 {row.runs.length} 次</span></h4>
+                    <h4>运行历史<span>{runFilter === "all" ? `近 ${row.runs.length} 次` : `筛选:${RUN_BADGE[runFilter]}`}</span></h4>
                     <div className="wk-avd__runs">
-                        {row.runs.map((r, i) => (
+                        {visibleRuns.map((r, i) => (
                             <div key={i} className="wk-avd__runrow">
-                                <i className={`is-${r.state}`} />
-                                <span>{RUN_STATE_LABEL[r.state]}</span>
+                                <span className={`wk-avd__badge is-${r.state}`}>
+                                    {r.state === "ok" ? "✓" : r.state === "fail" ? "✕" : "⤼"} {RUN_BADGE[r.state]}
+                                </span>
+                                <span className="wk-avd__runmsg">定时触发 · 发到 {row.target}</span>
                                 <em>{r.dur}</em>
                                 <time>{r.at}</time>
                             </div>
                         ))}
+                        {visibleRuns.length === 0 && <div className="wk-avd__runempty">该状态最近没有运行记录。</div>}
                     </div>
                 </section>
             </div>
