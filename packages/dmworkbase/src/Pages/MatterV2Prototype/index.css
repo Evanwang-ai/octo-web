@@ -6900,3 +6900,31 @@
 .wk-loop-create__cli-copy:hover {
   background: var(--wk-brand-primary-hover, #000);
 }
+
+/* ── monogram 头像(B2):AgentAvatar/SquadAvatar 自带盒 + 名字 hash 色 + presence 点 ── */
+.wk-avatarm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: 0 0 auto;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  overflow: visible;
+}
+.wk-avatarm__dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wk-color-online, #3ba55d);
+  border: 1.5px solid var(--wk-bg-surface, #fff);
+}
+.wk-avatarm__dot.is-idle { background: var(--wk-text-disabled, #c9cdd4); }
+.wk-avatarm__dot.is-busy { background: #e5a13a; }
+/* 小队成员头像堆叠 */
+.wk-matter-squads__members .wk-avatarm { margin-left: -6px; box-shadow: 0 0 0 1.5px var(--wk-bg-surface, #fff); }
+.wk-matter-squads__members .wk-avatarm:first-child { margin-left: 0; }
