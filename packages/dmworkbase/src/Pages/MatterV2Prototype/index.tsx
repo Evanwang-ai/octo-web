@@ -970,7 +970,8 @@ const CREATE_EXAMPLES = [
 ]
 
 function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
-    const [mode, setMode] = useState<"manual" | "agent">("manual")
+    // R6-A(Evan):合并 手动/AI队友 为一个 AI队友新建回路模板(去 tab)
+    const [mode] = useState<"manual" | "agent">("agent")
     const [keepCreating, setKeepCreating] = useState(false)
     // 手动模式字段(与旧弹窗字段一致)
     const [title, setTitle] = useState("")
@@ -1012,10 +1013,6 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                 <button type="button" className="wk-loop-create__close" aria-label="关闭" onClick={onClose}>✕</button>
                 <i className="wk-loop-create__divider" />
                 <strong className="wk-loop-create__name">新建回路</strong>
-                <div className="wk-loop-create__modes" role="tablist" aria-label="创建方式">
-                    <button type="button" role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "is-active" : ""} onClick={() => setMode("manual")}>手动</button>
-                    <button type="button" role="tab" aria-selected={mode === "agent"} className={mode === "agent" ? "is-active" : ""} onClick={() => setMode("agent")}>AI 队友</button>
-                </div>
                 <div className="wk-loop-create__bar-right">
                     {mode === "manual" && (
                         <div className="wk-loop-create__keep">
@@ -1033,7 +1030,7 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                         </div>
                     )}
                     <button type="button" className="wk-loop-create__submit" onClick={onClose}>
-                        {mode === "manual" ? "创建回路" : "派单 (⌘↵)"}
+                        派单 (⌘↵)
                     </button>
                 </div>
             </header>
