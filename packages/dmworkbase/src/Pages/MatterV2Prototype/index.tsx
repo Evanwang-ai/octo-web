@@ -57,7 +57,7 @@ const WORKSPACES_SEED: Workspace[] = [
 const SQUADS = [
     {
         id: "squad-onboard",
-        name: "OctoLoop Onboarding Squad",
+        name: "OctoLoop 上手小队",
         leader: "Prototyper-Codex-MBOT",
         members: ["Prototyper-Codex-MBOT", "Analyser-CC-MBOT", "Documenter-Worker"],
         creator: "lvsijia",
@@ -577,7 +577,7 @@ const BOARD_COLUMNS: Array<{ id: string; label: string; tone: string; cards: Boa
         label: "进行中",
         tone: "warm",
         cards: [
-            { key: "OCT-7", title: "打磨 OctoLoop 演示脚本：一句话派单全链路", desc: "从建单到回报,把演示脚本走顺。", project: "OctoLoop 产品手册", agent: "OctoLoop Onboarding Squad", agentType: "squad", updated: "更新于 1 小时前", pri: "mid", progress: { done: 3, total: 5 } },
+            { key: "OCT-7", title: "打磨 OctoLoop 演示脚本：一句话派单全链路", desc: "从建单到回报,把演示脚本走顺。", project: "OctoLoop 产品手册", agent: "OctoLoop 上手小队", agentType: "squad", updated: "更新于 1 小时前", pri: "mid", progress: { done: 3, total: 5 } },
         ],
     },
     {
@@ -1845,13 +1845,13 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                 className="wk-matter-squad-modal__dialog"
                 role="dialog"
                 aria-modal="true"
-                aria-label="创建 Squad"
+                aria-label="创建小队"
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <header className="wk-matter-squad-modal__head">
                     <div>
-                        <h2>创建 Squad</h2>
-                        <p>创建一个由 Leader Agent 协调团队的协作 Squad，可选添加成员。</p>
+                        <h2>创建小队</h2>
+                        <p>创建一个由领队协调、成员协作的小队，可选添加成员。</p>
                     </div>
                     <button type="button" onClick={onClose} aria-label="关闭">×</button>
                 </header>
@@ -1867,24 +1867,24 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                         </label>
                         <label>
                             <span>描述</span>
-                            <input placeholder="描述这个 Squad 负责什么..." />
+                            <input placeholder="描述这个小队负责什么..." />
                             <small>0 / 255</small>
                         </label>
                     </div>
 
                     <section className="wk-matter-squad-modal__leader">
-                        <span>Leader Agent</span>
-                        <p>Leader 接收分配给此 Squad 的所有任务并协调团队。</p>
+                        <span>领队</span>
+                        <p>领队接收分配给这个小队的所有任务并协调团队。</p>
                         <button type="button">
                             <UserPlus size={16} />
-                            选择一个 Leader Agent
+                            选择一个领队
                             <ChevronDown size={15} />
                         </button>
                         <span className="wk-matter-squad-modal__label2">附加成员 (可选)</span>
-                        <p>Leader 可以委派子任务的成员。也可稍后再加。</p>
+                        <p>领队可以委派子任务的成员。也可稍后再加。</p>
                         <button type="button">
                             <UserPlus size={16} />
-                            添加 Agent 或工作区成员
+                            添加 AI 队友或工作区成员
                             <ChevronDown size={15} />
                         </button>
                     </section>
@@ -1892,7 +1892,7 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
 
                 <footer className="wk-matter-squad-modal__foot">
                     <button type="button" onClick={onClose}>取消</button>
-                    <button type="button" className="wk-matter-squad-modal__submit" disabled>创建 Squad</button>
+                    <button type="button" className="wk-matter-squad-modal__submit" disabled>创建小队</button>
                 </footer>
             </section>
         </div>
@@ -1968,7 +1968,7 @@ function MatterSquadDetail({
                     ) : (
                         <section className="wk-seccard">
                             <h4>Instructions</h4>
-                            <p className="wk-cw-help">小队指引会在 Leader 处理分配给该小队的 Loop 时注入到它的 prompt 中。可用来给 Leader 提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
+                            <p className="wk-cw-help">小队指引会在领队处理分配给该小队的 Loop 时注入到它的 prompt 中。可用来给领队提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
                             <textarea className="wk-cw-editor" placeholder="e.g. Always start by writing a failing test. Prefer small, atomic commits." />
                             <div className="wk-seccard__actions">
                                 <button type="button" className="wk-cw-save"><Save size={14} />保存</button>
