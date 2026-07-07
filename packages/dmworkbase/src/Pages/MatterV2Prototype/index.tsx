@@ -2415,7 +2415,7 @@ function MatterIssueDetail({
                     <section className="wk-matter-issue-detail__activity">
                         <header>
                             <h2>动态</h2>
-                            <span className="wk-matter-issue-detail__unsub">取消订阅 · 🤖 {issue.agent === "未分配" ? "CC-Protoper" : issue.agent}</span>
+                            <span className="wk-matter-issue-detail__unsub">取消订阅 · <AgentAvatar name={issue.agent === "未分配" ? "CC-Protoper" : issue.agent} size={16} />{issue.agent === "未分配" ? "CC-Protoper" : issue.agent}</span>
                         </header>
                         <div className="wk-matter-issue-detail__timeline">
                             <div className="wk-matter-issue-detail__ev">
@@ -2458,7 +2458,7 @@ function MatterIssueDetail({
                         <dt>状态</dt>
                         <dd><CheckCircle2 size={15} />审核中</dd>
                         <dt>负责人</dt>
-                        <dd>🤖 {issue.agent === "未分配" ? "CC-Protoper" : issue.agent}</dd>
+                        <dd><AgentAvatar name={issue.agent === "未分配" ? "CC-Protoper" : issue.agent} size={16} />{issue.agent === "未分配" ? "CC-Protoper" : issue.agent}</dd>
                         <dt>项目</dt>
                         <dd>📁 {issue.project}</dd>
                     </dl>
@@ -2470,7 +2470,7 @@ function MatterIssueDetail({
                     <h3>详情⌄</h3>
                     <dl>
                         <dt>创建者</dt>
-                        <dd>🤖 CC-Protoper</dd>
+                        <dd><AgentAvatar name="CC-Protoper" size={16} />CC-Protoper</dd>
                         <dt>创建时间</dt>
                         <dd>Jul 2</dd>
                         <dt>更新时间</dt>
@@ -2517,7 +2517,7 @@ function MessageCard({
             <header>
                 <ChevronDown size={14} />
                 <span className={user ? "wk-matter-v2-card__user" : "wk-matter-v2-card__agent"}>
-                    {user ? "L" : <Bot size={14} />}
+                    {user ? "L" : avatarInitial(author)}
                     {!user && <i />}
                 </span>
                 <strong>{author}</strong>
