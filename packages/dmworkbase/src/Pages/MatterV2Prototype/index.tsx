@@ -12,7 +12,6 @@ import {
     Circle,
     ClipboardList,
     Edit3,
-    Expand,
     Eye,
     Lock,
     MoreHorizontal,
@@ -795,108 +794,69 @@ function MatterIssuesBoard({
     )
 }
 
-// T2 建单双模式(照 Multica 真身 0701 实拍):手动 ⇄ AI 队友互切;
-// 手动=标题/描述+提示行+chips(⋯菜单:开始日期/父Loop/子Loop);AI 队友=创建者行+意图框+项目下拉+⌘↵。
+// ① 建单重构(0707 终挑):手动=Stripe 全屏双栏(左分节表单 + 右实时预览,右侧要有排版);
+// AI 队友=Linear Ask(居中 composer + Skills 下拉 + 可关闭示例卡)。字段与旧弹窗一致,容器换形态。
 const CREATE_ISSUE_AGENT = "Prototyper-Codex-MBOT"
 const CREATE_ISSUE_PROJECTS = ["Octo-Runtime", "OctoLoop 产品手册", "接线演练场"]
+const CREATE_STATUS = ["待规划", "待办", "进行中", "审核中"]
+const CREATE_PRI = ["无优先级", "低", "中", "紧急"] as const
+const CREATE_ASSIGNEES = [CREATE_ISSUE_AGENT, "CC-Protoper", "Analyser-CC-MBOT", "王宜林 (我)"]
+const CREATE_SKILLS = ["lark-doc", "lark-sheets", "lark-wiki", "browser-use"]
+const CREATE_EXAMPLES = [
+    { title: "打磨演示脚本", desc: "从建单到回报,把一句话派单全链路走顺。" },
+    { title: "整理用户反馈", desc: "把上周反馈归并成 top 10 痛点表格。" },
+    { title: "排查收件箱加载慢", desc: "让 Bohan 修一下 Web 项目里收件箱加载慢的问题。" },
+]
 
 function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
     const [mode, setMode] = useState<"manual" | "agent">("manual")
     const [keepCreating, setKeepCreating] = useState(false)
-    const [moreOpen, setMoreOpen] = useState(false)
+    // 手动模式字段(与旧弹窗字段一致)
+    const [title, setTitle] = useState("")
+    const [desc, setDesc] = useState("")
+    const [status, setStatus] = useState("待办")
+    const [pri, setPri] = useState<(typeof CREATE_PRI)[number]>("无优先级")
+    const [assignee, setAssignee] = useState(CREATE_ISSUE_AGENT)
+    const [project, setProject] = useState(CREATE_ISSUE_PROJECTS[0])
+    const [due, setDue] = useState("")
+    const [extras, setExtras] = useState<string[]>([])
+    const [previewTab, setPreviewTab] = useState<"card" | "detail">("card")
+    // AI 队友模式
+    const [intent, setIntent] = useState("")
+    const [agentProject, setAgentProject] = useState("")
+    const [skillsOpen, setSkillsOpen] = useState(false)
     const [projectOpen, setProjectOpen] = useState(false)
-    const [project, setProject] = useState("")
+    const [examplesShown, setExamplesShown] = useState(true)
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose()
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") onClose()
+        }
+        window.addEventListener("keydown", onKey)
+        return () => window.removeEventListener("keydown", onKey)
+    }, [onClose])
+
+    function toggleExtra(key: string) {
+        setExtras((list) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]))
+    }
+
+    const priIcon: "none" | "mid" | "urgent" = pri === "紧急" ? "urgent" : pri === "无优先级" ? "none" : "mid"
+    const isBotAssignee = assignee !== "王宜林 (我)"
 
     return (
-        <div className="wk-matter-create-issue" role="presentation" onMouseDown={onClose}>
-            <section
-                className="wk-matter-create-issue__dialog"
-                role="dialog"
-                aria-modal="true"
-                aria-label="新建 Loop"
-                onMouseDown={(event) => event.stopPropagation()}
-            >
-                <header className="wk-matter-create-issue__head">
-                    <div className="wk-matter-create-issue__crumb">
-                        <span>OctoLoop</span>
-                        <ChevronRight size={13} />
-                        <strong>{mode === "manual" ? "手动创建" : "通过 AI 队友创建"}</strong>
-                    </div>
-                    <div className="wk-matter-create-issue__tools">
-                        <button type="button" aria-label="展开"><Expand size={16} /></button>
-                        <button type="button" aria-label="关闭" onClick={onClose}>×</button>
-                    </div>
-                </header>
-
-                {mode === "manual" ? (
-                    <>
-                        <main className="wk-matter-create-issue__body">
-                            <input className="wk-matter-create-issue__title" placeholder="Loop 标题" autoFocus />
-                            <textarea className="wk-matter-create-issue__desc" placeholder="添加描述..." />
-                        </main>
-
-                        <div className="wk-matter-create-issue__hint">
-                            <Bot size={13} />
-                            创建后 {CREATE_ISSUE_AGENT} 会立即开始工作。
-                        </div>
-
-                        <div className="wk-matter-create-issue__chips">
-                            <button type="button"><Circle size={14} />待办</button>
-                            <button type="button">— 无优先级</button>
-                            <button type="button"><Bot size={14} />{CREATE_ISSUE_AGENT}</button>
-                            <button type="button">截止日期</button>
-                            <button type="button">📁 Octo-Runtime</button>
-                            <button type="button" aria-haspopup="menu" aria-expanded={moreOpen} onClick={() => setMoreOpen((v) => !v)}>
-                                <MoreHorizontal size={15} />
-                            </button>
-                            {moreOpen && (
-                                <div className="wk-matter-create-issue__more" role="menu">
-                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>📅 设置开始日期...</button>
-                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↑ 设置父 Loop...</button>
-                                    <button type="button" role="menuitem" onClick={() => setMoreOpen(false)}>↓ 添加子 Loop...</button>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="wk-matter-create-issue__creator">
-                            <span>创建者</span>
-                            <em><Bot size={13} /></em>
-                            <strong>{CREATE_ISSUE_AGENT}</strong>
-                        </div>
-                        <main className="wk-matter-create-issue__body">
-                            <textarea
-                                className="wk-matter-create-issue__intent"
-                                autoFocus
-                                placeholder='告诉 AI 队友要做什么,例如:"让 Bohan 修一下 Web 项目里收件箱加载慢的问题"'
-                            />
-                        </main>
-
-                        <div className="wk-matter-create-issue__chips">
-                            <button type="button" aria-haspopup="menu" aria-expanded={projectOpen} onClick={() => setProjectOpen((v) => !v)}>
-                                <Briefcase size={14} />{project || "无项目"}
-                            </button>
-                            {projectOpen && (
-                                <div className="wk-matter-create-issue__more is-up" role="menu">
-                                    {CREATE_ISSUE_PROJECTS.map((p) => (
-                                        <button key={p} type="button" role="menuitem" onClick={() => { setProject(p); setProjectOpen(false) }}>
-                                            📁 {p}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-
-                <footer className="wk-matter-create-issue__foot">
-                    <button type="button" aria-label="添加附件"><Paperclip size={17} /></button>
-                    <div className="wk-matter-create-issue__actions">
-                        <button type="button" onClick={() => setMode((m) => (m === "manual" ? "agent" : "manual"))}>
-                            ⇄ {mode === "manual" ? "切换到 AI 队友" : "切换到手动"}
-                        </button>
-                        <div className="wk-matter-create-issue__keep">
+        <div className="wk-loop-create" role="dialog" aria-modal="true" aria-label="新建 Loop">
+            <header className="wk-loop-create__bar">
+                <button type="button" className="wk-loop-create__close" aria-label="关闭" onClick={onClose}>✕</button>
+                <i className="wk-loop-create__divider" />
+                <strong className="wk-loop-create__name">新建 Loop</strong>
+                <div className="wk-loop-create__modes" role="tablist" aria-label="创建方式">
+                    <button type="button" role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "is-active" : ""} onClick={() => setMode("manual")}>手动</button>
+                    <button type="button" role="tab" aria-selected={mode === "agent"} className={mode === "agent" ? "is-active" : ""} onClick={() => setMode("agent")}>AI 队友</button>
+                </div>
+                <div className="wk-loop-create__bar-right">
+                    {mode === "manual" && (
+                        <div className="wk-loop-create__keep">
                             <button
                                 type="button"
                                 role="switch"
@@ -909,12 +869,222 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                             </button>
                             <span>继续创建</span>
                         </div>
-                        <button type="button" className="wk-matter-create-issue__submit" onClick={onClose}>
-                            {mode === "manual" ? "创建 Loop" : "创建 (⌘↵)"}
-                        </button>
+                    )}
+                    <button type="button" className="wk-loop-create__submit" onClick={onClose}>
+                        {mode === "manual" ? "创建 Loop" : "派单 (⌘↵)"}
+                    </button>
+                </div>
+            </header>
+
+            {mode === "manual" ? (
+                <div className="wk-loop-create__split">
+                    <main className="wk-loop-create__form">
+                        <section>
+                            <h3>基本信息</h3>
+                            <input className="wk-loop-create__title" placeholder="Loop 标题" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
+                            <textarea className="wk-loop-create__desc" placeholder="添加描述..." value={desc} onChange={(e) => setDesc(e.target.value)} />
+                        </section>
+                        <section>
+                            <h3>属性</h3>
+                            <div className="wk-loop-create__grid">
+                                <label>
+                                    <span>状态</span>
+                                    <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                                        {CREATE_STATUS.map((s) => <option key={s}>{s}</option>)}
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>优先级</span>
+                                    <select value={pri} onChange={(e) => setPri(e.target.value as any)}>
+                                        {CREATE_PRI.map((s) => <option key={s}>{s}</option>)}
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>负责人</span>
+                                    <select value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+                                        {CREATE_ASSIGNEES.map((s) => <option key={s}>{s}</option>)}
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>项目</span>
+                                    <select value={project} onChange={(e) => setProject(e.target.value)}>
+                                        {CREATE_ISSUE_PROJECTS.map((s) => <option key={s}>{s}</option>)}
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>截止日期</span>
+                                    <input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+                                </label>
+                            </div>
+                            {isBotAssignee && (
+                                <p className="wk-loop-create__hint">
+                                    <Bot size={13} />
+                                    创建后 {assignee} 会立即开始工作。
+                                </p>
+                            )}
+                        </section>
+                        <section>
+                            <h3>更多选项</h3>
+                            <div className="wk-loop-create__extras">
+                                {[
+                                    { k: "start", label: "开始日期" },
+                                    { k: "parent", label: "父 Loop" },
+                                    { k: "sub", label: "子 Loop" },
+                                    { k: "attach", label: "附件" },
+                                ].map((opt) => (
+                                    <div key={opt.k} className="wk-loop-create__extra">
+                                        <label>
+                                            <input type="checkbox" checked={extras.includes(opt.k)} onChange={() => toggleExtra(opt.k)} />
+                                            <span>{opt.label}</span>
+                                        </label>
+                                        {extras.includes(opt.k) && (
+                                            <div className="wk-loop-create__extra-ctl">
+                                                {opt.k === "start" && <input type="date" />}
+                                                {opt.k === "parent" && (
+                                                    <select defaultValue="">
+                                                        <option value="" disabled>选择父 Loop...</option>
+                                                        <option>OCT-7 打磨 OctoLoop 演示脚本</option>
+                                                        <option>OCT-4 整理 OctoLoop 上手指南</option>
+                                                    </select>
+                                                )}
+                                                {opt.k === "sub" && <input placeholder="子 Loop 标题,回车添加" />}
+                                                {opt.k === "attach" && (
+                                                    <button type="button" className="wk-loop-create__attach">
+                                                        <Paperclip size={14} />
+                                                        选择文件
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    </main>
+                    <aside className="wk-loop-create__preview" aria-label="预览">
+                        <div className="wk-loop-create__ptabs">
+                            <span>预览</span>
+                            <div role="tablist">
+                                <button type="button" role="tab" aria-selected={previewTab === "card"} className={previewTab === "card" ? "is-active" : ""} onClick={() => setPreviewTab("card")}>看板卡片</button>
+                                <button type="button" role="tab" aria-selected={previewTab === "detail"} className={previewTab === "detail" ? "is-active" : ""} onClick={() => setPreviewTab("detail")}>详情页</button>
+                            </div>
+                        </div>
+                        {previewTab === "card" ? (
+                            <div className="wk-loop-create__pcanvas">
+                                <div className="wk-loop-create__pcol">
+                                    <div className="wk-loop-create__pcol-head">
+                                        <i />
+                                        {status}
+                                        <em>+1</em>
+                                    </div>
+                                    <div className="wk-loop-create__pcard">
+                                        <div className="wk-loop-create__pcard-top">
+                                            <PriorityIcon pri={priIcon} />
+                                            <span>OCT-124</span>
+                                        </div>
+                                        <strong>{title || "未命名 Loop"}</strong>
+                                        {desc.trim() && <p>{desc}</p>}
+                                        <div className="wk-loop-create__pcard-meta">📁 {project}</div>
+                                        <div className="wk-loop-create__pcard-foot">
+                                            <span><Bot size={13} />{assignee}</span>
+                                            <time>刚刚</time>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="wk-loop-create__pnote">创建后,这张卡会出现在「{status}」列。</p>
+                            </div>
+                        ) : (
+                            <div className="wk-loop-create__pcanvas">
+                                <div className="wk-loop-create__pdetail">
+                                    <div className="wk-loop-create__pdetail-crumb">
+                                        <span>📁 {project}</span>
+                                        <ChevronRight size={12} />
+                                        <span>OCT-124</span>
+                                    </div>
+                                    <h2>{title || "未命名 Loop"}</h2>
+                                    <div className="wk-loop-create__pdetail-chips">
+                                        <i><Circle size={11} />{status}</i>
+                                        <i>{pri}</i>
+                                        <i><Bot size={11} />{assignee}</i>
+                                        {due && <i>📅 {due}</i>}
+                                    </div>
+                                    <p>{desc.trim() || "添加描述后,这里会显示 Loop 的正文。"}</p>
+                                    <dl>
+                                        <div><dt>项目</dt><dd>{project}</dd></div>
+                                        <div><dt>负责人</dt><dd>{assignee}</dd></div>
+                                        <div><dt>状态</dt><dd>{status}</dd></div>
+                                        <div><dt>截止日期</dt><dd>{due || "—"}</dd></div>
+                                    </dl>
+                                </div>
+                                <p className="wk-loop-create__pnote">字段沿用 Loop 详情页(基准),创建即长这样。</p>
+                            </div>
+                        )}
+                    </aside>
+                </div>
+            ) : (
+                <div className="wk-loop-create__ask">
+                    <div className="wk-loop-create__ask-inner">
+                        <h2>把活交给 AI 队友</h2>
+                        <p>一句话描述你要的结果,{CREATE_ISSUE_AGENT} 会把它变成一个跑起来的 Loop。</p>
+                        <div className="wk-loop-create__composer">
+                            <textarea
+                                autoFocus
+                                placeholder='例如:"让 Bohan 修一下 Web 项目里收件箱加载慢的问题"'
+                                value={intent}
+                                onChange={(e) => setIntent(e.target.value)}
+                            />
+                            <div className="wk-loop-create__composer-bar">
+                                <div className="wk-loop-create__composer-left">
+                                    <button type="button" aria-haspopup="menu" aria-expanded={skillsOpen} onClick={() => { setSkillsOpen((v) => !v); setProjectOpen(false) }}>
+                                        Skills
+                                        <ChevronDown size={13} />
+                                    </button>
+                                    {skillsOpen && (
+                                        <div className="wk-loop-create__menu" role="menu">
+                                            {CREATE_SKILLS.map((s) => (
+                                                <button key={s} type="button" role="menuitem" onClick={() => setSkillsOpen(false)}>{s}</button>
+                                            ))}
+                                            <footer>来自 我的 Skills</footer>
+                                        </div>
+                                    )}
+                                    <button type="button" aria-haspopup="menu" aria-expanded={projectOpen} onClick={() => { setProjectOpen((v) => !v); setSkillsOpen(false) }}>
+                                        <Briefcase size={13} />
+                                        {agentProject || "无项目"}
+                                    </button>
+                                    {projectOpen && (
+                                        <div className="wk-loop-create__menu is-project" role="menu">
+                                            {CREATE_ISSUE_PROJECTS.map((p) => (
+                                                <button key={p} type="button" role="menuitem" onClick={() => { setAgentProject(p); setProjectOpen(false) }}>📁 {p}</button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <button type="button" aria-label="添加附件"><Paperclip size={14} /></button>
+                                </div>
+                                <div className="wk-loop-create__composer-right">
+                                    <span className="wk-loop-create__exec"><Bot size={13} />{CREATE_ISSUE_AGENT}</span>
+                                    <button type="button" className="wk-loop-create__send" onClick={onClose}>派单 ⌘↵</button>
+                                </div>
+                            </div>
+                        </div>
+                        {examplesShown && (
+                            <div className="wk-loop-create__examples">
+                                <div className="wk-loop-create__examples-head">
+                                    <span>从一个例子开始</span>
+                                    <button type="button" aria-label="关闭示例" onClick={() => setExamplesShown(false)}>✕</button>
+                                </div>
+                                <div className="wk-loop-create__examples-grid">
+                                    {CREATE_EXAMPLES.map((ex) => (
+                                        <button key={ex.title} type="button" onClick={() => setIntent(ex.desc)}>
+                                            <strong>{ex.title}</strong>
+                                            <span>{ex.desc}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </footer>
-            </section>
+                </div>
+            )}
         </div>
     )
 }
