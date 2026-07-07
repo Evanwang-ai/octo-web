@@ -6928,3 +6928,54 @@
 /* 小队成员头像堆叠 */
 .wk-matter-squads__members .wk-avatarm { margin-left: -6px; box-shadow: 0 0 0 1.5px var(--wk-bg-surface, #fff); }
 .wk-matter-squads__members .wk-avatarm:first-child { margin-left: 0; }
+
+/* ═══ E:看板 + 列表 = feat/loop-react mlv 标杆(端口自 MatterListView/index.css,值实测) ═══ */
+/* 列表 */
+.mlv-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 12px 32px; }
+.mlv-group { margin-bottom: 2px; }
+.mlv-group-head { display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; padding: 0 16px 0 10px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--wk-text-secondary, #51565d); }
+.mlv-chev { display: inline-flex; width: 14px; font-size: 15px; line-height: 1; color: var(--wk-text-disabled, #c9cdd4); transition: transform 0.15s; }
+.mlv-chev.is-open { transform: rotate(90deg); }
+.mlv-group-label { color: var(--wk-text-primary, #1f2329); }
+.mlv-group-count { color: var(--wk-text-disabled, #c9cdd4); font-weight: 500; }
+/* 行:40px 密集 · 内缩圆角 hover · 无分隔线 */
+.mlv-row { display: flex; align-items: center; gap: 8px; height: 40px; margin: 0 8px; padding: 0 10px; border-radius: var(--wk-r-md, 8px); cursor: pointer; transition: background 0.1s; }
+.mlv-row:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.03)); }
+.mlv-check { flex: 0 0 16px; display: inline-flex; align-items: center; justify-content: center; width: 16px; opacity: 0; transition: opacity 0.1s; }
+.mlv-check input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--wk-brand-primary, #1f2329); }
+.mlv-row:hover .mlv-check { opacity: 1; }
+.mlv-icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 3px; border: none; background: transparent; border-radius: 5px; line-height: 0; }
+.mlv-cell { flex: 0 0 auto; }
+.mlv-icon { display: block; }
+.mlv-title { flex: 0 1 auto; min-width: 0; font-size: 13px; font-weight: 500; color: var(--wk-text-primary, #1f2329); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mlv-flex { flex: 1 1 auto; }
+.mlv-proj { flex: 0 0 auto; max-width: 150px; font-size: 12.5px; color: var(--wk-text-tertiary, #8f959e); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mlv-id { flex: 0 0 auto; font-family: var(--wk-font-mono, ui-monospace, "SF Mono", Menlo, monospace); font-size: 12px; color: var(--wk-text-disabled, #c9cdd4); white-space: nowrap; }
+.mlv-leader { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; max-width: 200px; }
+.mlv-leader--none { color: var(--wk-text-disabled, #c9cdd4); font-size: 12.5px; }
+.mlv-leader-name { font-size: 12.5px; color: var(--wk-text-secondary, #51565d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mlv-ai { flex: 0 0 auto; display: inline-flex; align-items: center; height: 16px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: var(--wk-color-accent, #5b5ef0); background: color-mix(in srgb, var(--wk-color-accent, #5b5ef0) 12%, transparent); }
+.mlv-date { flex: 0 0 auto; width: 68px; text-align: right; font-size: 12px; color: var(--wk-text-tertiary, #8f959e); white-space: nowrap; }
+/* 看板 */
+.mlv-board { flex: 1 1 auto; min-height: 0; display: flex; align-items: flex-start; gap: 14px; overflow-x: auto; overflow-y: hidden; padding: 10px 20px 24px; }
+.mlv-col { flex: 0 0 288px; width: 288px; height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.mlv-col-head { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px; font-size: 13px; font-weight: 600; }
+.mlv-col-label { color: var(--wk-text-primary, #1f2329); }
+.mlv-col-count { color: var(--wk-text-disabled, #c9cdd4); font-weight: 500; }
+.mlv-col-add { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border: none; background: transparent; border-radius: 6px; color: var(--wk-text-tertiary, #8f959e); font-size: 16px; cursor: pointer; opacity: 0; transition: opacity 0.12s, background 0.12s; }
+.mlv-col:hover .mlv-col-add { opacity: 1; }
+.mlv-col-add:hover { background: var(--wk-brand-tint-08, rgba(0,0,0,0.05)); }
+.mlv-col-cards { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; }
+.mlv-card { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-md, 8px); background: var(--wk-bg-surface, #fff); box-shadow: var(--wk-shadow-sm, 0 1px 2px rgba(0,0,0,0.05)); cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s; }
+.mlv-card:hover { border-color: var(--wk-brand-tint-15, rgba(0,0,0,0.12)); transform: translateY(-1px); }
+.mlv-card-top { display: flex; align-items: center; gap: 6px; }
+.mlv-card-id { font-family: var(--wk-font-mono, ui-monospace, Menlo, monospace); font-size: 11.5px; color: var(--wk-text-disabled, #c9cdd4); }
+.mlv-card-date { font-size: 11.5px; color: var(--wk-text-tertiary, #8f959e); }
+.mlv-card-title { font-size: 13px; font-weight: 550; color: var(--wk-text-primary, #1f2329); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mlv-card-foot { display: flex; align-items: center; gap: 6px; }
+.mlv-card-proj { font-size: 12px; color: var(--wk-text-tertiary, #8f959e); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.mlv-card-leader { display: inline-flex; align-items: center; gap: 4px; }
+/* 工具栏「布局」段控 */
+.wk-mv2-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 7px; background: var(--wk-brand-tint-06, rgba(0,0,0,0.04)); }
+.wk-mv2-seg button { height: 24px; padding: 0 12px; border: none; background: transparent; border-radius: 5px; font-size: 12.5px; font-weight: 550; color: var(--wk-text-tertiary, #8f959e); cursor: pointer; }
+.wk-mv2-seg button.is-on { background: var(--wk-bg-surface, #fff); color: var(--wk-text-primary, #1f2329); box-shadow: var(--wk-shadow-sm, 0 1px 2px rgba(0,0,0,0.06)); }

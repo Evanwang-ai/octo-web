@@ -158,46 +158,118 @@ const ISSUE_STATUSES = [
     { label: "已阻塞", tone: "blocked" },
 ] as const
 
-function PriorityIcon({ pri }: { pri: "none" | "mid" | "urgent" }) {
-    if (pri === "none") return <span className="wk-mv2-pri is-none" aria-label="无优先级">—</span>
+// 优先级 + 状态 = Linear 几何原子(端口自 feat/loop-react mlv icons.tsx,着色走 --wk-* 带 fallback)。
+function PriorityIcon({ pri, size = 16 }: { pri: "none" | "mid" | "urgent"; size?: number }) {
+    if (pri === "urgent") {
+        return (
+            <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="紧急">
+                <rect x="1" y="1" width="14" height="14" rx="3.5" style={{ fill: "var(--wk-color-warning, #d99e21)" }} />
+                <rect x="7" y="3.6" width="2" height="5.4" rx="1" fill="#fff" />
+                <rect x="7" y="10.6" width="2" height="2" rx="1" fill="#fff" />
+            </svg>
+        )
+    }
+    const on = pri === "mid" ? 2 : 0
+    const bars = [{ x: 1.5, y: 9, h: 5 }, { x: 6.5, y: 6, h: 8 }, { x: 11.5, y: 3, h: 11 }]
     return (
-        <svg className={`wk-mv2-pri${pri === "urgent" ? " is-urgent" : ""}`} width="14" height="12" viewBox="0 0 14 12" aria-hidden>
-            <rect x="1" y="7" width="3" height="4" rx="1" />
-            <rect x="5.5" y="4" width="3" height="7" rx="1" />
-            <rect x="10" y="1" width="3" height="10" rx="1" opacity={pri === "urgent" ? 1 : 0.35} />
+        <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="优先级">
+            {bars.map((b, i) => (
+                <rect key={i} x={b.x} y={b.y} width="3" height={b.h} rx="1" style={{ fill: i < on ? "var(--wk-text-primary, #1f2329)" : "var(--wk-text-disabled, #c9cdd4)" }} />
+            ))}
         </svg>
     )
 }
 
+// restyle 状态 tone → benchmark 状态键
+const STATUS_KEY: Record<string, string> = { backlog: "backlog", todo: "open", doing: "in_progress", warm: "in_progress", review: "review", green: "review", done: "done", blocked: "blocked", red: "blocked" }
+function StatusIcon({ status, size = 16 }: { status: string; size?: number }) {
+    const ring = (color: string, dash?: string) => (
+        <circle cx="8" cy="8" r="6" fill="none" style={{ stroke: color }} strokeWidth={1.6} strokeDasharray={dash} />
+    )
+    switch (status) {
+        case "backlog":
+            return <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="待规划">{ring("var(--wk-text-tertiary, #8f959e)", "2.4 2.2")}</svg>
+        case "open":
+            return <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="待办">{ring("var(--wk-text-tertiary, #8f959e)")}</svg>
+        case "in_progress":
+            return (
+                <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="进行中">
+                    {ring("var(--wk-color-info, #2f6fed)")}
+                    <path d="M8 8 L8 3 A5 5 0 0 1 13 8 Z" style={{ fill: "var(--wk-color-info, #2f6fed)" }} />
+                </svg>
+            )
+        case "review":
+            return (
+                <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="审核中">
+                    {ring("var(--wk-color-warning, #d99e21)")}
+                    <path d="M8 8 L8 3 A5 5 0 1 1 4.46 11.54 Z" style={{ fill: "var(--wk-color-warning, #d99e21)" }} />
+                </svg>
+            )
+        case "done":
+            return (
+                <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="已完成">
+                    <circle cx="8" cy="8" r="7" style={{ fill: "var(--wk-color-success, #2ea44f)" }} />
+                    <path d="M5 8.2l2 2 4-4.4" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            )
+        case "blocked":
+            return (
+                <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon" aria-label="已阻塞">
+                    <circle cx="8" cy="8" r="7" style={{ fill: "var(--wk-color-error, #e5484d)" }} />
+                    <rect x="7" y="4" width="2" height="5" rx="1" fill="#fff" />
+                    <rect x="7" y="10.5" width="2" height="2" rx="1" fill="#fff" />
+                </svg>
+            )
+        default:
+            return <svg width={size} height={size} viewBox="0 0 16 16" className="mlv-icon">{ring("var(--wk-text-tertiary, #8f959e)")}</svg>
+    }
+}
+
 function IssueGroupList({ rows }: { rows: ReadonlyArray<typeof ISSUE_ROWS[number]> }) {
     return (
-        <div className="wk-mv2-grouplist">
+        <div className="mlv-list">
             {ISSUE_STATUSES.map((st) => {
                 const group = rows.filter((r) => r.status === st.label)
+                if (group.length === 0) return null
+                const skey = STATUS_KEY[st.tone] || "open"
                 return (
-                    <section key={st.label}>
-                        <header className={`wk-mv2-grouplist__head is-${st.tone}`}>
-                            <input type="checkbox" aria-label={`选择 ${st.label} 组`} />
-                            <ChevronDown size={13} />
-                            <i className="wk-mv2-status-dot" />
-                            <strong>{st.label}</strong>
-                            <small>{group.length}</small>
-                        </header>
-                        {group.length === 0 ? (
-                            <div className="wk-mv2-grouplist__empty">无回路</div>
-                        ) : (
-                            group.map((r) => (
-                                <button key={r.key} type="button" className="wk-mv2-grouplist__row">
-                                    <PriorityIcon pri={r.pri} />
-                                    <span className="wk-mv2-grouplist__key">{r.key}</span>
-                                    <span className="wk-mv2-grouplist__title">{r.title}</span>
-                                    <span className="wk-mv2-grouplist__proj">📁 {r.project}</span>
-                                    <span className="wk-mv2-grouplist__assignee"><span className="wk-mv2-grouplist__ava"><Bot size={12} /></span>{r.agent}</span>
-                                    <time className="wk-mv2-grouplist__time">{r.updated}</time>
-                                </button>
-                            ))
-                        )}
-                    </section>
+                    <div key={st.label} className="mlv-group">
+                        <button type="button" className="mlv-group-head">
+                            <span className="mlv-chev is-open">›</span>
+                            <StatusIcon status={skey} size={14} />
+                            <span className="mlv-group-label">{st.label}</span>
+                            <span className="mlv-group-count">{group.length}</span>
+                        </button>
+                        {group.map((r) => (
+                            <div
+                                key={r.key}
+                                className="mlv-row"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => WKApp.routeRight.replaceToRoot(<MatterIssueDetail issue={r} />)}
+                            >
+                                <label className="mlv-check" onClick={(e) => e.stopPropagation()}>
+                                    <input type="checkbox" aria-label="选择回路" />
+                                </label>
+                                <span className="mlv-cell mlv-icon-btn"><PriorityIcon pri={r.pri} size={16} /></span>
+                                <span className="mlv-cell mlv-icon-btn"><StatusIcon status={skey} size={16} /></span>
+                                <span className="mlv-title">{r.title}</span>
+                                <span className="mlv-flex" />
+                                <span className="mlv-proj">{r.project}</span>
+                                <span className="mlv-id">{r.key}</span>
+                                {r.agent !== "未分配" ? (
+                                    <span className="mlv-leader">
+                                        <AgentAvatar name={r.agent} size={18} />
+                                        <span className="mlv-leader-name">{r.agent}</span>
+                                        <span className="mlv-ai">AI</span>
+                                    </span>
+                                ) : (
+                                    <span className="mlv-leader mlv-leader--none">未分配</span>
+                                )}
+                                <span className="mlv-date">{r.updated}</span>
+                            </div>
+                        ))}
+                    </div>
                 )
             })}
         </div>
@@ -746,8 +818,6 @@ function MatterIssuesBoard({
                     ))}
                 </div>
                 <div className="wk-matter-board__actions">
-                    <button type="button">0 工作中</button>
-
                     <div className="wk-mv2-filterwrap">
                         <button type="button" aria-haspopup="menu" aria-expanded={filterOpen} onClick={() => { setFilterOpen((v) => !v); setDateSub(false); setDisplayOpen(false); setViewOpen(false) }}>筛选</button>
                         {filterOpen && (
@@ -776,9 +846,16 @@ function MatterIssuesBoard({
                     </div>
 
                     <div className="wk-mv2-filterwrap">
-                        <button type="button" aria-haspopup="menu" aria-expanded={displayOpen} onClick={() => { setDisplayOpen((v) => !v); setFilterOpen(false); setViewOpen(false) }}>手动</button>
+                        <button type="button" aria-haspopup="menu" aria-expanded={displayOpen} onClick={() => { setDisplayOpen((v) => !v); setFilterOpen(false); setViewOpen(false) }}>显示</button>
                         {displayOpen && (
                             <div className="wk-mv2-panel" role="menu">
+                                <div className="wk-mv2-panel__row">
+                                    <span>布局</span>
+                                    <div className="wk-mv2-seg">
+                                        <button type="button" className={view === "board" ? "is-on" : ""} onClick={() => setView("board")}>看板</button>
+                                        <button type="button" className={view === "list" ? "is-on" : ""} onClick={() => setView("list")}>列表</button>
+                                    </div>
+                                </div>
                                 <div className="wk-mv2-panel__row">
                                     <span>分组</span>
                                     <select defaultValue="状态"><option>状态</option><option>项目</option><option>负责人</option></select>
@@ -807,70 +884,58 @@ function MatterIssuesBoard({
                             </div>
                         )}
                     </div>
-
-                    <div className="wk-mv2-filterwrap">
-                        <button type="button" aria-haspopup="menu" aria-expanded={viewOpen} onClick={() => { setViewOpen((v) => !v); setFilterOpen(false); setDisplayOpen(false) }}>{view === "board" ? "看板" : "列表"}</button>
-                        {viewOpen && (
-                            <div className="wk-mv2-menu" role="menu">
-                                <span className="wk-mv2-panel__label">视图</span>
-                                <button type="button" role="menuitem" onClick={() => { setView("board"); setViewOpen(false) }}>▦ 看板{view === "board" && <em>✓</em>}</button>
-                                <button type="button" role="menuitem" onClick={() => { setView("list"); setViewOpen(false) }}>☰ 列表{view === "list" && <em>✓</em>}</button>
-                            </div>
-                        )}
-                    </div>
                 </div>
             </div>
 
             {view === "list" ? (
-                <div className="wk-matter-board__listwrap">
-                    <IssueGroupList rows={ISSUE_ROWS} />
-                </div>
+                <IssueGroupList rows={ISSUE_ROWS} />
             ) : (
-                <div className="wk-matter-board__columns">
-                    {BOARD_COLUMNS.map((column) => (
-                        <section key={column.id} className={`wk-matter-board__column wk-matter-board__column--${column.tone}`}>
-                            <header>
-                                <span className="wk-matter-board__status-dot" />
-                                <strong>{column.label}</strong>
-                                <small>{column.cards.length}</small>
-                                <MoreHorizontal size={15} />
-                                <button type="button" onClick={() => setCreateIssueOpen(true)}>+</button>
-                            </header>
-
-                            {column.cards.length === 0 ? (
-                                <div className="wk-matter-board__empty">无回路</div>
-                            ) : (
-                                <div className="wk-matter-board__cards">
+                <div className="mlv-board">
+                    {BOARD_COLUMNS.map((column) => {
+                        const skey = STATUS_KEY[column.tone] || "open"
+                        return (
+                            <div key={column.id} className="mlv-col">
+                                <div className="mlv-col-head">
+                                    <StatusIcon status={skey} size={14} />
+                                    <span className="mlv-col-label">{column.label}</span>
+                                    <span className="mlv-col-count">{column.cards.length}</span>
+                                    <span className="mlv-flex" />
+                                    <button type="button" className="mlv-col-add" onClick={() => setCreateIssueOpen(true)} aria-label="新建回路">+</button>
+                                </div>
+                                <div className="mlv-col-cards">
                                     {column.cards.map((card) => (
-                                        <button
+                                        <div
                                             key={card.key}
-                                            type="button"
-                                            className="wk-matter-board__card"
+                                            className="mlv-card"
+                                            role="button"
+                                            tabIndex={0}
                                             onClick={() => WKApp.routeRight.replaceToRoot(<MatterIssueDetail issue={card} />)}
                                         >
-                                            <div className="wk-matter-board__card-key">
-                                                {cardProps.includes("优先级") && <PriorityIcon pri={card.pri} />}
-                                                <span>{card.key}</span>
+                                            <div className="mlv-card-top">
+                                                {cardProps.includes("优先级") && <span className="mlv-icon-btn"><PriorityIcon pri={card.pri} size={14} /></span>}
+                                                <span className="mlv-icon-btn"><StatusIcon status={skey} size={14} /></span>
+                                                <span className="mlv-card-id">{card.key}</span>
+                                                <span className="mlv-flex" />
+                                                {card.updated && <span className="mlv-card-date">{card.updated.replace("更新于 ", "")}</span>}
                                             </div>
-                                            <h3>{card.title}</h3>
-                                            {cardProps.includes("描述") && card.desc && <p>{card.desc}</p>}
-                                            {cardProps.includes("项目") && <span className="wk-matter-board__project">📁 {card.project}</span>}
-                                            <footer>
-                                                {cardProps.includes("负责人") && (
-                                                    <span className="wk-matter-board__agent">
-                                                        {card.agentType === "squad" ? <Users size={12} /> : card.agentType === "bot" ? <Bot size={12} /> : null}
-                                                        {card.agent}
+                                            <div className="mlv-card-title">{card.title}</div>
+                                            <div className="mlv-card-foot">
+                                                {cardProps.includes("项目") && <span className="mlv-card-proj">{card.project}</span>}
+                                                <span className="mlv-flex" />
+                                                {cardProps.includes("子回路进度") && card.progress && <ProgressRing done={card.progress.done} total={card.progress.total} />}
+                                                {cardProps.includes("负责人") && card.agentType !== "none" && (
+                                                    <span className="mlv-card-leader">
+                                                        {card.agentType === "squad" ? <SquadAvatar name={card.agent} size={18} /> : <AgentAvatar name={card.agent} size={18} />}
+                                                        <span className="mlv-ai">{card.agentType === "squad" ? "队" : "AI"}</span>
                                                     </span>
                                                 )}
-                                                {cardProps.includes("子回路进度") && card.progress && <ProgressRing done={card.progress.done} total={card.progress.total} />}
-                                                {card.updated && <time>{card.updated}</time>}
-                                            </footer>
-                                        </button>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                            )}
-                        </section>
-                    ))}
+                            </div>
+                        )
+                    })}
                 </div>
             )}
 
