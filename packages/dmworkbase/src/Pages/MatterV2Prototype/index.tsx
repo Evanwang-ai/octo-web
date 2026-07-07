@@ -1052,6 +1052,7 @@ function AddSkillModal({ onClose }: { onClose: () => void }) {
     )
 }
 
+// ④ WorkOS 骨架(06-WorkOS 蒸馏):全宽单栏 = 身份头(大头像+名+元数据 chips)→ 水平 tab → section 卡片流。
 function MatterCoWorkerDetail({
     coworker,
 }: {
@@ -1067,40 +1068,29 @@ function MatterCoWorkerDetail({
                     <span>AI 队友</span>
                     <ChevronRight size={13} />
                     <strong>{coworker.name}</strong>
-                    <em><i />在线</em>
                 </div>
                 <MoreHorizontal size={17} />
             </header>
 
-            <div className="wk-matter-coworker-detail__layout">
-                <aside className="wk-matter-coworker-detail__profile">
-                    <div className="wk-matter-coworker-detail__identity">
-                        <span><Bot size={28} /></span>
-                        <h2>{coworker.name}</h2>
+            <div className="wk-idhost">
+                {/* 身份头:头像 + 名 + 描述 + 元数据 chips 行(WorkOS org_id/域名 chips 位) */}
+                <div className="wk-idhead">
+                    <span className="wk-idhead__avatar"><Bot size={26} /><i /></span>
+                    <div className="wk-idhead__main">
+                        <h1>{coworker.name}</h1>
                         <p>{coworker.desc}</p>
-                        <em><i />在线</em>
+                        <div className="wk-idhead__chips">
+                            <span className="wk-chip is-online"><i />在线</span>
+                            <span className="wk-chip is-mono">{coworker.runtime}</span>
+                            <span className="wk-chip is-mono">gpt-5.5</span>
+                            <span className="wk-chip">{coworker.visibility === "personal" ? <><Lock size={11} /> Personal</> : "Workspace"}</span>
+                            <span className="wk-chip">并发 {coworker.concurrency}</span>
+                            <span className="wk-chip">思考 · 跟随 CLI</span>
+                        </div>
                     </div>
-                    <dl>
-                        <dt>属性</dt>
-                        <div><span>运行时</span><strong>{coworker.runtime}<i /></strong></div>
-                        <div><span>模型</span><strong>gpt-5.5</strong></div>
-                        <div><span>思考</span><strong>跟随 CLI 配置</strong></div>
-                        <div><span>可见性</span><strong>{coworker.visibility === "personal" ? <><Lock size={12} /> Personal</> : "Workspace"}</strong></div>
-                        <div><span>并发</span><strong>{coworker.concurrency}</strong></div>
-                    </dl>
-                    <dl>
-                        <dt>详情</dt>
-                        <div><span>所有者</span><strong><b>L</b>{coworker.owner}</strong></div>
-                        <div><span>创建时间</span><strong>3 天前</strong></div>
-                        <div><span>更新时间</span><strong>1 小时前</strong></div>
-                    </dl>
-                    <div className="wk-matter-coworker-detail__skills">
-                        <strong>SKILLS <span>{CW_SKILLS.length}</span></strong>
-                        <p>{CW_SKILLS.map((skill) => <em key={skill}>{skill}</em>)}<button type="button" onClick={() => setAddSkillOpen(true)}>+ 附加</button></p>
-                    </div>
-                </aside>
+                </div>
 
-                <main className="wk-matter-coworker-detail__main">
+                <main className="wk-idhead__content">
                     <nav className="wk-matter-coworker-detail__tabs">
                         {CW_TABS.map((tab) => (
                             <button key={tab.key} type="button" className={page === tab.key ? "is-active" : ""} onClick={() => setPage(tab.key)}>{tab.label}</button>
@@ -1109,25 +1099,35 @@ function MatterCoWorkerDetail({
 
                     {page === "activity" && (
                         <div className="wk-matter-coworker-detail__cards">
-                            <section>
-                                <strong>当前 <span>无进行中的工作</span></strong>
+                            <section className="wk-seccard">
+                                <h4>概览</h4>
+                                <dl className="wk-seccard__dl">
+                                    <div><dt>所有者</dt><dd><b className="wk-minav">L</b>{coworker.owner}</dd></div>
+                                    <div><dt>创建时间</dt><dd>3 天前</dd></div>
+                                    <div><dt>更新时间</dt><dd>1 小时前</dd></div>
+                                    <div><dt>Skills</dt><dd>{CW_SKILLS.length} 个</dd></div>
+                                </dl>
+                            </section>
+                            <section className="wk-seccard">
+                                <h4>当前<span>无进行中的工作</span></h4>
                                 <p>这个 AI 队友当前没有在跑任何 task。</p>
                             </section>
-                            <section className="wk-matter-coworker-detail__metric">
-                                <span>近 30 天　表现</span>
+                            <section className="wk-seccard wk-matter-coworker-detail__metric">
+                                <h4>近 30 天<span>表现</span></h4>
                                 <strong>{coworker.runs}</strong>
                                 <p>100% 成功 · 平均 12s</p>
                                 <i />
                             </section>
-                            <section>
-                                <strong>最近工作 <span>还没有完成的 task</span></strong>
+                            <section className="wk-seccard">
+                                <h4>最近工作<span>还没有完成的 task</span></h4>
                                 <p>这个 AI 队友还没有完成过任何 task。</p>
                             </section>
                         </div>
                     )}
 
                     {page === "tasks" && (
-                        <div className="wk-cw-tasks">
+                        <div className="wk-cw-tasks wk-seccard">
+                            <h4>Tasks<span>分配给这个 AI 队友的 Loop</span></h4>
                             <div className="wk-cw-tasks__toolbar">
                                 <label className="wk-cw-tasks__search"><Search size={14} /><input placeholder="搜索 issue..." /></label>
                                 <div className="wk-cw-tasks__chips">
@@ -1144,7 +1144,8 @@ function MatterCoWorkerDetail({
                     )}
 
                     {page === "instructions" && (
-                        <div className="wk-cw-pane">
+                        <div className="wk-cw-pane wk-seccard">
+                            <h4>指令</h4>
                             <p className="wk-cw-help">定义这个 AI 队友的身份和工作风格。会注入到每个 task 的上下文。支持 Markdown。</p>
                             <textarea
                                 className="wk-cw-editor"
@@ -1156,15 +1157,16 @@ function MatterCoWorkerDetail({
                     )}
 
                     {page === "skills" && (
-                        <div className="wk-cw-pane">
-                            <div className="wk-cw-skillshead">
-                                <p className="wk-cw-help">分配给该 AI 队友的工作区 skill。本地运行时 skill 会自动可用。</p>
-                                <button type="button" className="wk-cw-addbtn" onClick={() => setAddSkillOpen(true)}>+ 添加 skill</button>
-                            </div>
+                        <div className="wk-cw-pane wk-seccard">
+                            <h4>Skills<span>来自 我的 Skills(User 层)</span></h4>
+                            <p className="wk-cw-help">分配给该 AI 队友的 skill。本地运行时 skill 会自动可用。</p>
                             <div className="wk-cw-skillgrid">
                                 {CW_SKILLS.map((skill) => (
                                     <span key={skill} className="wk-cw-skillchip">{skill}</span>
                                 ))}
+                            </div>
+                            <div className="wk-seccard__actions">
+                                <button type="button" className="wk-cw-save" onClick={() => setAddSkillOpen(true)}>+ 添加 skill</button>
                             </div>
                         </div>
                     )}
@@ -1386,24 +1388,22 @@ function MatterSquadDetail({
                 <button type="button"><Trash2 size={15} />归档</button>
             </header>
 
-            <div className="wk-matter-squad-detail__layout">
-                <aside className="wk-matter-squad-detail__profile">
-                    <div className="wk-matter-squad-detail__identity">
-                        <span><Users size={30} /></span>
-                        <h2>{squad.name}</h2>
+            {/* ⑤ WorkOS 骨架:身份头 + 水平 tab + section 卡片流(Members=卡内表格+底部操作) */}
+            <div className="wk-idhost">
+                <div className="wk-idhead">
+                    <span className="wk-idhead__avatar is-squad"><Users size={26} /></span>
+                    <div className="wk-idhead__main">
+                        <h1>{squad.name}</h1>
                         <p>{squad.description}</p>
+                        <div className="wk-idhead__chips">
+                            <span className="wk-chip">👑 {squad.leader}</span>
+                            <span className="wk-chip">成员 {squad.members.length}</span>
+                            <span className="wk-chip">由 {squad.creator} 创建 · {squad.created}</span>
+                        </div>
                     </div>
-                    <dl>
-                        <dt>详情</dt>
-                        <div><span>Leader</span><strong><Bot size={13} />{squad.leader}</strong></div>
-                        <div><span>Members</span><strong>{squad.members.length}</strong></div>
-                        <div><span>Created by</span><strong><i>L</i>{squad.creator}</strong></div>
-                        <div><span>Created</span><strong>{squad.created}</strong></div>
-                        <div><span>Updated</span><strong>{squad.updated}</strong></div>
-                    </dl>
-                </aside>
+                </div>
 
-                <main className="wk-matter-squad-detail__main">
+                <main className="wk-idhead__content">
                     <nav className="wk-matter-squad-detail__tabs">
                         <button type="button" className={activeTab === "members" ? "is-active" : ""} onClick={() => setActiveTab("members")}>
                             <Users size={15} />
@@ -1416,35 +1416,34 @@ function MatterSquadDetail({
                     </nav>
 
                     {activeTab === "members" ? (
-                        <section className="wk-matter-squad-detail__members">
-                            <header>
-                                <div>
-                                    <h3>成员</h3>
-                                    <p>该小队有 {squad.members.length} 名成员</p>
-                                </div>
-                                <div>
-                                    <button type="button"><PlusIcon />创建 AI 队友</button>
-                                    <button type="button"><PlusIcon />添加成员</button>
-                                </div>
-                            </header>
-                            <div className="wk-matter-squad-detail__member-list">
+                        <section className="wk-seccard">
+                            <h4>成员<span>该小队有 {squad.members.length} 名成员</span></h4>
+                            <div className="wk-sqtable">
                                 {squad.members.map((member, index) => (
-                                    <article key={member}>
-                                        <span><Bot size={17} /><i /></span>
-                                        <div>
+                                    <div key={member} className="wk-sqtable__row">
+                                        <span className="wk-sqtable__avatar"><Bot size={15} /><i /></span>
+                                        <div className="wk-sqtable__who">
                                             <strong>{member}</strong>
-                                            <small>Agent {index === 0 ? " · 负责人 · 空闲" : " · 空闲"}</small>
-                                            <p>{index === 0 ? "leader" : "添加角色..."}</p>
-                                            <time>最近活动 1 分钟前</time>
+                                            <small>Agent · 最近活动 1 分钟前</small>
                                         </div>
-                                    </article>
+                                        <span className={`wk-chip${index === 0 ? " is-leader" : ""}`}>{index === 0 ? "负责人" : "成员"}</span>
+                                        <span className="wk-sqtable__state">空闲</span>
+                                    </div>
                                 ))}
+                            </div>
+                            <div className="wk-seccard__actions">
+                                <button type="button" className="wk-cw-save"><PlusIcon />添加成员</button>
+                                <button type="button" className="wk-cw-addbtn"><PlusIcon />创建 AI 队友</button>
                             </div>
                         </section>
                     ) : (
-                        <section className="wk-matter-squad-detail__instructions">
-                            <p>小队指引会在 Leader 智能体处理分配给该小队的 issue 时注入到它的 prompt 中。可用来给 Leader 提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
-                            <textarea placeholder="e.g. Always start by writing a failing test. Prefer small, atomic commits." />
+                        <section className="wk-seccard">
+                            <h4>Instructions</h4>
+                            <p className="wk-cw-help">小队指引会在 Leader 处理分配给该小队的 Loop 时注入到它的 prompt 中。可用来给 Leader 提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
+                            <textarea className="wk-cw-editor" placeholder="e.g. Always start by writing a failing test. Prefer small, atomic commits." />
+                            <div className="wk-seccard__actions">
+                                <button type="button" className="wk-cw-save"><Save size={14} />保存</button>
+                            </div>
                         </section>
                     )}
                 </main>
