@@ -871,6 +871,7 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
     const [skillsOpen, setSkillsOpen] = useState(false)
     const [projectOpen, setProjectOpen] = useState(false)
     const [examplesShown, setExamplesShown] = useState(true)
+    const [copied, setCopied] = useState(false)
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -1070,6 +1071,25 @@ function MatterCreateIssueModal({ onClose }: { onClose: () => void }) {
                     <div className="wk-loop-create__ask-inner">
                         <h2>把活交给 AI 队友</h2>
                         <p>一句话描述你要的结果,{CREATE_ISSUE_AGENT} 会把它变成一个跑起来的 Loop。</p>
+                        <div className="wk-loop-create__cli">
+                            <div className="wk-loop-create__cli-head">
+                                <span className="wk-loop-create__cli-dot" />
+                                <div>
+                                    <strong>你还没装 OctoLoop CLI</strong>
+                                    <span>装上后,{CREATE_ISSUE_AGENT} 就能在你的机器上跑这个 Loop;暂时没装也行——把下面这条信息发给 Bot 即可派单。</span>
+                                </div>
+                            </div>
+                            <div className="wk-loop-create__cli-acts">
+                                <button type="button" className="wk-loop-create__cli-install">查看安装指引</button>
+                                <button
+                                    type="button"
+                                    className="wk-loop-create__cli-copy"
+                                    onClick={() => { setCopied(true); window.setTimeout(() => setCopied(false), 1600) }}
+                                >
+                                    {copied ? "已复制到剪贴板" : "一键复制发给 Bot 的信息"}
+                                </button>
+                            </div>
+                        </div>
                         <div className="wk-loop-create__composer">
                             <textarea
                                 autoFocus
