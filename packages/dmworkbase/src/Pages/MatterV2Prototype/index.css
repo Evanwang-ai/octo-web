@@ -1336,11 +1336,11 @@
 .wk-matter-coworkers__row,
 .wk-matter-squads__row,
 .wk-mv2-projects__row {
-  display: flex;
+  display: grid;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: calc(100% - 16px);
-  min-height: 40px;
+  min-height: 44px;
   margin: 0 8px;
   padding: 0 10px;
   border: none;
@@ -1350,6 +1350,27 @@
   transition: background 0.1s;
   text-align: left;
   color: var(--wk-text-primary, #1f2329);
+}
+
+/* #10:统一列表语言——各列表 flex 稀疏行 → 与 Loops 一致的对齐网格行(无列头) */
+.wk-matter-coworkers__row { grid-template-columns: minmax(0, 1fr) 72px 128px 156px 84px 44px; }
+.wk-mv2-projects__row { grid-template-columns: minmax(0, 1fr) 84px 108px 56px 124px 84px; }
+.wk-matter-squads__row { grid-template-columns: minmax(0, 1fr) 184px 100px 116px; }
+
+.wk-matter-coworkers__row > *,
+.wk-mv2-projects__row > *,
+.wk-matter-squads__row > * {
+  min-width: 0;
+}
+
+.wk-matter-coworkers__muted,
+.wk-matter-coworkers__quiet,
+.wk-mv2-projects__muted,
+.wk-matter-squads__leader,
+.wk-matter-squads__creator {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wk-matter-coworkers__item:hover,
