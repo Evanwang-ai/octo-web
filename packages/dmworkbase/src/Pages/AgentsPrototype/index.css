@@ -275,3 +275,158 @@
   color: var(--wk-text-on-brand, #fff) !important;
   font-weight: 600;
 }
+
+
+/* ── P12(Evan R2 重做):从 Runtime 接入 AI 队友 —— 名册挑一个 + 收口配置 ── */
+.wk-agent-modal__rtsearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--wk-border-default, #e6e8eb);
+  border-radius: var(--wk-r-md, 8px);
+  color: var(--wk-text-tertiary, #8f959e);
+  margin-bottom: 12px;
+}
+.wk-agent-modal__rtsearch input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--wk-text-primary, #1f2329);
+}
+.wk-agent-modal__rtlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.wk-agent-modal__rtempty {
+  padding: 20px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--wk-text-tertiary, #8f959e);
+}
+.wk-agent-modal__rtrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--wk-border-default, #e6e8eb);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface, #fff);
+}
+.wk-agent-modal__rticon {
+  flex: 0 0 30px;
+  height: 30px;
+  border-radius: var(--wk-r-md, 8px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+  font-size: 15px;
+}
+.wk-agent-modal__rtmain {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wk-agent-modal__rtmain strong {
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--wk-text-primary, #1f2329);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wk-agent-modal__rtmain strong em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+  color: var(--wk-text-tertiary, #8f959e);
+}
+.wk-agent-modal__rtmain small {
+  font-size: 11.5px;
+  color: var(--wk-text-tertiary, #8f959e);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wk-agent-modal__rtstatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--wk-text-tertiary, #8f959e);
+  flex-shrink: 0;
+}
+.wk-agent-modal__rtstatus i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wk-color-online, #3ba55d);
+}
+.wk-agent-modal__rtpick {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-brand-primary, #1f2329);
+  color: var(--wk-text-on-brand, #fff);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wk-agent-modal__rtpick:hover {
+  background: var(--wk-brand-primary-hover, #000);
+}
+.wk-agent-modal__rtnote {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--wk-text-tertiary, #8f959e);
+}
+.wk-agent-modal__picked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 16px;
+  border: 1px solid color-mix(in srgb, var(--wk-brand-primary, #1f2329) 20%, transparent);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.03));
+}
+.wk-agent-modal__change {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--wk-border-default, #e6e8eb);
+  border-radius: var(--wk-r-md, 8px);
+  background: var(--wk-bg-surface, #fff);
+  font-size: 12px;
+  color: var(--wk-text-secondary, #51565d);
+  cursor: pointer;
+}
+.wk-agent-modal__change:hover {
+  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+}
+.wk-agent-modal__back {
+  margin-right: auto;
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--wk-text-secondary, #51565d) !important;
+}
+/* P12:body 不再是 64px+1fr 双列(旧克隆用的头像+表单),改单列 */
+.wk-agent-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

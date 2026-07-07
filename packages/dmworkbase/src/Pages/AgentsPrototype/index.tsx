@@ -317,8 +317,34 @@ function AgentDetailSurface({ agent }: { agent: AgentItem }) {
     )
 }
 
+// P12(Evan R2 重做,去 Multica 表单克隆):建 AI 队友 = 从「我的 Runtime」挑一个已注册运行时接入 →
+// 配置命名/可见性/skills(母页参考 Vercel import 逐行 Import,收口参考 StackAI 三段壳)。
+const RUNTIME_ROSTER = [
+    { id: "r-claude-kaka", name: "Claude", machine: "kaka-mbp", icon: "✳", cli: "2.1.145 (Claude Code)" },
+    { id: "r-codex-kaka", name: "Codex", machine: "kaka-mbp", icon: "◎", cli: "codex-cli 0.48.0" },
+    { id: "r-hermes-kaka", name: "Hermes", machine: "kaka-mbp", icon: "◉", cli: "Hermes Agent 1.4" },
+    { id: "r-openclaw-kaka", name: "Openclaw", machine: "kaka-mbp", icon: "🦀", cli: "OpenClaw 2026.6" },
+    { id: "r-opencode-kaka", name: "Opencode", machine: "kaka-mbp", icon: "■", cli: "1.2.26" },
+    { id: "r-claude-build", name: "Claude", machine: "build-mini", icon: "✳", cli: "2.1.140 (Claude Code)" },
+    { id: "r-codex-build", name: "Codex", machine: "build-mini", icon: "◎", cli: "codex-cli 0.48.0" },
+]
+
 function CreateAgentModal({ onClose }: { onClose: () => void }) {
+    const [step, setStep] = useState<"pick" | "config">("pick")
+    const [picked, setPicked] = useState<(typeof RUNTIME_ROSTER)[number] | null>(null)
+    const [query, setQuery] = useState("")
+    const [name, setName] = useState("")
     const [visibility, setVisibility] = useState<"workspace" | "personal">("workspace")
+
+    const candidates = RUNTIME_ROSTER.filter((r) =>
+        `${r.name} ${r.machine}`.toLowerCase().includes(query.trim().toLowerCase()),
+    )
+
+    function pick(r: (typeof RUNTIME_ROSTER)[number]) {
+        setPicked(r)
+        setName(`${r.name}-新队友`)
+        setStep("config")
+    }
 
     return (
         <div className="wk-agent-modal" role="presentation" onMouseDown={onClose}>
@@ -326,69 +352,102 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
                 className="wk-agent-modal__dialog"
                 role="dialog"
                 aria-modal="true"
-                aria-label="创建 AI 队友"
+                aria-label="接入 AI 队友"
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <header className="wk-agent-modal__head">
                     <div>
-                        <h2>创建 AI 队友</h2>
-                        <p>为工作区创建一个新的 AI 队友。</p>
+                        <h2>{step === "pick" ? "接入 AI 队友" : "配置 AI 队友"}</h2>
+                        <p>
+                            {step === "pick"
+                                ? "从你的 Runtime 里挑一个已注册的运行时,接入成一个 AI 队友。"
+                                : `基于 ${picked?.name}(${picked?.machine})接入,给它起个名、定可见性。`}
+                        </p>
                     </div>
                     <button type="button" onClick={onClose} aria-label="关闭">
                         <X size={18} />
                     </button>
                 </header>
 
-                <div className="wk-agent-modal__body">
-                    <button type="button" className="wk-agent-modal__image">
-                        <ImagePlus size={22} />
-                    </button>
-
-                    <div className="wk-agent-modal__form">
-                        <label>
-                            <span>名称</span>
-                            <input autoFocus placeholder="例如：深度研究搭档" />
+                {step === "pick" ? (
+                    <div className="wk-agent-modal__body">
+                        <label className="wk-agent-modal__rtsearch">
+                            <Search size={15} />
+                            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索运行时(Claude / Codex / 机器名)..." autoFocus />
                         </label>
-                        <label>
-                            <span>描述</span>
-                            <input placeholder="这个 AI 队友做什么？" />
-                            <small>0 / 255</small>
-                        </label>
-                    </div>
-
-                    <div className="wk-agent-modal__field wk-agent-modal__wide">
-                        <span>可见性</span>
-                        <div className="wk-agent-modal__visibility">
-                            <button
-                                type="button"
-                                className={visibility === "workspace" ? "is-active" : ""}
-                                onClick={() => setVisibility("workspace")}
-                            >
-                                <Globe2 size={17} />
-                                <strong>Workspace</strong>
-                                <small>All members can assign</small>
-                            </button>
-                            <button
-                                type="button"
-                                className={visibility === "personal" ? "is-active" : ""}
-                                onClick={() => setVisibility("personal")}
-                            >
-                                <Lock size={17} />
-                                <strong>Personal</strong>
-                                <small>Only you and workspace admins can assign</small>
-                            </button>
+                        <div className="wk-agent-modal__rtlist">
+                            {candidates.length === 0 ? (
+                                <div className="wk-agent-modal__rtempty">没有匹配的运行时。</div>
+                            ) : candidates.map((r) => (
+                                <div key={r.id} className="wk-agent-modal__rtrow">
+                                    <span className="wk-agent-modal__rticon">{r.icon}</span>
+                                    <span className="wk-agent-modal__rtmain">
+                                        <strong>{r.name} <em>{r.machine}</em></strong>
+                                        <small>{r.cli}</small>
+                                    </span>
+                                    <span className="wk-agent-modal__rtstatus"><i />在线</span>
+                                    <button type="button" className="wk-agent-modal__rtpick" onClick={() => pick(r)}>接入</button>
+                                </div>
+                            ))}
                         </div>
+                        <p className="wk-agent-modal__rtnote">找不到想要的?去「我的 · Runtime」装一个新的运行时,它就会出现在这里。</p>
                     </div>
+                ) : (
+                    <div className="wk-agent-modal__body">
+                        <div className="wk-agent-modal__picked">
+                            <span className="wk-agent-modal__rticon">{picked?.icon}</span>
+                            <span className="wk-agent-modal__rtmain">
+                                <strong>{picked?.name} <em>{picked?.machine}</em></strong>
+                                <small>{picked?.cli}</small>
+                            </span>
+                            <button type="button" className="wk-agent-modal__change" onClick={() => setStep("pick")}>更换</button>
+                        </div>
 
-                    <PrototypeSelect label="运行时" icon={<Bot size={18} />} title="Hermes (kaka-mbp)" desc="lvsijia" />
-                    <PrototypeSelect label="模型" icon={<SlidersHorizontal size={17} />} title="默认（提供方）" />
-                    <PrototypeSelect label="指令" icon={<ClipboardList size={17} />} title="点击撰写指令..." muted />
-                    <PrototypeSelect label="SKILLS" icon={<Plus size={17} />} title="从工作区添加 skill" muted />
-                </div>
+                        <div className="wk-agent-modal__form">
+                            <label>
+                                <span>名称</span>
+                                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如:深度研究搭档" autoFocus />
+                            </label>
+                        </div>
+
+                        <div className="wk-agent-modal__field wk-agent-modal__wide">
+                            <span>可见性</span>
+                            <div className="wk-agent-modal__visibility">
+                                <button
+                                    type="button"
+                                    className={visibility === "workspace" ? "is-active" : ""}
+                                    onClick={() => setVisibility("workspace")}
+                                >
+                                    <Globe2 size={17} />
+                                    <strong>工作区</strong>
+                                    <small>全员可派单</small>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={visibility === "personal" ? "is-active" : ""}
+                                    onClick={() => setVisibility("personal")}
+                                >
+                                    <Lock size={17} />
+                                    <strong>个人</strong>
+                                    <small>仅你和工作区管理员可派单</small>
+                                </button>
+                            </div>
+                        </div>
+
+                        <PrototypeSelect label="指令" icon={<ClipboardList size={17} />} title="点击撰写指令..." muted />
+                        <PrototypeSelect label="Skills" icon={<Plus size={17} />} title="从工作区添加 skill" muted />
+                    </div>
+                )}
 
                 <footer className="wk-agent-modal__foot">
-                    <button type="button" onClick={onClose}>取消</button>
-                    <button type="button" className="wk-agent-modal__submit">创建</button>
+                    {step === "pick" ? (
+                        <button type="button" onClick={onClose}>取消</button>
+                    ) : (
+                        <>
+                            <button type="button" className="wk-agent-modal__back" onClick={() => setStep("pick")}>‹ 返回</button>
+                            <button type="button" className="wk-agent-modal__submit" onClick={onClose}>创建</button>
+                        </>
+                    )}
                 </footer>
             </section>
         </div>
