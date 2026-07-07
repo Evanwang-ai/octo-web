@@ -1266,6 +1266,7 @@ interface AutomationRow {
     id: string
     title: string
     desc: string
+    prompt?: string
     enabled: boolean
     cronText: string
     target: string
@@ -1280,6 +1281,21 @@ const AUTOMATIONS_SEED: AutomationRow[] = [
         id: "auto-digest",
         title: "Daily news digest",
         desc: "每天早上收集团队相关的行业动态,汇总成一份晨报发到项目里。",
+prompt: `你是团队的行业情报助手。每天早上 09:00 触发时,完成以下工作。
+
+# 目标
+收集过去 24 小时内与我们团队相关的行业动态,汇总成一份可直接群发的中文晨报。
+
+# 步骤
+1. 扫描订阅源(Hacker News、本周 arXiv cs.AI 新论文、竞品公告页),挑出与「AI Agent 工作台 / 多智能体协作 / 回路编排」强相关的 5–8 条。
+2. 每条给出:一句话结论 + 为什么和我们有关 + 原文链接。
+3. 按「值得马上跟进 / 保持关注 / 仅供了解」三档排序。
+4. 开头写 2–3 句今日总览,结尾附一条你的判断。
+
+# 风格
+- 先结论后论据,能删则删。
+- 不确定的信息标注「待核实」,不要编造数据。
+- 全文控制在 600 字以内。`,
         enabled: true,
         cronText: "每天 09:00",
         target: "Octo-Runtime",
@@ -1298,6 +1314,20 @@ const AUTOMATIONS_SEED: AutomationRow[] = [
         id: "auto-weekly",
         title: "周报汇总",
         desc: "每周五扫描本周完成的回路,生成周报草稿等确认。",
+prompt: `你是团队的周报撰写助手。每周五 17:00 触发时,生成本周周报草稿并等待确认。
+
+# 目标
+扫描本周状态变为「已完成」的回路,沉淀成一份结构化周报。
+
+# 步骤
+1. 拉取本周(周一至周五)完成的所有回路,按项目分组。
+2. 每个项目写:本周交付了什么、关键进展、遗留问题。
+3. 汇总本周数字:完成回路数、参与的 AI 队友、平均耗时。
+4. 末尾列出下周需要人拍板的 2–3 个决策点。
+
+# 风格
+- 面向管理者视角,突出结果而非过程。
+- 草稿完成后进入「待确认」,不要直接群发。`,
         enabled: false,
         cronText: "每周五 17:00",
         target: "OctoLoop 产品手册",
@@ -1492,36 +1522,48 @@ function MatterAutomationDetail({ row, onToggle, onBack }: { row: AutomationRow;
             <div className="wk-avd__main">
                 <div className="wk-avd__body">
                     <main className="wk-avd__content">
-                        <div className="wk-avd__stats" role="tablist" aria-label="按状态筛选运行历史">
-                            {([
-                                { k: "all", label: "全部运行" },
-                                { k: "ok", label: "成功" },
-                                { k: "fail", label: "失败" },
-                                { k: "skip", label: "跳过" },
-                            ] as const).map((s) => (
-                                <button
-                                    key={s.k}
-                                    type="button"
-                                    role="tab"
-                                    aria-selected={runFilter === s.k}
-                                    className={runFilter === s.k ? "is-active" : ""}
-                                    onClick={() => setRunFilter(s.k)}
-                                >
-                                    <span>{s.label}</span>
-                                    <strong>{counts[s.k]}</strong>
-                                </button>
-                            ))}
-                        </div>
+                        {/* 任务说明 = 主体:prompt 是自动化的大头,给足空间(假设很长) */}
+                        <section className="wk-avd__promptsec">
+                            <div className="wk-avd__secthead">
+                                <h2>任务说明</h2>
+                                <span>每次触发时交给执行方的完整指令 —— AI 队友按它执行</span>
+                            </div>
+                            <pre className="wk-avd__prompt">{row.prompt || row.desc}</pre>
+                        </section>
 
-                        <section className="wk-avd__card wk-avd__history">
-                            <h4>运行历史<span>{runFilter === "all" ? `近 ${row.runs.length} 次` : `筛选:${RUN_BADGE[runFilter]}`}</span></h4>
+                        {/* 运行历史 */}
+                        <section className="wk-avd__runsec">
+                            <div className="wk-avd__secthead">
+                                <h2>运行历史</h2>
+                                <span>{runFilter === "all" ? `近 ${row.runs.length} 次运行` : `筛选:${RUN_BADGE[runFilter]}`}</span>
+                            </div>
+                            <div className="wk-avd__stats" role="tablist" aria-label="按状态筛选运行历史">
+                                {([
+                                    { k: "all", label: "全部运行" },
+                                    { k: "ok", label: "成功" },
+                                    { k: "fail", label: "失败" },
+                                    { k: "skip", label: "跳过" },
+                                ] as const).map((s) => (
+                                    <button
+                                        key={s.k}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={runFilter === s.k}
+                                        className={runFilter === s.k ? "is-active" : ""}
+                                        onClick={() => setRunFilter(s.k)}
+                                    >
+                                        <span>{s.label}</span>
+                                        <strong>{counts[s.k]}</strong>
+                                    </button>
+                                ))}
+                            </div>
                             <div className="wk-avd__runs">
                                 {visibleRuns.map((r, i) => (
                                     <div key={i} className="wk-avd__runrow">
                                         <span className={`wk-avd__badge is-${r.state}`}>
                                             {r.state === "ok" ? "✓" : r.state === "fail" ? "✕" : "⤼"} {RUN_BADGE[r.state]}
                                         </span>
-                                        <span className="wk-avd__runmsg">定时触发 · 发到 {row.target}</span>
+                                        <span className="wk-avd__runmsg">定时触发 · 发送到 {row.target}</span>
                                         <em>{r.dur}</em>
                                         <time>{r.at}</time>
                                     </div>
@@ -1532,19 +1574,15 @@ function MatterAutomationDetail({ row, onToggle, onBack }: { row: AutomationRow;
                     </main>
 
                     <aside className="wk-avd__rail">
-                        <section className="wk-avd__card">
-                            <h4>属性</h4>
+                        <section className="wk-avd__inspector">
+                            <h3>属性</h3>
                             <dl>
-                                <div><dt>执行方</dt><dd><Bot size={13} />{row.executor}</dd></div>
-                                <div><dt>频率</dt><dd>{row.cronText}</dd></div>
-                                <div><dt>发到</dt><dd>📁 {row.target}</dd></div>
+                                <div><dt>状态</dt><dd><span className={`wk-avd__statedot is-${row.enabled ? "on" : "off"}`} />{row.enabled ? "启用中" : "已停用"}</dd></div>
+                                <div><dt>执行方</dt><dd><AgentAvatar name={row.executor} size={18} />{row.executor}</dd></div>
+                                <div><dt>触发</dt><dd>{row.cronText}</dd></div>
+                                <div><dt>发送到</dt><dd className="wk-avd__target"><span>📁 {row.target}</span><small>项目 · 每次触发建一个新回路</small></dd></div>
                                 <div><dt>下次运行</dt><dd>{row.enabled && row.next ? row.next : "—"}</dd></div>
                             </dl>
-                        </section>
-
-                        <section className="wk-avd__card">
-                            <h4>任务说明<span>每次运行时读取</span></h4>
-                            <p>{row.desc}</p>
                         </section>
                     </aside>
                 </div>
