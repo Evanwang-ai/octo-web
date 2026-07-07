@@ -11,6 +11,7 @@ import {
     Plus,
     Settings2,
     Circle,
+    CircleDot,
     ClipboardList,
     Edit3,
     Eye,
@@ -373,7 +374,7 @@ export default function MatterV2Prototype() {
 
             <nav className="wk-matter-v2-sidebar__nav">
                 <button type="button" className={activeView === "myissues" ? "is-active" : ""} onClick={() => setView("myissues")}>
-                    <Circle size={16} />
+                    <CircleDot size={16} />
                     我的回路
                 </button>
             </nav>
@@ -1516,7 +1517,6 @@ function MatterAutomationDetail({ row, onToggle, onBack }: { row: AutomationRow;
                     </button>
                     <em className={row.enabled ? "is-on" : ""}>{row.enabled ? "启用中" : "已停用"}</em>
                 </div>
-                <button type="button" className="wk-avd__run">▶ 立即运行</button>
             </header>
 
             <div className="wk-avd__main">
@@ -1583,6 +1583,7 @@ function MatterAutomationDetail({ row, onToggle, onBack }: { row: AutomationRow;
                                 <div><dt>发送到</dt><dd className="wk-avd__target"><span>📁 {row.target}</span><small>项目 · 每次触发建一个新回路</small></dd></div>
                                 <div><dt>下次运行</dt><dd>{row.enabled && row.next ? row.next : "—"}</dd></div>
                             </dl>
+                            <button type="button" className="wk-avd__runbtn">▶ 立即运行</button>
                         </section>
                     </aside>
                 </div>

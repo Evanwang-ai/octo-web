@@ -7026,3 +7026,7 @@
 
 /* D:Loop 详情右栏属性 —— 图标(monogram)+ 文本对齐(Linear borderless) */
 .wk-matter-issue-detail__props dd { display: flex; align-items: center; gap: 6px; }
+
+/* R4-5:立即运行 移到属性 Inspector 底下(全宽次按钮) */
+.wk-avd__runbtn { width: 100%; margin-top: 14px; height: 34px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-md, 8px); background: var(--wk-bg-surface, #fff); color: var(--wk-text-primary, #1f2329); font-size: 13px; font-weight: 550; cursor: pointer; transition: background .1s; }
+.wk-avd__runbtn:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.04)); }
