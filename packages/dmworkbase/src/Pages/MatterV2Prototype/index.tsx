@@ -11,7 +11,7 @@ import {
     Plus,
     Settings2,
     Circle,
-    CircleDot,
+    CircleUserRound,
     ClipboardList,
     Edit3,
     Eye,
@@ -374,7 +374,7 @@ export default function MatterV2Prototype() {
 
             <nav className="wk-matter-v2-sidebar__nav">
                 <button type="button" className={activeView === "myissues" ? "is-active" : ""} onClick={() => setView("myissues")}>
-                    <CircleDot size={16} />
+                    <CircleUserRound size={16} />
                     我的回路
                 </button>
             </nav>
@@ -2352,8 +2352,6 @@ function MatterIssueDetail({
                     <strong>{issue.key} {issue.title}</strong>
                 </div>
                 <div className="wk-matter-issue-detail__tools">
-                    <Pin size={17} />
-                    <MoreHorizontal size={17} />
                     <button type="button" onClick={() => WKApp.routeRight.replaceToRoot(<MatterIssuesBoard />)}>看板</button>
                 </div>
             </header>
