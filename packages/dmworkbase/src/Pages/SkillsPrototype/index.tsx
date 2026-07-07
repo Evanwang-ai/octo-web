@@ -7,7 +7,9 @@ import {
     Code2,
     Download,
     ExternalLink,
+    FileText,
     Filter,
+    Folder,
     Lock,
     Plus,
     Search,
@@ -16,7 +18,24 @@ import {
     X,
 } from "lucide-react"
 import WKApp from "../../App"
+import MarkdownContent from "../../Messages/Text/MarkdownContent"
 import "./index.css"
+
+interface SkillTreeNode {
+    id: string
+    name: string
+    kind: "folder" | "file"
+    lang?: "md" | "code"
+    size?: string
+    content?: string
+    children?: SkillTreeNode[]
+}
+
+interface SkillUser {
+    id: string
+    name: string
+    type: "worker" | "squad"
+}
 
 interface SkillFile {
     id: string
@@ -27,7 +46,69 @@ interface SkillFile {
     source: string
     updated: string
     agents: number
+    tree?: SkillTreeNode[]
+    usedBy?: SkillUser[]
 }
+
+const SKILL_MD = `---
+name: grill-me
+description: A relentless interview to sharpen a plan or design.
+disable-model-invocation: true
+---
+
+# grill-me
+
+运行一次 \`/grilling\` 会话。面向一份计划或设计稿，连续追问，直到把没想清楚的地方问穿。
+
+## 什么时候用
+
+- 计划 / 设计稿写完、交付前想先自证伪
+- 拿不准哪里是最薄弱的假设
+
+## 流程
+
+1. **找目标** — 让对方贴出计划原文，确认要打磨的范围。
+2. **连环追问** — 每轮只问一个最要害的问题，不给台阶。
+3. **输出清单** — 把暴露出的假设与漏洞，整理成一份修订清单收尾。
+
+细节见 SPEC.md 与 reference/ 下的题库与评分标准。
+`
+
+const SPEC_MD = `# 规格:grilling 会话协议
+
+## 输入
+
+一份计划或设计文档(markdown / 纯文本)。
+
+## 单轮结构
+
+| 阶段 | 动作 |
+| --- | --- |
+| 提问 | 只抛一个最要害的问题 |
+| 收敛 | 逼对方给出可证伪的回答 |
+| 记账 | 把新暴露的假设登记进清单 |
+
+## 退出条件
+
+连续两轮问不出新漏洞,输出《修订清单》并结束。
+`
+
+const QUESTIONS_MD = `# 题库
+
+- 这个方案最先崩的地方是哪一处?为什么是它?
+- 如果只能砍掉一半范围,你砍哪一半?
+- 你在假设谁的行为?他凭什么这么做?
+- 成功长什么样?用一个能被测量的句子说清。
+`
+
+const RUBRIC_MD = `# 评分标准
+
+一次合格的 grilling:
+
+- [ ] 至少击穿一个"想当然"的假设
+- [ ] 每个问题都可被证伪,不是发散
+- [ ] 收尾清单里每条都带下一步动作
+`
 
 const SKILLS: SkillFile[] = [
     {
@@ -38,7 +119,24 @@ const SKILLS: SkillFile[] = [
         command: "/grilling",
         source: "https://www.skills.sh/skills/grill-me",
         updated: "3 小时前",
-        agents: 0,
+        agents: 2,
+        tree: [
+            { id: "SKILL.md", name: "SKILL.md", kind: "file", lang: "md", size: "1.4 KB", content: SKILL_MD },
+            { id: "SPEC.md", name: "SPEC.md", kind: "file", lang: "md", size: "0.7 KB", content: SPEC_MD },
+            {
+                id: "reference",
+                name: "reference",
+                kind: "folder",
+                children: [
+                    { id: "reference/questions.md", name: "questions.md", kind: "file", lang: "md", size: "0.4 KB", content: QUESTIONS_MD },
+                    { id: "reference/rubric.md", name: "rubric.md", kind: "file", lang: "md", size: "0.3 KB", content: RUBRIC_MD },
+                ],
+            },
+        ],
+        usedBy: [
+            { id: "w-proto", name: "Prototyper-Codex-MBOT", type: "worker" },
+            { id: "w-analyser", name: "Analyser-CC-MBOT", type: "worker" },
+        ],
     },
 ]
 
@@ -329,11 +427,82 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
     )
 }
 
-// P5(0707 终挑 GitBook 文档):单栏大排版正文;文件树窄栏与右 Inspector 砍除,
-// 元数据压成标题下 chips,权限降为文末小字。常驻 AI 面板 Evan 拍砍。
-function SkillDetailSurface({ skill }: { skill: SkillFile }) {
+// P5(Evan R2):技能详情 = GitBook 双栏。左 = 身份 + 文件树 + 被谁使用,右 = 选中文件内容,
+// md 复用 Octo Web 的 MarkdownContent 渲染(pdf/html 同理走文件预览);技能可为文件夹结构。
+function findFirstFile(nodes: SkillTreeNode[]): SkillTreeNode | null {
+    for (const n of nodes) {
+        if (n.kind === "file") return n
+        if (n.children) {
+            const f = findFirstFile(n.children)
+            if (f) return f
+        }
+    }
+    return null
+}
+
+function SkillTreeItem({ node, depth, selectedId, onSelect }: {
+    node: SkillTreeNode
+    depth: number
+    selectedId?: string
+    onSelect: (n: SkillTreeNode) => void
+}) {
+    const [open, setOpen] = useState(true)
+    if (node.kind === "folder") {
+        return (
+            <>
+                <button
+                    type="button"
+                    className="wk-skdoc2__row is-folder"
+                    style={{ paddingLeft: 8 + depth * 14 }}
+                    onClick={() => setOpen((o) => !o)}
+                >
+                    <ChevronRight size={13} className={`wk-skdoc2__chev${open ? " is-open" : ""}`} />
+                    <Folder size={14} />
+                    <span>{node.name}</span>
+                </button>
+                {open && node.children?.map((c) => (
+                    <SkillTreeItem key={c.id} node={c} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />
+                ))}
+            </>
+        )
+    }
     return (
-        <section className="wk-skill-detail is-doc" aria-label="Skill detail">
+        <button
+            type="button"
+            className={`wk-skdoc2__row is-file${selectedId === node.id ? " is-active" : ""}`}
+            style={{ paddingLeft: 8 + depth * 14 + 18 }}
+            onClick={() => onSelect(node)}
+        >
+            <FileText size={14} />
+            <span>{node.name}</span>
+        </button>
+    )
+}
+
+function SkillDetailSurface({ skill }: { skill: SkillFile }) {
+    const tree: SkillTreeNode[] = skill.tree && skill.tree.length > 0
+        ? skill.tree
+        : [{ id: skill.name, name: skill.name, kind: "file", lang: "md", size: "2.1 KB", content: `# ${skill.title}\n\n${skill.description}` }]
+    const usedBy = skill.usedBy ?? []
+    const firstFile = useMemo(() => findFirstFile(tree), [tree])
+    const [selectedId, setSelectedId] = useState<string | undefined>(firstFile?.id)
+
+    const selected = useMemo(() => {
+        const find = (nodes: SkillTreeNode[]): SkillTreeNode | null => {
+            for (const n of nodes) {
+                if (n.id === selectedId && n.kind === "file") return n
+                if (n.children) {
+                    const f = find(n.children)
+                    if (f) return f
+                }
+            }
+            return null
+        }
+        return find(tree) ?? firstFile
+    }, [selectedId, tree, firstFile])
+
+    return (
+        <section className="wk-skill-detail" aria-label="Skill detail">
             <header className="wk-skill-detail__top">
                 <div className="wk-skill-detail__crumb">
                     <span>Skills</span>
@@ -346,54 +515,68 @@ function SkillDetailSurface({ skill }: { skill: SkillFile }) {
                 </div>
             </header>
 
-            <main className="wk-skdoc">
-                <article className="wk-skdoc__page">
-                    <span className="wk-skdoc__icon"><BookOpen size={22} /></span>
-                    <h1>{skill.title}</h1>
-                    <p className="wk-skdoc__lead">{skill.description}</p>
-                    <div className="wk-skdoc__meta">
-                        <i title={skill.source}><ExternalLink size={12} />导入自 Skills.sh</i>
+            <div className="wk-skdoc2">
+                <aside className="wk-skdoc2__side">
+                    <div className="wk-skdoc2__ident">
+                        <span className="wk-skdoc2__icon"><BookOpen size={18} /></span>
+                        <div>
+                            <strong>{skill.title}</strong>
+                            <p>{skill.description}</p>
+                        </div>
+                    </div>
+                    <div className="wk-skdoc2__metarow">
+                        <i title={skill.source}><ExternalLink size={11} />导入自 Skills.sh</i>
                         <i>更新于 {skill.updated}</i>
-                        <i>由 lvsijia</i>
-                        <i><Bot size={12} />被 {skill.agents} 个 AI 队友使用</i>
-                        <i className="is-mono">0ab0a72d</i>
                     </div>
 
-                    <hr />
-
-                    <h2>frontmatter</h2>
-                    <div className="wk-skill-detail__yaml">
-                        <div><span>name</span><strong>{skill.title}</strong></div>
-                        <div><span>description</span><strong>{skill.description}</strong></div>
-                        <div><span>disable-model-invocation</span><strong>true</strong></div>
+                    <div className="wk-skdoc2__sectitle">文件</div>
+                    <div className="wk-skdoc2__tree">
+                        {tree.map((n) => (
+                            <SkillTreeItem key={n.id} node={n} depth={0} selectedId={selected?.id} onSelect={(f) => setSelectedId(f.id)} />
+                        ))}
                     </div>
 
-                    <h2>使用方式</h2>
-                    <p>
-                        运行一次 <code>{skill.command}</code> 会话。面向一份计划或设计稿,连续追问,直到把没想清楚的地方问穿。
-                    </p>
-                    <ul>
-                        <li><strong>找目标</strong>:让对方贴出计划原文,确认要打磨的范围。</li>
-                        <li><strong>连环追问</strong>:每轮只问一个最要害的问题,不给台阶。</li>
-                        <li><strong>输出清单</strong>:把暴露出的假设与漏洞,整理成一份修订清单收尾。</li>
-                    </ul>
-
-                    <h2>文件 · 1</h2>
-                    <div className="wk-skdoc__files">
-                        <button type="button">
-                            <BookOpen size={14} />
-                            {skill.name}
-                            <em>2.1 KB</em>
-                        </button>
+                    <div className="wk-skdoc2__sectitle"><Bot size={12} />被 {usedBy.length} 个 AI 队友使用</div>
+                    <div className="wk-skdoc2__usedby">
+                        {usedBy.length === 0 ? (
+                            <p className="wk-skdoc2__usedempty">还没有 AI 队友使用这个 skill。</p>
+                        ) : usedBy.map((u) => (
+                            <div key={u.id} className="wk-skdoc2__user">
+                                <span className="wk-skdoc2__uav">{u.name.charAt(0)}</span>
+                                <span className="wk-skdoc2__uname">{u.name}</span>
+                                <span className="wk-skdoc2__ukind">{u.type === "squad" ? "小队" : "AI 队友"}</span>
+                            </div>
+                        ))}
                     </div>
 
-                    <footer className="wk-skdoc__perms">
-                        <div><Lock size={13} /><span>你可以编辑和删除这个 skill,修改在 AI 队友下次运行时生效。</span></div>
-                        <div><Users size={13} /><span>工作区成员可以把这个 skill 分配给 AI 队友。</span></div>
-                        <div><Code2 size={13} /><span>原型摆拍:不做包安装,也不做远端同步。</span></div>
+                    <footer className="wk-skdoc2__perms">
+                        <div><Lock size={12} /><span>可编辑删除，改动在下次运行时生效。</span></div>
+                        <div><Users size={12} /><span>工作区成员可把它分配给 AI 队友。</span></div>
+                        <div><Code2 size={12} /><span>原型摆拍:不装包、不同步远端。</span></div>
                     </footer>
+                </aside>
+
+                <article className="wk-skdoc2__main">
+                    {selected ? (
+                        <>
+                            <div className="wk-skdoc2__filebar">
+                                <FileText size={14} />
+                                <strong>{selected.name}</strong>
+                                {selected.size && <em>{selected.size}</em>}
+                            </div>
+                            <div className="wk-skdoc2__content">
+                                {selected.lang === "md" ? (
+                                    <MarkdownContent content={selected.content ?? ""} />
+                                ) : (
+                                    <pre className="wk-skdoc2__code"><code>{selected.content}</code></pre>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="wk-skdoc2__empty">选择左侧一个文件查看内容。</div>
+                    )}
                 </article>
-            </main>
+            </div>
         </section>
     )
 }
