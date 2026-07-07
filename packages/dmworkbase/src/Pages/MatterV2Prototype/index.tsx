@@ -100,12 +100,12 @@ const COWORKERS = [
 
 // ── 共享:按状态分组的 Loop 列表(T3 Tasks tab / T5 列表视图共用)──
 const ISSUE_ROWS = [
-    { key: "OCT-1", title: "test", project: "Octo-Runtime", status: "待办", pri: "none" },
-    { key: "OCT-2", title: "询问当前 agent 身份和模型", project: "Octo-Runtime", status: "审核中", pri: "mid" },
-    { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", project: "Octo-Runtime", status: "审核中", pri: "mid" },
-    { key: "OCT-4", title: "整理 OctoLoop 上手指南", project: "OctoLoop 产品手册", status: "已完成", pri: "mid" },
-    { key: "OCT-5", title: "附件测试：仅 PDF → Runtime 抽取文字", project: "接线演练场", status: "已完成", pri: "urgent" },
-    { key: "OCT-6", title: "等待上游接口：回调闭环验证", project: "接线演练场", status: "已阻塞", pri: "mid" },
+    { key: "OCT-1", title: "test", project: "Octo-Runtime", status: "待办", pri: "none", agent: "未分配", updated: "2 天前" },
+    { key: "OCT-2", title: "询问当前 agent 身份和模型", project: "Octo-Runtime", status: "审核中", pri: "mid", agent: "Prototyper-Codex-MBOT", updated: "4 小时前" },
+    { key: "OCT-3", title: "回答运行环境询问：workspace 绝对路径、机器名称、执行状态", project: "Octo-Runtime", status: "审核中", pri: "mid", agent: "CC-Protoper", updated: "4 小时前" },
+    { key: "OCT-4", title: "整理 OctoLoop 上手指南", project: "OctoLoop 产品手册", status: "已完成", pri: "mid", agent: "Documenter-Worker", updated: "1 天前" },
+    { key: "OCT-5", title: "附件测试：仅 PDF → Runtime 抽取文字", project: "接线演练场", status: "已完成", pri: "urgent", agent: "Analyser-CC-MBOT", updated: "3 天前" },
+    { key: "OCT-6", title: "等待上游接口：回调闭环验证", project: "接线演练场", status: "已阻塞", pri: "mid", agent: "Triager-Worker", updated: "5 天前" },
 ] as const
 
 const ISSUE_STATUSES = [
@@ -151,7 +151,8 @@ function IssueGroupList({ rows }: { rows: ReadonlyArray<typeof ISSUE_ROWS[number
                                     <span className="wk-mv2-grouplist__key">{r.key}</span>
                                     <span className="wk-mv2-grouplist__title">{r.title}</span>
                                     <span className="wk-mv2-grouplist__proj">📁 {r.project}</span>
-                                    <span className="wk-mv2-grouplist__bot"><Bot size={13} /></span>
+                                    <span className="wk-mv2-grouplist__assignee"><span className="wk-mv2-grouplist__ava"><Bot size={12} /></span>{r.agent}</span>
+                                    <time className="wk-mv2-grouplist__time">{r.updated}</time>
                                 </button>
                             ))
                         )}
