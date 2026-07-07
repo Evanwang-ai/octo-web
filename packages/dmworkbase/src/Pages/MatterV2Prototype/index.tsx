@@ -1233,7 +1233,7 @@ function AutomationCreateModal({ onClose }: { onClose: () => void }) {
 const RUN_BADGE = { ok: "成功", skip: "跳过", fail: "失败" } as const
 
 // P4(0707 终挑 Stripe 1bbafee3):状态徽章 + 统计卡行(点击即筛运行历史)
-function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggle: (id: string) => void }) {
+function MatterAutomationDetail({ row, onToggle, onBack }: { row: AutomationRow; onToggle: (id: string) => void; onBack: () => void }) {
     const [runFilter, setRunFilter] = useState<"all" | "ok" | "fail" | "skip">("all")
     const counts = {
         all: row.health.length,
@@ -1247,7 +1247,7 @@ function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggl
         <section className="wk-avd" aria-label="自动化详情">
             <header className="wk-avd__top">
                 <div className="wk-avd__crumb">
-                    <span>自动化</span>
+                    <button type="button" className="wk-avd__crumb-back" onClick={onBack}>自动化</button>
                     <ChevronRight size={13} />
                     <strong>{row.title}</strong>
                     <button
@@ -1287,37 +1287,43 @@ function MatterAutomationDetail({ row, onToggle }: { row: AutomationRow; onToggl
                     ))}
                 </div>
 
-                <section className="wk-avd__card">
-                    <h4>属性</h4>
-                    <dl>
-                        <div><dt>执行方</dt><dd><Bot size={13} />{row.executor}</dd></div>
-                        <div><dt>频率</dt><dd>{row.cronText}</dd></div>
-                        <div><dt>发到</dt><dd>📁 {row.target}</dd></div>
-                        <div><dt>下次运行</dt><dd>{row.enabled && row.next ? row.next : "—"}</dd></div>
-                    </dl>
-                </section>
+                <div className="wk-avd__grid">
+                    <div className="wk-avd__col">
+                        <section className="wk-avd__card">
+                            <h4>属性</h4>
+                            <dl>
+                                <div><dt>执行方</dt><dd><Bot size={13} />{row.executor}</dd></div>
+                                <div><dt>频率</dt><dd>{row.cronText}</dd></div>
+                                <div><dt>发到</dt><dd>📁 {row.target}</dd></div>
+                                <div><dt>下次运行</dt><dd>{row.enabled && row.next ? row.next : "—"}</dd></div>
+                            </dl>
+                        </section>
 
-                <section className="wk-avd__card">
-                    <h4>任务说明<span>AI 队友每次运行时读取</span></h4>
-                    <p>{row.desc}</p>
-                </section>
-
-                <section className="wk-avd__card">
-                    <h4>运行历史<span>{runFilter === "all" ? `近 ${row.runs.length} 次` : `筛选:${RUN_BADGE[runFilter]}`}</span></h4>
-                    <div className="wk-avd__runs">
-                        {visibleRuns.map((r, i) => (
-                            <div key={i} className="wk-avd__runrow">
-                                <span className={`wk-avd__badge is-${r.state}`}>
-                                    {r.state === "ok" ? "✓" : r.state === "fail" ? "✕" : "⤼"} {RUN_BADGE[r.state]}
-                                </span>
-                                <span className="wk-avd__runmsg">定时触发 · 发到 {row.target}</span>
-                                <em>{r.dur}</em>
-                                <time>{r.at}</time>
-                            </div>
-                        ))}
-                        {visibleRuns.length === 0 && <div className="wk-avd__runempty">该状态最近没有运行记录。</div>}
+                        <section className="wk-avd__card">
+                            <h4>任务说明<span>AI 队友每次运行时读取</span></h4>
+                            <p>{row.desc}</p>
+                        </section>
                     </div>
-                </section>
+
+                    <div className="wk-avd__col">
+                        <section className="wk-avd__card">
+                            <h4>运行历史<span>{runFilter === "all" ? `近 ${row.runs.length} 次` : `筛选:${RUN_BADGE[runFilter]}`}</span></h4>
+                            <div className="wk-avd__runs">
+                                {visibleRuns.map((r, i) => (
+                                    <div key={i} className="wk-avd__runrow">
+                                        <span className={`wk-avd__badge is-${r.state}`}>
+                                            {r.state === "ok" ? "✓" : r.state === "fail" ? "✕" : "⤼"} {RUN_BADGE[r.state]}
+                                        </span>
+                                        <span className="wk-avd__runmsg">定时触发 · 发到 {row.target}</span>
+                                        <em>{r.dur}</em>
+                                        <time>{r.at}</time>
+                                    </div>
+                                ))}
+                                {visibleRuns.length === 0 && <div className="wk-avd__runempty">该状态最近没有运行记录。</div>}
+                            </div>
+                        </section>
+                    </div>
+                </div>
             </div>
         </section>
     )
@@ -1334,8 +1340,7 @@ function MatterAutomationList() {
     if (detail) {
         return (
             <div className="wk-avd__host">
-                <button type="button" className="wk-avd__back" onClick={() => setDetailId(null)}>‹ 自动化</button>
-                <MatterAutomationDetail row={detail} onToggle={toggle} />
+                <MatterAutomationDetail row={detail} onToggle={toggle} onBack={() => setDetailId(null)} />
             </div>
         )
     }

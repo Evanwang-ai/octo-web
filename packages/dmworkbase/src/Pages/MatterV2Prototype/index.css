@@ -3679,22 +3679,19 @@
   background: var(--wk-bg-surface, #fff);
 }
 
-.wk-avd__back {
-  align-self: flex-start;
-  margin: 12px 20px 0;
-  height: 26px;
-  padding: 0 8px;
+.wk-avd__crumb-back {
   border: none;
   background: transparent;
-  border-radius: 6px;
-  color: var(--wk-text-tertiary, #8f959e);
+  padding: 0;
+  font: inherit;
   font-size: 12.5px;
+  color: var(--wk-text-tertiary, #8f959e);
   cursor: pointer;
 }
 
-.wk-avd__back:hover {
-  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+.wk-avd__crumb-back:hover {
   color: var(--wk-text-secondary, #51565d);
+  text-decoration: underline;
 }
 
 .wk-avd {
@@ -3772,7 +3769,27 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 760px;
+  max-width: 1120px;
+}
+
+.wk-avd__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.wk-avd__col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .wk-avd__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .wk-avd__card {
