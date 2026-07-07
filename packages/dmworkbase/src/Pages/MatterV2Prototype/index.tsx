@@ -3,6 +3,7 @@ import {
     Archive,
     Bot,
     Briefcase,
+    Calendar,
     Check,
     CheckCircle2,
     ChevronDown,
@@ -1312,19 +1313,93 @@ const AUTOMATIONS_SEED: AutomationRow[] = [
 ]
 
 // 单页新建(P3=Resend 广播撰写页,0707 终挑):邮件式行字段 + When 自然语言回显(时区注脚)+ 大任务说明输入区
-const WHEN_PRESETS = [
-    { label: "每天 09:00", echo: "明天 09:00" },
-    { label: "每个工作日 09:30", echo: "周一 09:30" },
-    { label: "每周五 17:00", echo: "本周五 17:00" },
-    { label: "每月 1 日 10:00", echo: "8月1日 10:00" },
-]
+function pad2(n: number) { return String(n).padStart(2, "0") }
+
+// A1(Evan R3):触发时间 = 真日历 date picker(替下拉/联想)。参照设计库 Linear Schedule / Cursor。
+function MiniCalendar({ value, onPick }: { value: Date; onPick: (d: Date) => void }) {
+    const [view, setView] = useState(new Date(value.getFullYear(), value.getMonth(), 1))
+    const year = view.getFullYear()
+    const month = view.getMonth()
+    const firstDow = new Date(year, month, 1).getDay()
+    const days = new Date(year, month + 1, 0).getDate()
+    const today = new Date()
+    const cells: Array<number | null> = [...Array(firstDow).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)]
+    return (
+        <div className="wk-dtp" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="wk-dtp__head">
+                <button type="button" onClick={() => setView(new Date(year, month - 1, 1))} aria-label="上个月"><ChevronRight size={15} style={{ transform: "rotate(180deg)" }} /></button>
+                <span>{year} 年 {month + 1} 月</span>
+                <button type="button" onClick={() => setView(new Date(year, month + 1, 1))} aria-label="下个月"><ChevronRight size={15} /></button>
+            </div>
+            <div className="wk-dtp__week">{["日", "一", "二", "三", "四", "五", "六"].map((w) => <span key={w}>{w}</span>)}</div>
+            <div className="wk-dtp__grid">
+                {cells.map((d, i) => d === null ? <span key={i} /> : (
+                    <button
+                        key={i}
+                        type="button"
+                        className={`wk-dtp__day${value.getFullYear() === year && value.getMonth() === month && value.getDate() === d ? " is-sel" : ""}${today.getFullYear() === year && today.getMonth() === month && today.getDate() === d ? " is-today" : ""}`}
+                        onClick={() => onPick(new Date(year, month, d))}
+                    >{d}</button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+const FREQ_LABEL: Record<string, string> = { once: "单次", daily: "每天", weekly: "每周", monthly: "每月" }
+
+function TriggerField() {
+    const [freq, setFreq] = useState<"once" | "daily" | "weekly" | "monthly">("daily")
+    const [date, setDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d })
+    const [weekday, setWeekday] = useState(1)
+    const [monthday, setMonthday] = useState(1)
+    const [time, setTime] = useState("09:00")
+    const [calOpen, setCalOpen] = useState(false)
+    const WD = ["日", "一", "二", "三", "四", "五", "六"]
+    const dateStr = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+    const echo = freq === "once" ? `${dateStr} ${time}`
+        : freq === "daily" ? `每天 ${time}`
+        : freq === "weekly" ? `每周${WD[weekday]} ${time}`
+        : `每月 ${monthday} 日 ${time}`
+    return (
+        <div className="wk-awz__row is-trigger">
+            <span>触发时间</span>
+            <div className="wk-awz__triggerbox">
+                <div className="wk-mv2-seg wk-awz__freqseg">
+                    {(["once", "daily", "weekly", "monthly"] as const).map((f) => (
+                        <button key={f} type="button" className={freq === f ? "is-on" : ""} onClick={() => { setFreq(f); setCalOpen(false) }}>{FREQ_LABEL[f]}</button>
+                    ))}
+                </div>
+                <div className="wk-awz__triggerctl">
+                    {freq === "once" && (
+                        <div className="wk-awz__datewrap">
+                            <button type="button" className="wk-awz__datebtn" onClick={() => setCalOpen((o) => !o)}>
+                                <Calendar size={14} />{dateStr}
+                            </button>
+                            {calOpen && <MiniCalendar value={date} onPick={(d) => { setDate(d); setCalOpen(false) }} />}
+                        </div>
+                    )}
+                    {freq === "weekly" && (
+                        <div className="wk-awz__wdchips">
+                            {WD.map((w, i) => (
+                                <button key={w} type="button" className={weekday === i ? "is-on" : ""} onClick={() => setWeekday(i)}>{w}</button>
+                            ))}
+                        </div>
+                    )}
+                    {freq === "monthly" && (
+                        <select className="wk-awz__monthday" value={monthday} onChange={(e) => setMonthday(Number(e.target.value))} aria-label="每月几号">
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d} 日</option>)}
+                        </select>
+                    )}
+                    <input type="time" className="wk-awz__time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="时间" />
+                </div>
+                <em className="wk-awz__echo">下次运行 · {echo}<small>Asia/Shanghai GMT+8</small></em>
+            </div>
+        </div>
+    )
+}
 
 function AutomationCreateModal({ onClose }: { onClose: () => void }) {
-    const [when, setWhen] = useState("")
-    const [whenOpen, setWhenOpen] = useState(false)
-    const preset = WHEN_PRESETS.find((item) => item.label === when)
-    const echo = preset ? preset.echo : when.trim() ? "明天 09:00" : ""
-
     return (
         <div className="wk-awz" role="presentation" onMouseDown={onClose}>
             <section className="wk-awz__dialog" role="dialog" aria-modal="true" aria-label="新建自动化" onMouseDown={(e) => e.stopPropagation()}>
@@ -1346,43 +1421,22 @@ function AutomationCreateModal({ onClose }: { onClose: () => void }) {
                         </select>
                     </div>
                     <div className="wk-awz__row">
-                        <span>发到哪</span>
+                        <span>发送到</span>
                         <select defaultValue="Octo-Runtime">
-                            {PROJECTS_ROWS.map((proj) => <option key={proj.name}>{proj.name}</option>)}
+                            <optgroup label="项目 · 每次触发建一个新回路">
+                                {PROJECTS_ROWS.map((proj) => <option key={proj.name}>{proj.name}</option>)}
+                            </optgroup>
+                            <optgroup label="频道 · 直接发消息,不建回路">
+                                <option>#产品研发部</option>
+                                <option>#接线演练场</option>
+                            </optgroup>
+                            <optgroup label="会话线程 · 直接回复,不建回路">
+                                <option>线程 · OctoLoop 演示脚本</option>
+                                <option>线程 · 回调闭环验证</option>
+                            </optgroup>
                         </select>
                     </div>
-                    <div className="wk-awz__row is-when">
-                        <span>触发时间</span>
-                        <input
-                            placeholder="用一句话描述时间,例如:每天 09:00"
-                            value={when}
-                            onChange={(e) => setWhen(e.target.value)}
-                            onFocus={() => setWhenOpen(true)}
-                            onClick={() => setWhenOpen(true)}
-                            onBlur={() => window.setTimeout(() => setWhenOpen(false), 150)}
-                        />
-                        {echo && <em className="wk-awz__echo">下次 · {echo}</em>}
-                        {whenOpen && (
-                            <div className="wk-awz__whenmenu" role="menu">
-                                {WHEN_PRESETS.map((item) => (
-                                    <button
-                                        key={item.label}
-                                        type="button"
-                                        role="menuitem"
-                                        onMouseDown={(e) => {
-                                            e.preventDefault()
-                                            setWhen(item.label)
-                                            setWhenOpen(false)
-                                        }}
-                                    >
-                                        <span>{item.label}</span>
-                                        <em>{item.echo}</em>
-                                    </button>
-                                ))}
-                                <footer>Asia/Shanghai (GMT+8)</footer>
-                            </div>
-                        )}
-                    </div>
+                    <TriggerField />
                     <textarea
                         className="wk-awz__instructions"
                         placeholder={"任务说明:触发时交给执行方的指令,AI 队友每次运行时读取。写得越像给人的交代,效果越好。\n\n# 目标\n你希望 AI 队友完成什么?\n\n# 步骤\n1. ...\n2. ..."}

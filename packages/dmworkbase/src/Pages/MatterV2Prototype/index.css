@@ -6986,3 +6986,31 @@
 .wk-sqc__leaderbadge { flex: 0 0 auto; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 5px; font-size: 11px; font-weight: 600; color: var(--wk-text-on-brand, #fff); background: var(--wk-brand-primary, #1f2329); }
 .wk-sqc__change { flex: 0 0 auto; border: none; background: transparent; color: var(--wk-text-tertiary, #8f959e); font-size: 12.5px; cursor: pointer; }
 .wk-sqc__change:hover { color: var(--wk-text-primary, #1f2329); }
+
+/* A1:触发时间 date picker(频率段控 + 日历 popover + 时间) */
+.wk-awz__row.is-trigger { align-items: flex-start; }
+.wk-awz__triggerbox { display: flex; flex-direction: column; gap: 8px; }
+.wk-awz__freqseg { align-self: flex-start; }
+.wk-awz__triggerctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; position: relative; }
+.wk-awz__datewrap { position: relative; }
+.wk-awz__datebtn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-md, 8px); background: var(--wk-bg-surface, #fff); font-size: 13px; color: var(--wk-text-primary, #1f2329); cursor: pointer; }
+.wk-awz__datebtn:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.03)); }
+.wk-awz__time, .wk-awz__monthday { height: 34px; padding: 0 10px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-md, 8px); background: var(--wk-bg-surface, #fff); font-size: 13px; color: var(--wk-text-primary, #1f2329); }
+.wk-awz__wdchips { display: inline-flex; gap: 4px; }
+.wk-awz__wdchips button { width: 30px; height: 30px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: 7px; background: var(--wk-bg-surface, #fff); font-size: 12.5px; color: var(--wk-text-secondary, #51565d); cursor: pointer; }
+.wk-awz__wdchips button.is-on { background: var(--wk-brand-primary, #1f2329); color: var(--wk-text-on-brand, #fff); border-color: var(--wk-brand-primary, #1f2329); }
+.wk-awz__echo { font-size: 12px; color: var(--wk-text-tertiary, #8f959e); font-style: normal; }
+.wk-awz__echo small { color: var(--wk-text-disabled, #c9cdd4); margin-left: 8px; }
+.wk-dtp { position: absolute; top: 40px; left: 0; z-index: 30; width: 252px; padding: 10px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-lg, 12px); background: var(--wk-bg-elevated, #fff); box-shadow: var(--wk-shadow-lg, 0 12px 40px rgba(0,0,0,0.18)); }
+.wk-dtp__head { display: flex; align-items: center; justify-content: space-between; height: 28px; margin-bottom: 6px; }
+.wk-dtp__head span { font-size: 13px; font-weight: 600; color: var(--wk-text-primary, #1f2329); }
+.wk-dtp__head button { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; border-radius: 6px; color: var(--wk-text-tertiary, #8f959e); cursor: pointer; }
+.wk-dtp__head button:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.05)); }
+.wk-dtp__week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+.wk-dtp__week span { text-align: center; font-size: 11px; color: var(--wk-text-tertiary, #8f959e); padding: 4px 0; }
+.wk-dtp__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.wk-dtp__grid > span { height: 30px; }
+.wk-dtp__day { height: 30px; border: none; background: transparent; border-radius: 7px; font-size: 12.5px; color: var(--wk-text-primary, #1f2329); cursor: pointer; }
+.wk-dtp__day:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.05)); }
+.wk-dtp__day.is-today { font-weight: 700; box-shadow: inset 0 0 0 1px var(--wk-border-default, #e6e8eb); }
+.wk-dtp__day.is-sel, .wk-dtp__day.is-sel:hover { background: var(--wk-brand-primary, #1f2329); color: var(--wk-text-on-brand, #fff); font-weight: 600; }
