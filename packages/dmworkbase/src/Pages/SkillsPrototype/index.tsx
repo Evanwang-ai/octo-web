@@ -214,12 +214,37 @@ export { SKILLS, SkillsListSurface, ImportSkillModal, SkillDetailSurface }
 
 type CreateSkillStep = "manual" | "url" | "runtime"
 
-// P14(0707 终挑 GitBook +New):三路创建从「三卡 chooser 弹窗」降级为按钮下拉菜单,最克制的 chooser
-const CREATE_SKILL_OPTIONS: Array<{ step: CreateSkillStep; title: string; desc: string }> = [
-    { step: "manual", title: "手动创建", desc: "从空白 SKILL.md 开始,自己写指令。" },
-    { step: "url", title: "从 URL 导入", desc: "从 ClawHub、Skills.sh 或 GitHub 拉取。" },
-    { step: "runtime", title: "从运行时复制", desc: "把本地运行时里装好的 skill 提升过来。" },
+// P14(Evan R2):三路创建聚合进一个「新建 Skill」页(VEED 式方式卡),不再是下拉菜单
+const CREATE_SKILL_OPTIONS: Array<{ step: CreateSkillStep; title: string; desc: string; icon: React.ReactNode }> = [
+    { step: "manual", title: "空白起草", desc: "从空白 SKILL.md 开始,自己写指令。", icon: <FileText size={18} /> },
+    { step: "url", title: "从 URL 导入", desc: "从 ClawHub、Skills.sh 或 GitHub 链接拉取。", icon: <ExternalLink size={18} /> },
+    { step: "runtime", title: "从运行时复制", desc: "把本地运行时里装好的 skill 提升过来。", icon: <Bot size={18} /> },
 ]
+
+function SkillCreateChooser({ onClose, onPick }: { onClose: () => void; onPick: (step: CreateSkillStep) => void }) {
+    return (
+        <div className="wk-skc" role="presentation" onMouseDown={onClose}>
+            <section className="wk-skc__dialog" role="dialog" aria-modal="true" aria-label="新建 Skill" onMouseDown={(e) => e.stopPropagation()}>
+                <header className="wk-skc__head">
+                    <div>
+                        <h2>新建 Skill</h2>
+                        <p>挑一种方式创建 skill —— 都在这一页。</p>
+                    </div>
+                    <button type="button" className="wk-skc__close" onClick={onClose} aria-label="关闭"><X size={18} /></button>
+                </header>
+                <div className="wk-skc__grid">
+                    {CREATE_SKILL_OPTIONS.map((opt) => (
+                        <button key={opt.step} type="button" className="wk-skc__card" onClick={() => onPick(opt.step)}>
+                            <span className="wk-skc__icon">{opt.icon}</span>
+                            <strong>{opt.title}</strong>
+                            <span className="wk-skc__desc">{opt.desc}</span>
+                        </button>
+                    ))}
+                </div>
+            </section>
+        </div>
+    )
+}
 
 function SkillsListSurface({
     skills,
@@ -245,30 +270,16 @@ function SkillsListSurface({
                     <p>工作区里任何 AI 队友都能使用的指令。</p>
                     <a href="#learn-more">了解更多 →</a>
                 </div>
-                <div className="wk-skills-list__newwrap">
-                    <button type="button" className="wk-skills-list__create" aria-haspopup="menu" aria-expanded={newOpen} onClick={() => setNewOpen((v) => !v)}>
-                        <Plus size={15} />
-                        新建 skill
-                    </button>
-                    {newOpen && (
-                        <div className="wk-skills-list__newmenu" role="menu">
-                            {CREATE_SKILL_OPTIONS.map((opt) => (
-                                <button
-                                    key={opt.step}
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                        setNewOpen(false)
-                                        onPickCreate(opt.step)
-                                    }}
-                                >
-                                    <strong>{opt.title}</strong>
-                                    <span>{opt.desc}</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <button type="button" className="wk-skills-list__create" onClick={() => setNewOpen(true)}>
+                    <Plus size={15} />
+                    新建 Skill
+                </button>
+                {newOpen && (
+                    <SkillCreateChooser
+                        onClose={() => setNewOpen(false)}
+                        onPick={(step) => { setNewOpen(false); onPickCreate(step) }}
+                    />
+                )}
             </header>
 
             <div className="wk-skills-list__toolbar">

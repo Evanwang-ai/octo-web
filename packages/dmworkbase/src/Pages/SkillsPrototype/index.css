@@ -1410,3 +1410,101 @@
   flex: none;
   margin-top: 2px;
 }
+
+
+/* ── P14(Evan R2):新建 Skill = VEED 式聚合页(单入口 → 一屏方式卡) ── */
+.wk-skc {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.32);
+  padding: 24px;
+}
+.wk-skc__dialog {
+  width: 100%;
+  max-width: 560px;
+  background: var(--wk-bg-elevated, #fff);
+  border-radius: var(--wk-r-lg, 12px);
+  box-shadow: var(--wk-shadow-lg, 0 16px 48px rgba(0, 0, 0, 0.24));
+  overflow: hidden;
+}
+.wk-skc__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--wk-border-default, #e6e8eb);
+}
+.wk-skc__head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wk-text-primary, #1f2329);
+}
+.wk-skc__head p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--wk-text-tertiary, #8f959e);
+}
+.wk-skc__close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--wk-r-md, 8px);
+  color: var(--wk-text-tertiary, #8f959e);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.wk-skc__close:hover {
+  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+}
+.wk-skc__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 20px;
+}
+.wk-skc__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--wk-border-default, #e6e8eb);
+  border-radius: var(--wk-r-lg, 10px);
+  background: var(--wk-bg-surface, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.1s, transform 0.1s;
+}
+.wk-skc__card:hover {
+  border-color: var(--wk-text-tertiary, #8f959e);
+  transform: translateY(-1px);
+}
+.wk-skc__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--wk-r-md, 8px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+  color: var(--wk-text-secondary, #51565d);
+}
+.wk-skc__card strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--wk-text-primary, #1f2329);
+}
+.wk-skc__desc {
+  font-size: 12px;
+  color: var(--wk-text-tertiary, #8f959e);
+  line-height: 1.5;
+}
