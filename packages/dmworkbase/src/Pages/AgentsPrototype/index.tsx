@@ -4,6 +4,7 @@ import {
     Briefcase,
     ChevronDown,
     ClipboardList,
+    Cpu,
     Filter,
     Globe2,
     ImagePlus,
@@ -329,12 +330,22 @@ const RUNTIME_ROSTER = [
     { id: "r-codex-build", name: "Codex", machine: "build-mini", icon: "◎", cli: "codex-cli 0.48.0" },
 ]
 
+const MODEL_OPTIONS: Record<string, string[]> = {
+    Claude: ["claude-opus-4.8", "claude-sonnet-5", "claude-haiku-4.5"],
+    Codex: ["gpt-5.5-codex", "gpt-5.5", "o4-mini"],
+    Hermes: ["hermes-4-405b", "hermes-4-70b"],
+    Openclaw: ["claude-opus-4.8", "gpt-5.5"],
+    Opencode: ["gpt-5.5", "claude-sonnet-5"],
+    _default: ["gpt-5.5", "claude-opus-4.8"],
+}
+
 function CreateAgentModal({ onClose }: { onClose: () => void }) {
     const [step, setStep] = useState<"pick" | "config">("pick")
     const [picked, setPicked] = useState<(typeof RUNTIME_ROSTER)[number] | null>(null)
     const [query, setQuery] = useState("")
     const [name, setName] = useState("")
     const [visibility, setVisibility] = useState<"workspace" | "personal">("workspace")
+    const [model, setModel] = useState("gpt-5.5-codex")
 
     const candidates = RUNTIME_ROSTER.filter((r) =>
         `${r.name} ${r.machine}`.toLowerCase().includes(query.trim().toLowerCase()),
@@ -343,6 +354,7 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
     function pick(r: (typeof RUNTIME_ROSTER)[number]) {
         setPicked(r)
         setName(`${r.name}-新队友`)
+        setModel((MODEL_OPTIONS[r.name] ?? MODEL_OPTIONS._default)[0])
         setStep("config")
     }
 
@@ -431,6 +443,18 @@ function CreateAgentModal({ onClose }: { onClose: () => void }) {
                                     <strong>个人</strong>
                                     <small>仅你和工作区管理员可派单</small>
                                 </button>
+                            </div>
+                        </div>
+
+                        <div className="wk-agent-modal__field wk-agent-modal__wide">
+                            <span>模型</span>
+                            <div className="wk-agent-modal__modelrow">
+                                <Cpu size={16} />
+                                <select className="wk-agent-modal__modelsel" value={model} onChange={(e) => setModel(e.target.value)} aria-label="模型">
+                                    {(MODEL_OPTIONS[picked?.name ?? "_default"] ?? MODEL_OPTIONS._default).map((m) => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

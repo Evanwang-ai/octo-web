@@ -430,3 +430,8 @@
   flex-direction: column;
   gap: 16px;
 }
+
+
+/* C2:模型选择字段 */
+.wk-agent-modal__modelrow { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: var(--wk-r-md, 8px); background: var(--wk-bg-surface, #fff); color: var(--wk-text-tertiary, #8f959e); }
+.wk-agent-modal__modelsel { flex: 1 1 auto; height: 100%; border: none; background: transparent; font-size: 13.5px; color: var(--wk-text-primary, #1f2329); cursor: pointer; outline: none; }
