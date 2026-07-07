@@ -1537,3 +1537,10 @@
 .wk-skp__files span { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--wk-text-tertiary, #8f959e); font-family: var(--wk-font-mono, ui-monospace, Menlo, monospace); }
 .wk-skp__files em { font-size: 11px; color: var(--wk-text-disabled, #c9cdd4); font-style: normal; }
 .wk-skp__foot { font-size: 11px; color: var(--wk-text-disabled, #c9cdd4); line-height: 1.5; margin: 0; }
+
+/* R5-1:skill 创建合并单弹窗 —— 顶部方式段控(空白起草/URL/运行时) */
+.wk-skill-import-modal__methods { display: flex; gap: 6px; padding: 12px 16px 0; }
+.wk-skill-import-modal__method { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; border: 1px solid var(--wk-border-default, #e6e8eb); border-radius: 8px; background: var(--wk-bg-surface, #fff); font-size: 12.5px; font-weight: 550; color: var(--wk-text-secondary, #51565d); cursor: pointer; transition: border-color .1s, background .1s; }
+.wk-skill-import-modal__method svg { width: 15px; height: 15px; }
+.wk-skill-import-modal__method:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.03)); }
+.wk-skill-import-modal__method.is-on { border-color: var(--wk-brand-primary, #1f2329); background: var(--wk-brand-tint-06, rgba(0,0,0,0.05)); color: var(--wk-text-primary, #1f2329); }

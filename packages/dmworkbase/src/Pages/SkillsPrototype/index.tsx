@@ -204,7 +204,7 @@ export default function SkillsPrototype() {
                 </button>
             </nav>
 
-            {importStep && <ImportSkillModal step={importStep} onClose={() => setImportStep(null)} />}
+            {importStep && <ImportSkillModal initialStep={importStep} onClose={() => setImportStep(null)} />}
         </section>
     )
 }
@@ -260,7 +260,6 @@ function SkillsListSurface({
     onPickCreate: (step: CreateSkillStep) => void
     onOpenSkill: (skill: SkillFile) => void
 }) {
-    const [newOpen, setNewOpen] = useState(false)
     return (
         <section className="wk-skills-list" aria-label="Skills list">
             <header className="wk-skills-list__header">
@@ -271,16 +270,10 @@ function SkillsListSurface({
                     <p>工作区里任何 AI 队友都能使用的指令。</p>
                     <a href="#learn-more">了解更多 →</a>
                 </div>
-                <button type="button" className="wk-skills-list__create" onClick={() => setNewOpen(true)}>
+                <button type="button" className="wk-skills-list__create" onClick={() => onPickCreate("manual")}>
                     <Plus size={15} />
                     新建 Skill
                 </button>
-                {newOpen && (
-                    <SkillCreateChooser
-                        onClose={() => setNewOpen(false)}
-                        onPick={(step) => { setNewOpen(false); onPickCreate(step) }}
-                    />
-                )}
             </header>
 
             <div className="wk-skills-list__toolbar">
@@ -334,7 +327,8 @@ const RUNTIME_SKILLS = [
 ]
 
 // R4-3(Evan R4):两栏 = 左表单 + 右 skill 卡实时预览(拉开 Multica 三段壳克隆)。
-function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: () => void }) {
+function ImportSkillModal({ initialStep = "manual", onClose }: { initialStep?: CreateSkillStep; onClose: () => void }) {
+    const [method, setMethod] = useState<CreateSkillStep>(initialStep)
     const [name, setName] = useState("")
     const [desc, setDesc] = useState("")
     const [url, setUrl] = useState("")
@@ -344,18 +338,18 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
         manual: { title: "手动创建", sub: "从空白 SKILL.md 开始写。", badge: "手动", action: "创建 skill" },
         url: { title: "从 URL 导入", sub: "通过 URL 拉取已发布的 skill,文件由服务端拉取。", badge: "URL 导入", action: "导入" },
         runtime: { title: "从运行时复制", sub: "扫描本地运行时,把它磁盘上的 skill 提升到工作区。", badge: "运行时", action: "导入到工作区" },
-    }[step]
+    }[method]
 
     const pickedSkill = RUNTIME_SKILLS.find((s) => s.name === picked)
     const urlName = url.trim().replace(/\/+$/, "").split("/").pop() || ""
-    const previewName = step === "manual" ? (name.trim() || "新 skill")
-        : step === "url" ? (urlName || "从 URL 导入")
+    const previewName = method === "manual" ? (name.trim() || "新 skill")
+        : method === "url" ? (urlName || "从 URL 导入")
         : (picked || "选择一个 skill")
-    const previewDesc = step === "manual" ? (desc.trim() || "描述:什么时候把这个 skill 分配给 AI 队友。")
-        : step === "url" ? (url.trim() || "https://clawhub.ai/owner/skill")
+    const previewDesc = method === "manual" ? (desc.trim() || "描述:什么时候把这个 skill 分配给 AI 队友。")
+        : method === "url" ? (url.trim() || "https://clawhub.ai/owner/skill")
         : (pickedSkill ? pickedSkill.path : "从上方运行时里挑一个 skill 提升过来。")
-    const canSubmit = step === "manual" ? name.trim().length > 0
-        : step === "url" ? url.trim().length > 0
+    const canSubmit = method === "manual" ? name.trim().length > 0
+        : method === "url" ? url.trim().length > 0
         : !!picked
 
     return (
@@ -369,15 +363,29 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
             >
                 <header className="wk-skill-import-modal__head">
                     <div>
-                        <h2>{META.title}</h2>
-                        <p>{META.sub}</p>
+                        <h2>新建 Skill</h2>
+                        <p>选一种方式创建,右侧实时预览。</p>
                     </div>
                     <button type="button" aria-label="关闭" onClick={onClose}><X size={16} /></button>
                 </header>
 
+                <div className="wk-skill-import-modal__methods">
+                    {CREATE_SKILL_OPTIONS.map((opt) => (
+                        <button
+                            key={opt.step}
+                            type="button"
+                            className={`wk-skill-import-modal__method${method === opt.step ? " is-on" : ""}`}
+                            onClick={() => setMethod(opt.step)}
+                        >
+                            {opt.icon}
+                            <span>{opt.title}</span>
+                        </button>
+                    ))}
+                </div>
+
                 <div className="wk-skill-import-modal__panes">
                     <div className="wk-skill-import-modal__body">
-                        {step === "manual" && (
+                        {method === "manual" && (
                             <>
                                 <label>
                                     <span>名称</span>
@@ -390,7 +398,7 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
                                 </label>
                             </>
                         )}
-                        {step === "url" && (
+                        {method === "url" && (
                             <>
                                 <label>
                                     <span>Skill URL</span>
@@ -413,7 +421,7 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
                                 </div>
                             </>
                         )}
-                        {step === "runtime" && (
+                        {method === "runtime" && (
                             <>
                                 <label>
                                     <span>运行时</span>
@@ -457,7 +465,7 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
                             <p className="wk-skp__desc">{previewDesc}</p>
                             <div className="wk-skp__files">
                                 <span><FileText size={12} /> SKILL.md</span>
-                                {step === "runtime" && pickedSkill && <em>{pickedSkill.meta}</em>}
+                                {method === "runtime" && pickedSkill && <em>{pickedSkill.meta}</em>}
                             </div>
                         </div>
                         <p className="wk-skp__foot">创建后出现在工作区 Skills,可分配给任意 AI 队友。</p>
@@ -467,7 +475,7 @@ function ImportSkillModal({ step, onClose }: { step: CreateSkillStep; onClose: (
                 <footer className="wk-skill-import-modal__foot">
                     <button type="button" onClick={onClose}>取消</button>
                     <button type="button" className="wk-skill-import-modal__submit" disabled={!canSubmit} onClick={canSubmit ? onClose : undefined}>
-                        {step !== "manual" && <Download size={15} />}
+                        {method !== "manual" && <Download size={15} />}
                         {META.action}
                     </button>
                 </footer>
