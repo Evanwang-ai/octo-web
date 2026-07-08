@@ -864,8 +864,8 @@ function MatterIssuesBoard({
                                 <div className="wk-mv2-panel__row">
                                     <span>布局</span>
                                     <div className="wk-mv2-seg">
-                                        <button type="button" className={view === "board" ? "is-on" : ""} onClick={() => setView("board")}>看板</button>
                                         <button type="button" className={view === "list" ? "is-on" : ""} onClick={() => setView("list")}>列表</button>
+                                        <button type="button" className={view === "board" ? "is-on" : ""} onClick={() => setView("board")}>看板</button>
                                     </div>
                                 </div>
                                 <div className="wk-mv2-panel__row">
