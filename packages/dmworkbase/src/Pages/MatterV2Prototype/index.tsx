@@ -805,7 +805,7 @@ function MatterIssuesBoard({
 }) {
     const [createIssueOpen, setCreateIssueOpen] = useState(false)
     const [activeTab, setActiveTab] = useState(defaultTab)
-    const [view, setView] = useState<"board" | "list">("board")
+    const [view, setView] = useState<"board" | "list">("list")
     const [filterOpen, setFilterOpen] = useState(false)
     const [dateSub, setDateSub] = useState(false)
     const [displayOpen, setDisplayOpen] = useState(false)
