@@ -323,7 +323,7 @@ export default function MatterV2Prototype() {
         }
         if (view === "myissues") {
             WKApp.routeRight.replaceToRoot(
-                <MatterIssuesBoard title="我的回路" tabs={["全部", "已分配", "我创建的", "我的智能体和小队"]} defaultTab={1} />
+                <MatterIssuesBoard title="我的回路" tabs={["全部", "已分配", "我创建的", "我的队友和小队"]} defaultTab={1} />
             )
             return
         }
@@ -407,7 +407,7 @@ export default function MatterV2Prototype() {
                 </button>
                 <button type="button" className={activeView === "squads" ? "is-active" : ""} onClick={() => setView("squads")}>
                     <Users size={16} />
-                    小队
+                    AI 小队
                 </button>
                 {/* ⑧ 技能节点已迁「我的」(User 层);AI 队友/小队详情内 Loading 全局 Skills */}
             </div>
@@ -1832,9 +1832,7 @@ function AddSkillModal({ onClose }: { onClose: () => void }) {
 // R6-C(Evan):AI 队友详情对齐 feat/loop-react WorkerDetailView —— 两栏(主+右Inspector 296)、档案(GitHub 热力格+履历)/配置(Attio 左子导航)。
 const CFG_SECTIONS = [
     { key: "instructions", label: "Instructions" },
-    { key: "env", label: "环境变量" },
-    { key: "args", label: "自定义参数" },
-    { key: "mcp", label: "MCP" },
+    { key: "connectors", label: "连接器" },
     { key: "skills", label: "技能" },
 ] as const
 type CfgSection = typeof CFG_SECTIONS[number]["key"]
@@ -1931,27 +1929,26 @@ function MatterCoWorkerDetail({ coworker }: { coworker: typeof COWORKERS[number]
                                         <textarea className="wk-cw-editor" spellCheck={false} defaultValue={`你是 ${coworker.name},负责把杂乱请求整理成清晰的回路、评论和下一步动作。\n\n# 工作风格\n- 回复简洁、行动导向。\n- 只在缺失信息会改变结论时提一个澄清问题。`} />
                                     </div>
                                 )}
-                                {cfg === "env" && (
-                                    <div className="wk-cw-pane">
-                                        <div className="wk-cwd__cfghead"><h4>环境变量</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
-                                        <p className="wk-cw-help">在 AI 队友进程启动时注入(例如 <code>ANTHROPIC_API_KEY</code>)。</p>
-                                        <div className="wk-cw-kv"><input placeholder="KEY" /><input placeholder="值" type="password" /><button type="button" aria-label="显示值"><Eye size={14} /></button><button type="button" aria-label="删除"><Trash2 size={14} /></button></div>
-                                        <button type="button" className="wk-cw-addbtn">+ 添加变量</button>
-                                    </div>
-                                )}
-                                {cfg === "args" && (
-                                    <div className="wk-cw-pane">
-                                        <div className="wk-cwd__cfghead"><h4>自定义参数</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
-                                        <p className="wk-cw-help">启动命令追加的额外 CLI 参数。多 token 的参数可共用一行。</p>
-                                        <div className="wk-cw-kv is-one"><input placeholder="--flag 值" /><button type="button" aria-label="删除"><Trash2 size={14} /></button></div>
-                                        <button type="button" className="wk-cw-addbtn">+ 添加</button>
-                                    </div>
-                                )}
-                                {cfg === "mcp" && (
-                                    <div className="wk-cw-pane">
-                                        <div className="wk-cwd__cfghead"><h4>MCP</h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
-                                        <p className="wk-cw-help">转发给运行时 CLI 的 MCP 服务器配置,留空回退 CLI 默认。</p>
-                                        <textarea className="wk-cw-editor is-json" spellCheck={false} defaultValue={`{\n  "mcpServers": {\n    "fetch": { "command": "uvx", "args": ["mcp-server-fetch"] }\n  }\n}`} />
+                                {cfg === "connectors" && (
+                                    <div className="wk-cw-pane wk-cw-connectors">
+                                        <div className="wk-cwd__cfghead"><h4>连接器 <span>Connectors</span></h4><button type="button" className="wk-cw-save"><Save size={14} />保存</button></div>
+                                        <section>
+                                            <h5>MCP</h5>
+                                            <p className="wk-cw-help">转发给运行时 CLI 的 MCP 服务器配置,留空回退 CLI 默认。</p>
+                                            <textarea className="wk-cw-editor is-json" spellCheck={false} defaultValue={`{\n  "mcpServers": {\n    "fetch": { "command": "uvx", "args": ["mcp-server-fetch"] }\n  }\n}`} />
+                                        </section>
+                                        <section>
+                                            <h5>环境变量</h5>
+                                            <p className="wk-cw-help">在 AI 队友进程启动时注入(例如 <code>ANTHROPIC_API_KEY</code>)。</p>
+                                            <div className="wk-cw-kv"><input placeholder="KEY" /><input placeholder="值" type="password" /><button type="button" aria-label="显示值"><Eye size={14} /></button><button type="button" aria-label="删除"><Trash2 size={14} /></button></div>
+                                            <button type="button" className="wk-cw-addbtn">+ 添加变量</button>
+                                        </section>
+                                        <section>
+                                            <h5>自定义参数</h5>
+                                            <p className="wk-cw-help">启动命令追加的额外 CLI 参数。多 token 的参数可共用一行。</p>
+                                            <div className="wk-cw-kv is-one"><input placeholder="--flag 值" /><button type="button" aria-label="删除"><Trash2 size={14} /></button></div>
+                                            <button type="button" className="wk-cw-addbtn">+ 添加</button>
+                                        </section>
                                     </div>
                                 )}
                                 {cfg === "skills" && (
@@ -2014,12 +2011,12 @@ function MatterSquadsList() {
             <header className="wk-matter-squads__head">
                 <div className="wk-matter-squads__title">
                     <Users size={17} />
-                    <strong>小队</strong>
+                    <strong>AI 小队</strong>
                     <span>{SQUADS.length}</span>
                 </div>
                 <button type="button" className="wk-matter-squads__create" onClick={() => setCreateOpen(true)}>
                     <UserPlus size={15} />
-                    新建小队
+                    新建 AI 小队
                 </button>
             </header>
 
@@ -2058,11 +2055,11 @@ function MatterSquadsList() {
                             </div>
                         )}
                     </div>
-                    <button type="button">小队 ↑</button>
+                    <button type="button">AI 小队 ↑</button>
                 </div>
             </div>
 
-            <div className="mlv-list mlv-list--flush" role="list" aria-label="小队列表">
+            <div className="mlv-list mlv-list--flush" role="list" aria-label="AI 小队列表">
                 {SQUADS.map((squad) => (
                     <div
                         key={squad.id}
@@ -2115,12 +2112,12 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                 className="wk-sqc__dialog is-two-pane"
                 role="dialog"
                 aria-modal="true"
-                aria-label="创建小队"
+                aria-label="创建 AI 小队"
                 onMouseDown={(event) => event.stopPropagation()}
             >
                 <header className="wk-sqc__head">
                     <div>
-                        <h2>创建小队</h2>
+                        <h2>创建 AI 小队</h2>
                         <p>从你的 AI 队友里排一支队,指定一个领队。</p>
                     </div>
                     <button type="button" className="wk-sqc__close" onClick={onClose} aria-label="关闭"><X size={18} /></button>
@@ -2253,7 +2250,7 @@ function MatterCreateSquadModal({ onClose }: { onClose: () => void }) {
                     </span>
                     <div className="wk-sqc__actions">
                         <button type="button" className="wk-sqc__cancel" onClick={onClose}>取消</button>
-                        <button type="button" className="wk-sqc__submit" disabled={!canCreate} onClick={onClose}>创建小队</button>
+                        <button type="button" className="wk-sqc__submit" disabled={!canCreate} onClick={onClose}>创建 AI 小队</button>
                     </div>
                 </footer>
             </section>
@@ -2278,7 +2275,7 @@ function MatterSquadDetail({
         <section className="wk-matter-squad-detail" aria-label="小队详情">
             <header className="wk-matter-squad-detail__top">
                 <div className="wk-matter-squad-detail__crumb">
-                    <span>小队</span>
+                    <span>AI 小队</span>
                     <ChevronRight size={13} />
                     <strong><Users size={15} />{squad.name}</strong>
                 </div>
@@ -2364,8 +2361,8 @@ function MatterSquadDetail({
                         </div>
                     ) : (
                         <section className="wk-seccard">
-                            <h4>小队指引</h4>
-                            <p className="wk-cw-help">小队指引会在领队处理分配给该小队的回路时注入到它的 prompt 中。可用来给领队提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
+                            <h4>AI 小队指引</h4>
+                            <p className="wk-cw-help">AI 小队指引会在领队处理分配给该小队的回路时注入到它的 prompt 中。可用来给领队提供贯穿全队的指导、协作规范，或每次任务都应遵循的上下文。</p>
                             <textarea className="wk-cw-editor" placeholder="例如:处理任何回路前先与相关方对齐范围;优先小步、可回滚的提交。" />
                             <div className="wk-seccard__actions">
                                 <button type="button" className="wk-cw-save"><Save size={14} />保存</button>

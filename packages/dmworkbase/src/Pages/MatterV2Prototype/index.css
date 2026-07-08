@@ -4180,8 +4180,14 @@
   align-items: center;
   gap: 12px;
   min-height: 48px;
+  padding: 0 10px;
+  border: none;
   border-bottom: 1px solid var(--wk-brand-tint-06, rgba(0, 0, 0, 0.05));
+  background: transparent;
 }
+.wk-sqtable__row:last-child { border-bottom: none; }
+.wk-sqtable__row.is-click { width: 100%; text-align: left; cursor: pointer; border-radius: 0; }
+.wk-sqtable__row.is-click:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.03)); }
 
 .wk-sqtable__row:last-child {
   border-bottom: none;
@@ -7147,3 +7153,9 @@
 .wk-sqd-ghosticon { font-size: 22px; line-height: 1; color: var(--wk-text-disabled, #c9cdd4); }
 .wk-sqtable__row.is-click { width: 100%; text-align: left; background: transparent; }
 .wk-sqtable__row.is-click:hover { background: var(--wk-brand-tint-06, rgba(0,0,0,0.03)); }
+
+
+/* R7-3:连接器合并块 —— 子标题 */
+.wk-cw-connectors section { margin-bottom: 22px; }
+.wk-cw-connectors section h5 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--wk-text-primary, #1f2329); }
+.wk-cwd__cfghead h4 span { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--wk-text-tertiary, #8f959e); font-family: var(--wk-font-mono, ui-monospace, Menlo, monospace); }
