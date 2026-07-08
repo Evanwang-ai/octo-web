@@ -796,7 +796,7 @@ const CARD_PROPS = ["优先级", "描述", "负责人", "开始日期", "截止�
 
 function MatterIssuesBoard({
     title = "全部回路",
-    tabs = ["全部", "成员", "智能体"],
+    tabs = ["全部", "成员", "AI 队友"],
     defaultTab = 0,
 }: {
     title?: string
