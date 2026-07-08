@@ -1677,7 +1677,23 @@ const PROJECTS_ROWS = [
     { icon: "🧭", name: "OctoLoop 上手指南", status: "计划中", pri: "— 无优先级", done: 7, total: 7, owner: "lvsijia", created: "1 个月前" },
 ]
 
+function ProjectDonut({ done, total }: { done: number; total: number }) {
+    const r = 15
+    const c = 2 * Math.PI * r
+    const frac = total > 0 ? done / total : 0
+    return (
+        <span className="wk-pv-donut">
+            <svg width="42" height="42" viewBox="0 0 42 42" aria-hidden>
+                <circle cx="21" cy="21" r={r} fill="none" stroke="var(--wk-border-default, #e6e8eb)" strokeWidth="3.5" />
+                {total > 0 && <circle cx="21" cy="21" r={r} fill="none" stroke="var(--wk-color-success, #2ea44f)" strokeWidth="3.5" strokeDasharray={`${c * frac} ${c}`} transform="rotate(-90 21 21)" strokeLinecap="round" />}
+            </svg>
+            <span className="wk-pv-donut__num">{total > 0 ? `${done}/${total}` : "—"}</span>
+        </span>
+    )
+}
+
 function MatterProjectsList() {
+    const [view, setView] = useState<"list" | "card">("list")
     return (
         <section className="wk-mv2-projects" aria-label="项目列表">
             <header className="wk-mv2-projects__head">
@@ -1694,25 +1710,48 @@ function MatterProjectsList() {
                 <div className="wk-mv2-projects__actions">
                     <button type="button">筛选</button>
                     <button type="button">↓ 创建时间</button>
-                    <button type="button">表格</button>
+                    <div className="wk-mv2-seg">
+                        <button type="button" className={view === "list" ? "is-on" : ""} onClick={() => setView("list")}>列表</button>
+                        <button type="button" className={view === "card" ? "is-on" : ""} onClick={() => setView("card")}>卡片</button>
+                    </div>
                 </div>
             </div>
 
-            <div className="mlv-list mlv-list--flush" role="list" aria-label="项目列表">
-                {PROJECTS_ROWS.map((p) => (
-                    <div key={p.name} className="mlv-row" role="button" tabIndex={0}>
-                        <span className="mlv-emoji">{p.icon}</span>
-                        <span className="mlv-title">{p.name}</span>
-                        <span className="mlv-flex" />
-                        <span className="mlv-proj">{p.status}</span>
-                        <ProgressRing done={p.done} total={p.total} />
-                        {p.owner
-                            ? <span className="mlv-leader"><span className="mlv-owner-ava">L</span><span className="mlv-leader-name">{p.owner}</span></span>
-                            : <span className="mlv-leader mlv-leader--none">未指定</span>}
-                        <span className="mlv-date">{p.created}</span>
-                    </div>
-                ))}
-            </div>
+            {view === "list" ? (
+                <div className="mlv-list mlv-list--flush" role="list" aria-label="项目列表">
+                    {PROJECTS_ROWS.map((p) => (
+                        <div key={p.name} className="mlv-row" role="button" tabIndex={0}>
+                            <span className="mlv-emoji">{p.icon}</span>
+                            <span className="mlv-title">{p.name}</span>
+                            <span className="mlv-flex" />
+                            <span className="mlv-proj">{p.status}</span>
+                            <ProgressRing done={p.done} total={p.total} />
+                            {p.owner
+                                ? <span className="mlv-leader"><span className="mlv-owner-ava">L</span><span className="mlv-leader-name">{p.owner}</span></span>
+                                : <span className="mlv-leader mlv-leader--none">未指定</span>}
+                            <span className="mlv-date">{p.created}</span>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="wk-pv-grid">
+                    {PROJECTS_ROWS.map((p) => (
+                        <div key={p.name} className="wk-pv-card" role="button" tabIndex={0}>
+                            <div className="wk-pv-card__head">
+                                <span className="wk-pv-card__folder">{p.icon}</span>
+                                <strong>{p.name}</strong>
+                            </div>
+                            <div className="wk-pv-card__body">
+                                <ProjectDonut done={p.done} total={p.total} />
+                                <div className="wk-pv-card__meta">
+                                    <span className="wk-pv-card__scope">共享 · 创建于 {p.created}</span>
+                                    <span className="wk-pv-card__leader">{p.owner ? <><span className="mlv-owner-ava">L</span>{p.owner}</> : "领队未定"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </section>
     )
 }
